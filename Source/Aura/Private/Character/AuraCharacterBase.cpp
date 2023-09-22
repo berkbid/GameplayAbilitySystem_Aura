@@ -4,24 +4,14 @@
 
 AAuraCharacterBase::AAuraCharacterBase()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
+	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>("Weapon");
+	Weapon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Weapon->SetupAttachment(GetMesh(), FName("WeaponHandSocket"));
 }
 
 void AAuraCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
-}
-
-void AAuraCharacterBase::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
-void AAuraCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
