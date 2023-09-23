@@ -1,7 +1,10 @@
 // Copyright Berkeley Bidwell
 
 #include "Player/AuraPlayerController.h"
+//#include "Character/AuraCharacter.h"
+#include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "InputAction.h"
 
 AAuraPlayerController::AAuraPlayerController()
 {
@@ -12,27 +15,49 @@ AAuraPlayerController::AAuraPlayerController()
 void AAuraPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// Set up input mapping context
 	
-	// Halts execution if this condition fails
-	check(AuraContext);
-	UEnhancedInputLocalPlayerSubsystem* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
-	check(InputSubsystem);
-	InputSubsystem->AddMappingContext(AuraContext, 0);
+	if (IsLocalController())
+	{
+		check(AuraContext);
+		UEnhancedInputLocalPlayerSubsystem* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+		check(InputSubsystem);
+		InputSubsystem->AddMappingContext(AuraContext, 0);
 
-	// Set cursor properties
-	bShowMouseCursor = true;
-	DefaultMouseCursor = EMouseCursor::Default;
+		// Set cursor properties
+		bShowMouseCursor = true;
+		DefaultMouseCursor = EMouseCursor::Default;
 
-	// Set up input mode
-	FInputModeGameAndUI InputMode;
-	InputMode.SetHideCursorDuringCapture(true);
-	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-	SetInputMode(InputMode);
+		// Set up input mode
+		FInputModeGameAndUI InputMode;
+		InputMode.SetHideCursorDuringCapture(true);
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		SetInputMode(InputMode);
+	}
 }
 
 void AAuraPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
+
+	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent);
+	check(MoveAction);
+	
+	EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::AuraMove);
+}
+
+void AAuraPlayerController::AuraMove(const FInputActionValue& InputActionValue)
+{
+	if (APawn* ControlledPawn = GetPawn())
+	{
+		const FVector2D InputAxisVector = InputActionValue.Get<FVector2D>();
+		
+		const FRotator YawRotation(0.f, GetControlRotation().Yaw, 0.f);
+		
+		// Get forward vector from this rotation
+		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+		ControlledPawn->AddMovementInput(ForwardDirection, InputAxisVector.Y);
+		ControlledPawn->AddMovementInput(RightDirection, InputAxisVector.X);
+	}
 }
