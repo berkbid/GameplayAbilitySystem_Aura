@@ -26,8 +26,6 @@ protected:
 	
 	virtual void SetupInputComponent() override;
 	
-	
-	
 private:
 	void AuraMove(const FInputActionValue& InputActionValue);
 	
