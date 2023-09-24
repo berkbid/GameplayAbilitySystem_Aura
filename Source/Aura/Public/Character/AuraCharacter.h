@@ -19,6 +19,11 @@ class AURA_API AAuraCharacter : public AAuraCharacterBase
 
 public:
 	AAuraCharacter();
+
+	// ~ Begin APawn Interface.
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void OnRep_PlayerState() override;
+	// ~ End APawn Interface
 	
 protected:
 	UPROPERTY(EditAnywhere, Category = "Components")
@@ -26,5 +31,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Components")
 	TObjectPtr<UCameraComponent> Camera;
+
+private:
+	/** Initializes the ability system component with owner actor/avatar */
+	void InitAbilityActorInfo();
 	
 };
