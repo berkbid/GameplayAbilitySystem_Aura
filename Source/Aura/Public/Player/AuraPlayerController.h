@@ -25,7 +25,15 @@ protected:
 	virtual void BeginPlay() override;
 	
 	virtual void SetupInputComponent() override;
+
+	virtual void OnRep_PlayerState() override;
+	/** Server can init hud here because pc and ps are valid */
+	virtual void ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUDClass) override;
 	
+	void InitHUD();
+
+	void PrintLocalRole(const FString& InMessage = "") const;
+
 private:
 	void AuraMove(const FInputActionValue& InputActionValue);
 	
@@ -34,5 +42,5 @@ private:
 	
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> MoveAction;
-	
+
 };

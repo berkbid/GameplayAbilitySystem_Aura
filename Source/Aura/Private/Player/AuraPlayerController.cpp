@@ -5,6 +5,9 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
+#include "Player/AuraPlayerState.h"
+#include "UI/HUD/AuraHUD.h"
+#include "UI/WidgetController/AuraWidgetController.h"
 
 AAuraPlayerController::AAuraPlayerController()
 {
@@ -22,11 +25,11 @@ void AAuraPlayerController::BeginPlay()
 		UEnhancedInputLocalPlayerSubsystem* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
 		check(InputSubsystem);
 		InputSubsystem->AddMappingContext(AuraContext, 0);
-
+		
 		// Set cursor properties
 		bShowMouseCursor = true;
 		DefaultMouseCursor = EMouseCursor::Default;
-
+		
 		// Set up input mode
 		FInputModeGameAndUI InputMode;
 		InputMode.SetHideCursorDuringCapture(true);
@@ -45,6 +48,37 @@ void AAuraPlayerController::SetupInputComponent()
 	EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::AuraMove);
 }
 
+void AAuraPlayerController::ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUDClass)
+{
+	Super::ClientSetHUD_Implementation(NewHUDClass);
+	
+	PrintLocalRole(TEXT("ClientSetHUD: "));
+
+	// Could check if playerstate exists instead
+	if (HasAuthority())
+	{
+		InitHUD();
+	}
+}
+
+void AAuraPlayerController::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	InitHUD();
+}
+
+void AAuraPlayerController::InitHUD()
+{
+	AAuraHUD* AuraHUD = CastChecked<AAuraHUD>(GetHUD());
+	AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
+	check(AuraPlayerState);
+
+	// Only issue with doing it here is the Ability Actor Info (owner/avatar) might not be set yet
+	AuraHUD->InitHUD(FWidgetControllerParams(
+		this, AuraPlayerState, AuraPlayerState->GetAbilitySystemComponent(), AuraPlayerState->GetAttributeSet()));
+}
+
 void AAuraPlayerController::AuraMove(const FInputActionValue& InputActionValue)
 {
 	if (APawn* ControlledPawn = GetPawn())
@@ -60,4 +94,9 @@ void AAuraPlayerController::AuraMove(const FInputActionValue& InputActionValue)
 		ControlledPawn->AddMovementInput(ForwardDirection, InputAxisVector.Y);
 		ControlledPawn->AddMovementInput(RightDirection, InputAxisVector.X);
 	}
+}
+
+void AAuraPlayerController::PrintLocalRole(const FString& InMessage) const
+{
+	UE_LOG(LogTemp, Warning, TEXT("%sLocal Role: %s"), *InMessage, *UEnum::GetValueAsString<ENetRole>(GetLocalRole()));
 }
