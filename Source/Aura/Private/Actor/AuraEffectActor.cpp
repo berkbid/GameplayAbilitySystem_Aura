@@ -1,21 +1,19 @@
 // Copyright Berkeley Bidwell
 
 #include "Actor/AuraEffectActor.h"
+#include "Components/SceneComponent.h"
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 
-#include "AbilitySystemInterface.h"
-#include "AbilitySystem/AuraAttributeSet.h"
-#include "Components/SphereComponent.h"
-#include "Components/StaticMeshComponent.h"
+//#include "AbilitySystemInterface.h"
+//#include "AbilitySystem/AuraAttributeSet.h"
 
 AAuraEffectActor::AAuraEffectActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
-	
-	Mesh = CreateDefaultSubobject<UStaticMeshComponent>("Mesh");
-	SetRootComponent(Mesh);
-	
-	Sphere = CreateDefaultSubobject<USphereComponent>("Sphere");
-	Sphere->SetupAttachment(GetRootComponent());
+
+	SceneRoot = CreateDefaultSubobject<USceneComponent>("SceneRoot");
+	SetRootComponent(SceneRoot);
 
 	bReplicates = true;
 }
@@ -25,17 +23,41 @@ void AAuraEffectActor::BeginPlay()
 	Super::BeginPlay();
 
 	// Only server should handle this, if client gets overlap but server doesn't then there is no way for server to correct this
-	if (GetLocalRole() == ROLE_Authority)
+	// if (GetLocalRole() == ROLE_Authority)
+	// {
+	// 	Sphere->OnComponentBeginOverlap.AddDynamic(this, &AAuraEffectActor::BeginOverlap);
+	// 	Sphere->OnComponentEndOverlap.AddDynamic(this, &AAuraEffectActor::EndOverlap);
+	// }
+}
+
+void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, TSubclassOf<UGameplayEffect> GameplayEffectClass)
+{
+	// Only execute on server ?
+	//if (!HasAuthority())
+	//{
+		//return;
+	//}
+	
+	if (UAbilitySystemComponent* AbilitySystemComponent = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor))
 	{
-		Sphere->OnComponentBeginOverlap.AddDynamic(this, &AAuraEffectActor::BeginOverlap);
-		Sphere->OnComponentEndOverlap.AddDynamic(this, &AAuraEffectActor::EndOverlap);
+		FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+		EffectContext.AddSourceObject(this);
+		
+		const FGameplayEffectSpecHandle EffectSpec = AbilitySystemComponent->MakeOutgoingSpec(GameplayEffectClass, 1.f, EffectContext);
+
+		if (const FGameplayEffectSpec* Spec = EffectSpec.Data.Get())
+		{
+			AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*Spec);
+		}
 	}
 }
 
+/*
 void AAuraEffectActor::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Begin Overlap: %s"), *GetName());
+	
 	// TODO: Change to apply a Gameplay Effect.
 	if (const IAbilitySystemInterface* AbilitySystemInterface = Cast<IAbilitySystemInterface>(OtherActor))
 	{
@@ -46,6 +68,7 @@ void AAuraEffectActor::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 				// Casting away the const as a hack
 				UE_LOG(LogTemp, Warning, TEXT("Setting new health: %s"), *GetName());
 				const_cast<UAuraAttributeSet*>(AuraAttributes)->SetHealth(AuraAttributes->GetHealth() + 25.f);
+				const_cast<UAuraAttributeSet*>(AuraAttributes)->SetMana(AuraAttributes->GetMana() + 25.f);
 				Destroy();
 			}
 		}
@@ -58,3 +81,4 @@ void AAuraEffectActor::EndOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 	
 }
 
+*/
