@@ -4,7 +4,6 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Player/AuraPlayerState.h"
 
@@ -41,6 +40,9 @@ void AAuraCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
+	const ENetRole LocalRole = GetLocalRole();
+	UE_LOG(LogTemp, Warning, TEXT("Character: %s, possessedby local role: %s"), *GetName(), *UEnum::GetValueAsString(LocalRole));
+	
 	// Init for server. Only server is in here, not clients
 	InitAbilityActorInfo();
 }
@@ -49,8 +51,13 @@ void AAuraCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 
+	// Client doesn't need to do this, client automatically does this UAbilitySystemComponent::OnRep_OwningActor()
+	
+	//const ENetRole LocalRole = GetLocalRole();
+	//UE_LOG(LogTemp, Warning, TEXT("Character: %s, OnRep_PlayerState by local role: %s"), *GetName(), *UEnum::GetValueAsString(LocalRole));
+	
 	// Init for clients. All clients are in here, not server
-	InitAbilityActorInfo();
+	//InitAbilityActorInfo();
 }
 
 void AAuraCharacter::InitAbilityActorInfo()

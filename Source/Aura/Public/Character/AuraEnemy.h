@@ -26,4 +26,5 @@ protected:
 	// ~ Begin AActor Interface.
 	virtual void BeginPlay() override;
 	// ~ End AActor Interface
+	
 };

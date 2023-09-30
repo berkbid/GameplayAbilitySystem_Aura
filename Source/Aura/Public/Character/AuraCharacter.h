@@ -26,14 +26,14 @@ public:
 	// ~ End APawn Interface
 	
 protected:
+	/** Initializes the ability system component with owner actor/avatar */
+	virtual void InitAbilityActorInfo() override;
+	
 	UPROPERTY(EditAnywhere, Category = "Components")
 	TObjectPtr<USpringArmComponent> SpringArm;
 
 	UPROPERTY(EditAnywhere, Category = "Components")
 	TObjectPtr<UCameraComponent> Camera;
-
-private:
-	/** Initializes the ability system component with owner actor/avatar */
-	void InitAbilityActorInfo();
+	
 	
 };

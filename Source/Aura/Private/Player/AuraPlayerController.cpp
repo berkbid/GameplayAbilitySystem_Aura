@@ -52,7 +52,7 @@ void AAuraPlayerController::ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUD
 {
 	Super::ClientSetHUD_Implementation(NewHUDClass);
 	
-	PrintLocalRole(TEXT("ClientSetHUD: "));
+	//PrintLocalRole(TEXT("ClientSetHUD: "));
 
 	// Could check if playerstate exists instead
 	if (HasAuthority())

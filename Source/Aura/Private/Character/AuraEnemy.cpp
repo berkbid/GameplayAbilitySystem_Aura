@@ -30,11 +30,13 @@ AAuraEnemy::AAuraEnemy()
 void AAuraEnemy::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
+/*
+	// This seems to not even be necessary, ASC automatically inits this with correct owner/avatar on initializecomponent
 	check(AbilitySystemComponent);
-
 	// All clients and server are in here
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+*/
 }
 
 void AAuraEnemy::NotifyActorBeginCursorOver()
