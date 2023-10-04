@@ -1,6 +1,7 @@
 // Copyright Berkeley Bidwell
 
 #include "UI/WidgetController/HUDWidgetController.h"
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
 void UHUDWidgetController::BroadcastInitialValues()
@@ -15,32 +16,48 @@ void UHUDWidgetController::BroadcastInitialValues()
 
 void UHUDWidgetController::BindCallBacksToDependencies()
 {
-	if (UAbilitySystemComponent* ASC = WidgetControllerParams.AbilitySystemComponent)
+	if (UAuraAbilitySystemComponent* ASC = CastChecked<UAuraAbilitySystemComponent>(WidgetControllerParams.AbilitySystemComponent))
 	{
 		const UAuraAttributeSet* AttributeSet = CastChecked<UAuraAttributeSet>(WidgetControllerParams.AttributeSet);
-		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetHealthAttribute()).AddUObject(this, &UHUDWidgetController::HealthChanged);
-		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetMaxHealthAttribute()).AddUObject(this, &UHUDWidgetController::MaxHealthChanged);
-		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetManaAttribute()).AddUObject(this, &UHUDWidgetController::ManaChanged);
-		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetMaxManaAttribute()).AddUObject(this, &UHUDWidgetController::MaxManaChanged);
+		
+		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetHealthAttribute()).AddLambda(
+			[this](const FOnAttributeChangeData& Data)
+			{
+				OnHealthChanged.Broadcast(Data.NewValue);
+			});
+		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetMaxHealthAttribute()).AddLambda(
+			[this](const FOnAttributeChangeData& Data)
+			{
+				OnMaxHealthChanged.Broadcast(Data.NewValue);
+			});
+		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetManaAttribute()).AddLambda(
+			[this](const FOnAttributeChangeData& Data)
+			{
+				OnManaChanged.Broadcast(Data.NewValue);
+			});
+		ASC->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetMaxManaAttribute()).AddLambda(
+			[this](const FOnAttributeChangeData& Data)
+			{
+				OnMaxManaChanged.Broadcast(Data.NewValue);
+			});
+		ASC->EffectAssetTags.AddLambda(
+			[this](const FGameplayTagContainer& AssetTags)
+			{
+				const FGameplayTag MessageTag = FGameplayTag::RequestGameplayTag(FName("Message"));
+
+				// Broadcast all message tags
+				for (const FGameplayTag& Tag : AssetTags)
+				{
+					if (Tag.MatchesTag(MessageTag))
+					{
+						UE_LOG(LogTemp, Warning, TEXT("Effect has message tag: %s"), *Tag.ToString());
+						if (const FUIWidgetRow* TagRow = GetDataTableRowByTag<FUIWidgetRow>(MessageWidgetDataTable, Tag))
+						{
+							MessageWidgetRow.Broadcast(*TagRow);
+						}
+					}
+				}
+			}
+		);
 	}
-}
-
-void UHUDWidgetController::HealthChanged(const FOnAttributeChangeData& Data) const
-{
-	OnHealthChanged.Broadcast(Data.NewValue);
-}
-
-void UHUDWidgetController::MaxHealthChanged(const FOnAttributeChangeData& Data) const
-{
-	OnMaxHealthChanged.Broadcast(Data.NewValue);
-}
-
-void UHUDWidgetController::ManaChanged(const FOnAttributeChangeData& Data) const
-{
-	OnManaChanged.Broadcast(Data.NewValue);
-}
-
-void UHUDWidgetController::MaxManaChanged(const FOnAttributeChangeData& Data) const
-{
-	OnMaxManaChanged.Broadcast(Data.NewValue);
 }

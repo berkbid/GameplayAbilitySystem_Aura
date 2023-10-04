@@ -52,8 +52,10 @@ void AAuraPlayerController::ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUD
 {
 	Super::ClientSetHUD_Implementation(NewHUDClass);
 	
-	//PrintLocalRole(TEXT("ClientSetHUD: "));
+	PrintLocalRole(TEXT("ClientSetHUD: "));
 
+	// Only autonomous proxy is in here, but authority has valid playerstate and doesn't get OnRep_PlayerState called
+	// So if this is server's PC, init hud here
 	// Could check if playerstate exists instead
 	if (HasAuthority())
 	{
@@ -64,19 +66,26 @@ void AAuraPlayerController::ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUD
 void AAuraPlayerController::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
-
+	
+	PrintLocalRole(TEXT("OnRep_PlayerState: "));
+	
 	InitHUD();
 }
 
 void AAuraPlayerController::InitHUD()
 {
-	AAuraHUD* AuraHUD = CastChecked<AAuraHUD>(GetHUD());
-	AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
-	check(AuraPlayerState);
+	PrintLocalRole(TEXT("Init HUD: "));
 
-	// Only issue with doing it here is the Ability Actor Info (owner/avatar) might not be set yet
-	AuraHUD->InitHUD(FWidgetControllerParams(
-		this, AuraPlayerState, AuraPlayerState->GetAbilitySystemComponent(), AuraPlayerState->GetAttributeSet()));
+	if (IsLocalController())
+	{
+		AAuraHUD* AuraHUD = CastChecked<AAuraHUD>(GetHUD());
+		AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
+		check(AuraPlayerState);
+
+		// Only issue with doing it here is the Ability Actor Info (owner/avatar) might not be set yet
+		AuraHUD->InitHUD(FWidgetControllerParams(
+			this, AuraPlayerState, AuraPlayerState->GetAbilitySystemComponent(), AuraPlayerState->GetAttributeSet()));
+	}
 }
 
 void AAuraPlayerController::AuraMove(const FInputActionValue& InputActionValue)

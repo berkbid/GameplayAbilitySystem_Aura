@@ -26,10 +26,10 @@ void AAuraEffectActor::BeginPlay()
 void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, TSubclassOf<UGameplayEffect> GameplayEffectClass)
 {
 	// Only execute on server ?
-	//if (!HasAuthority())
-	//{
-		//return;
-	//}
+	if (!HasAuthority())
+	{
+		return;
+	}
 	
 	if (UAbilitySystemComponent* AbilitySystemComponent = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor))
 	{
@@ -38,7 +38,8 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, TSubclassOf<UGam
 
 		// Actor level specifies the curve level value for the gameplay effect if using curve table on a scalar modifier
 		const FGameplayEffectSpecHandle EffectSpec = AbilitySystemComponent->MakeOutgoingSpec(GameplayEffectClass, ActorLevel, EffectContext);
-		
+
+		//  Do we need to check if EffectSpec.Data.IsValid() before calling Get() ?
 		if (const FGameplayEffectSpec* Spec = EffectSpec.Data.Get())
 		{
 			// Get gameplay effect to see what duration policy is

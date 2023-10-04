@@ -68,6 +68,9 @@ Build/*/**
 # Don't ignore icon files in Build
 !Build/**/*.ico
 
+# Don't ignore third party libraries
+!ThirdParty/*
+
 # Built data for maps
 *_BuiltData.uasset
 

@@ -51,13 +51,13 @@ void AAuraCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 
+	/*
 	// Client doesn't need to do this, client automatically does this UAbilitySystemComponent::OnRep_OwningActor()
-	
 	//const ENetRole LocalRole = GetLocalRole();
 	//UE_LOG(LogTemp, Warning, TEXT("Character: %s, OnRep_PlayerState by local role: %s"), *GetName(), *UEnum::GetValueAsString(LocalRole));
-	
 	// Init for clients. All clients are in here, not server
 	//InitAbilityActorInfo();
+	*/
 }
 
 void AAuraCharacter::InitAbilityActorInfo()
@@ -71,4 +71,11 @@ void AAuraCharacter::InitAbilityActorInfo()
 	check(AbilitySystemComponent);
 	
 	AbilitySystemComponent->InitAbilityActorInfo(AuraPlayerState, this);
+
+	// Setting initial attribute values using a gameplay effect
+	// Technically only server needs to set this as the values will be replicated down to client
+	if (HasAuthority())
+	{
+		InitializeDefaultAttributes();
+	}
 }
