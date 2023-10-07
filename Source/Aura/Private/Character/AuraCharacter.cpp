@@ -60,6 +60,16 @@ void AAuraCharacter::OnRep_PlayerState()
 	*/
 }
 
+int32 AAuraCharacter::GetPlayerLevel()
+{
+	if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(GetPlayerState()))
+	{
+		return CombatInterface->GetPlayerLevel();
+	}
+	
+	return 1;
+}
+
 void AAuraCharacter::InitAbilityActorInfo()
 {
 	AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();

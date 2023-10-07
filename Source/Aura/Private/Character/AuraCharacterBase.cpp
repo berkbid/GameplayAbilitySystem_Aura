@@ -21,6 +21,8 @@ void AAuraCharacterBase::InitializeDefaultAttributes() const
 {
 	ApplyGameplayEffectToSelf(DefaultPrimaryAttributesClass, 1.f);
 	ApplyGameplayEffectToSelf(DefaultSecondaryAttributesClass, 1.f);
+	// Set vital after secondary because we want to set health/mana equal to max health/mana
+	ApplyGameplayEffectToSelf(DefaultVitalAttributesClass, 1.f);
 }
 
 void AAuraCharacterBase::ApplyGameplayEffectToSelf(const TSubclassOf<UGameplayEffect>& InGameplayEffectClass, float Level) const
@@ -33,7 +35,9 @@ void AAuraCharacterBase::ApplyGameplayEffectToSelf(const TSubclassOf<UGameplayEf
 	check(IsValid(GetAbilitySystemComponent()));
 	check(InGameplayEffectClass);
 	
-	const FGameplayEffectContextHandle ContextHandle = GetAbilitySystemComponent()->MakeEffectContext();
+	FGameplayEffectContextHandle ContextHandle = GetAbilitySystemComponent()->MakeEffectContext();
+	ContextHandle.AddSourceObject(this);
+	
 	const FGameplayEffectSpecHandle SpecHandle = GetAbilitySystemComponent()->MakeOutgoingSpec(InGameplayEffectClass, Level, ContextHandle);
 	
 	if (SpecHandle.Data.IsValid())

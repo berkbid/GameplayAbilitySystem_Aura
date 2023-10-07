@@ -25,6 +25,10 @@ public:
 	virtual void OnRep_PlayerState() override;
 	// ~ End APawn Interface
 	
+	// ~ Begin ICombatInterface
+	virtual int32 GetPlayerLevel() override;
+	// ~ End ICombatInterface
+	
 protected:
 	/** Initializes the ability system component with owner actor/avatar */
 	virtual void InitAbilityActorInfo() override;

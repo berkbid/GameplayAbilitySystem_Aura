@@ -22,9 +22,17 @@ public:
 	virtual void NotifyActorEndCursorOver() override;
 	// ~ End AActor Interface
 	
+	// ~ Begin ICombatInterface
+	virtual int32 GetPlayerLevel() override { return Level; }
+	// ~ End ICombatInterface
+	
 protected:
 	// ~ Begin AActor Interface.
 	virtual void BeginPlay() override;
 	// ~ End AActor Interface
 	
+	// Only server needs to know level of AI enemies, so not replicated
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class Defaults")
+	int32 Level = 1;
+
 };
