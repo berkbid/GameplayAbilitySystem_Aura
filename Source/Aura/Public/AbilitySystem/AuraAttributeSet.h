@@ -14,6 +14,9 @@ GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName) \
 GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
 GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)
 
+// Delegate that can have a function bound to it, returns value of type FGameplayAttribute
+//DECLARE_DELEGATE_RetVal(FGameplayAttribute, FAttributeSignature);
+
 USTRUCT(BlueprintType)
 struct FEffectProperties
 {
@@ -68,6 +71,10 @@ public:
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 	// ~ End UAttributeSet interface
+
+	/** Map of gameplay tag to the gameplay attribute */
+	TMap<FGameplayTag, FGameplayAttribute> TagsToAttributes;
+
 	
 	/*
 	 * Primary Attributes

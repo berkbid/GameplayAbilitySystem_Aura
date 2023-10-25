@@ -7,6 +7,8 @@
 void UHUDWidgetController::BroadcastInitialValues()
 {
 	const UAuraAttributeSet* AttributeSet = CastChecked<UAuraAttributeSet>(WidgetControllerParams.AttributeSet);
+
+	UE_LOG(LogTemp, Warning, TEXT("Broadcasting initial HUD values"));
 	
 	OnHealthChanged.Broadcast(AttributeSet->GetHealth());
 	OnMaxHealthChanged.Broadcast(AttributeSet->GetMaxHealth());

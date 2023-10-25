@@ -1,6 +1,7 @@
 // Copyright Berkeley Bidwell
 
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "AuraGameplayTags.h"
 #include "GameFramework/PlayerState.h"
 #include "Engine/EngineBaseTypes.h"
 
@@ -57,6 +58,7 @@ void UAuraAbilitySystemComponent::EffectApplied(UAbilitySystemComponent* Ability
 	{
 		if (const AController* Controller = PS->GetOwningController())
 		{
+			//  If not the servers playerstate then send client RPC to owning client to handle the event
 			if (!Controller->IsLocalController())
 			{
 				ClientEffectAppliedTags(TagContainer);

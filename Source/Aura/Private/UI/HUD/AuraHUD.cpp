@@ -2,6 +2,7 @@
 
 #include "UI/HUD/AuraHUD.h"
 #include "UI/Widget/AuraUserWidget.h"
+#include "UI/WidgetController/AttributeMenuWidgetController.h"
 #include "UI/WidgetController/HUDWidgetController.h"
 
 void AAuraHUD::InitHUD(const FWidgetControllerParams& InControllerParams)
@@ -28,4 +29,16 @@ UHUDWidgetController* AAuraHUD::GetHUDWidgetController(const FWidgetControllerPa
 	}
 	
 	return HUDWidgetController;
+}
+
+UAttributeMenuWidgetController* AAuraHUD::GetAttributeMenuWidgetController(const FWidgetControllerParams& InControllerParams)
+{
+	checkf(AttributeMenuWidgetControllerClass, TEXT("AttributeMenuWidgetControllerClass uninitialized, please fill out B_AuraHUD"));
+	
+	if (!AttributeMenuWidgetController)
+	{
+		AttributeMenuWidgetController = NewObject<UAttributeMenuWidgetController>(this, AttributeMenuWidgetControllerClass);
+		AttributeMenuWidgetController->SetWidgetControllerParams(InControllerParams);
+	}
+	return AttributeMenuWidgetController;
 }

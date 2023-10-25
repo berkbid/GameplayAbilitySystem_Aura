@@ -8,6 +8,7 @@
 
 class UAuraUserWidget;
 class UHUDWidgetController;
+class UAttributeMenuWidgetController;
 struct FWidgetControllerParams;
 
 /**
@@ -19,23 +20,30 @@ class AURA_API AAuraHUD : public AHUD
 	GENERATED_BODY()
 
 public:
-	UHUDWidgetController* GetHUDWidgetController(const FWidgetControllerParams& InControllerParams);
-
 	void InitHUD(const FWidgetControllerParams& InControllerParams);
 	
-public:
-	UPROPERTY(BlueprintReadOnly, Category="UI")
+	UHUDWidgetController* GetHUDWidgetController(const FWidgetControllerParams& InControllerParams);
+	
+	UAttributeMenuWidgetController* GetAttributeMenuWidgetController(const FWidgetControllerParams& InControllerParams);
+
+protected:
+	UPROPERTY(Transient, BlueprintReadOnly, Category="UI")
 	TObjectPtr<UAuraUserWidget> AuraHUD;
 	
-protected:
-
 private:
 	UPROPERTY(EditDefaultsOnly, Category="UI")
 	TSubclassOf<UAuraUserWidget> HudClass;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UHUDWidgetController> HUDWidgetController;
-
+	
 	UPROPERTY(EditDefaultsOnly, Category="UI")
 	TSubclassOf<UHUDWidgetController> HUDWidgetControllerClass;
+	
+	UPROPERTY(Transient)
+	TObjectPtr<UAttributeMenuWidgetController> AttributeMenuWidgetController;
+
+	UPROPERTY(EditDefaultsOnly, Category="UI")
+	TSubclassOf<UAttributeMenuWidgetController> AttributeMenuWidgetControllerClass;
+	
 };
