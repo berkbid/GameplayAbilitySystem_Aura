@@ -35,6 +35,24 @@ void UAuraAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AAc
 	}
 }
 
+void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupAbilities)
+{
+	const AActor* ActorOwner = GetOwner();
+	if (!ActorOwner || ActorOwner->GetLocalRole() < ROLE_Authority)
+	{
+		return;
+	}
+
+	// Server functionality to add abilities
+	for (const TSubclassOf<UGameplayAbility>& AbilityClass : StartupAbilities)
+	{
+		// Create ability spec from class and give ability and activate
+		FGameplayAbilitySpec AbilitySpec(AbilityClass, 1);
+		//GiveAbility(AbilitySpec);
+		GiveAbilityAndActivateOnce(AbilitySpec);
+	}
+}
+
 void UAuraAbilitySystemComponent::EffectApplied(UAbilitySystemComponent* AbilitySystemComponent, const FGameplayEffectSpec& EffectSpec, FActiveGameplayEffectHandle ActiveEffectHandle)
 {
 	// Only server is in here

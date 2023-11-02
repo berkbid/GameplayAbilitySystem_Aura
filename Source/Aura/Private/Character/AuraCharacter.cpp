@@ -45,6 +45,9 @@ void AAuraCharacter::PossessedBy(AController* NewController)
 	
 	// Init for server. Only server is in here, not clients
 	InitAbilityActorInfo();
+	
+	// Have server add character abilities
+	AddCharacterAbilities();
 }
 
 void AAuraCharacter::OnRep_PlayerState()

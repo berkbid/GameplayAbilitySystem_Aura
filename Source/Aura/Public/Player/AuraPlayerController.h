@@ -4,11 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "GameplayTagContainer.h"
 #include "AuraPlayerController.generated.h"
 
+struct FGameplayTag;
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
+class UAuraInputConfig;
 
 /**
  * 
@@ -36,11 +39,17 @@ protected:
 
 private:
 	void AuraMove(const FInputActionValue& InputActionValue);
+	void AbilityInputTagPressed(const FInputActionValue& InputActionValue, const FGameplayTag InputTag);
+	void AbilityInputTagReleased(const FInputActionValue& InputActionValue, const FGameplayTag InputTag);
+	void AbilityInputTagHeld(const FInputActionValue& InputActionValue, const FGameplayTag InputTag);
 	
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputMappingContext> AuraContext;
 	
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> MoveAction;
+
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	TObjectPtr<UAuraInputConfig> InputConfig;
 
 };

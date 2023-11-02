@@ -2,6 +2,7 @@
 
 #include "Character/AuraCharacterBase.h"
 #include "AbilitySystemComponent.h"
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
 
 AAuraCharacterBase::AAuraCharacterBase()
 {
@@ -47,4 +48,17 @@ void AAuraCharacterBase::ApplyGameplayEffectToSelf(const TSubclassOf<UGameplayEf
 			GetAbilitySystemComponent()->ApplyGameplayEffectSpecToSelf(*EffectSpec);
 		}
 	}
+}
+
+void AAuraCharacterBase::AddCharacterAbilities() const
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	// Have ability system component add abilities
+	UAuraAbilitySystemComponent* ASC = CastChecked<UAuraAbilitySystemComponent>(AbilitySystemComponent);
+	ASC->AddCharacterAbilities(StartupAbilities);
+	
 }

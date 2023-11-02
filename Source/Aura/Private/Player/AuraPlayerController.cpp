@@ -1,11 +1,11 @@
 // Copyright Berkeley Bidwell
 
 #include "Player/AuraPlayerController.h"
-//#include "Character/AuraCharacter.h"
-#include "EnhancedInputComponent.h"
+#include "Player/AuraPlayerState.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
-#include "Player/AuraPlayerState.h"
+#include "Input/AuraInputComponent.h"
+#include "Input/AuraInputConfig.h"
 #include "UI/HUD/AuraHUD.h"
 #include "UI/WidgetController/AuraWidgetController.h"
 
@@ -42,10 +42,11 @@ void AAuraPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
-	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent);
+	UAuraInputComponent* AuraInputComponent = CastChecked<UAuraInputComponent>(InputComponent);
 	check(MoveAction);
 	
-	EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::AuraMove);
+	AuraInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::AuraMove);
+	AuraInputComponent->BindAbilityActions(InputConfig, this, &ThisClass::AbilityInputTagPressed, &ThisClass::AbilityInputTagReleased, &ThisClass::AbilityInputTagHeld);
 }
 
 void AAuraPlayerController::ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUDClass)
@@ -103,6 +104,29 @@ void AAuraPlayerController::AuraMove(const FInputActionValue& InputActionValue)
 		ControlledPawn->AddMovementInput(ForwardDirection, InputAxisVector.Y);
 		ControlledPawn->AddMovementInput(RightDirection, InputAxisVector.X);
 	}
+}
+
+void AAuraPlayerController::AbilityInputTagPressed(const FInputActionValue& InputActionValue, const FGameplayTag InputTag)
+{
+	//check(InputConfig);
+	//const UInputAction* InputAction = InputConfig->FindAbilityInputActionForTag(InputTag);
+	UE_LOG(LogTemp, Warning, TEXT("Pressed: %s"), *InputTag.ToString());
+	
+	// TODO: Use tag to activate ability if ability mapped to tag
+}
+
+void AAuraPlayerController::AbilityInputTagReleased(const FInputActionValue& InputActionValue, const FGameplayTag InputTag)
+{
+	//check(InputConfig);
+	//const UInputAction* InputAction = InputConfig->FindAbilityInputActionForTag(InputTag);
+	UE_LOG(LogTemp, Warning, TEXT("Released: %s"), *InputTag.ToString());
+}
+
+void AAuraPlayerController::AbilityInputTagHeld(const FInputActionValue& InputActionValue, const FGameplayTag InputTag)
+{
+	//check(InputConfig);
+	//const UInputAction* InputAction = InputConfig->FindAbilityInputActionForTag(InputTag);
+	UE_LOG(LogTemp, Warning, TEXT("Held: %s"), *InputTag.ToString());
 }
 
 void AAuraPlayerController::PrintLocalRole(const FString& InMessage) const
