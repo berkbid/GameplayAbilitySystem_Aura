@@ -7,11 +7,14 @@
 #include "GameplayTagContainer.h"
 #include "AuraPlayerController.generated.h"
 
+class IEnemyInterface;
 struct FGameplayTag;
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
 class UAuraInputConfig;
+class UAuraAbilitySystemComponent;
+class USplineComponent;
 
 /**
  * 
@@ -37,12 +40,22 @@ protected:
 
 	void PrintLocalRole(const FString& InMessage = "") const;
 
+protected:
+	UPROPERTY(EditDefaultsOnly)
+	float AutoRunAcceptanceRadius = 50.f;
+	
 private:
 	void AuraMove(const FInputActionValue& InputActionValue);
 	void AbilityInputTagPressed(const FInputActionValue& InputActionValue, const FGameplayTag InputTag);
-	void AbilityInputTagReleased(const FInputActionValue& InputActionValue, const FGameplayTag InputTag);
 	void AbilityInputTagHeld(const FInputActionValue& InputActionValue, const FGameplayTag InputTag);
+	void AbilityInputTagReleased(const FInputActionValue& InputActionValue, const FGameplayTag InputTag);
 	
+	UAuraAbilitySystemComponent* GetASC();
+
+	/** Gets enemy interface actor under cursor */
+	IEnemyInterface* GetEnemyUnderCursor() const;
+	
+private:
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputMappingContext> AuraContext;
 	
@@ -52,4 +65,18 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UAuraInputConfig> InputConfig;
 
+	UPROPERTY(Transient)
+	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
+
+	// Movement
+	
+	FVector CachedDestination = FVector::ZeroVector;
+	float FollowTime = 0.f;
+	float ShortPressThreshold = 0.5f;
+	bool bAutoRunning = false;
+	bool bTargeting = false;
+	
+	UPROPERTY(Transient, VisibleAnywhere)
+	TObjectPtr<USplineComponent> Spline;
+	
 };

@@ -21,6 +21,10 @@ public:
 
 	/** Call from base character class to add startup abilities */
 	void AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupAbilities);
+
+	void AbilityInputTagHeld(const FGameplayTag& InputTag);
+	
+	void AbilityInputTagReleased(const FGameplayTag& InputTag);
 	
 protected:
 	void EffectApplied(UAbilitySystemComponent* AbilitySystemComponent, const FGameplayEffectSpec& EffectSpec, FActiveGameplayEffectHandle ActiveEffectHandle);
@@ -32,4 +36,8 @@ public:
 	FDelegateHandle EffectAppliedDelegate;
 	
 	FEffectAssetTags EffectAssetTags;
+
+private:
+	FGameplayAbilitySpec* FindAbilityForTag(const FGameplayTag& InTag);
+	
 };

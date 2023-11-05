@@ -1,11 +1,14 @@
 // Copyright Berkeley Bidwell
 
 #include "Player/AuraPlayerController.h"
+#include "AuraGameplayTags.h"
 #include "Player/AuraPlayerState.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "Components/SplineComponent.h"
 #include "Input/AuraInputComponent.h"
-#include "Input/AuraInputConfig.h"
+#include "Interaction/EnemyInterface.h"
 #include "UI/HUD/AuraHUD.h"
 #include "UI/WidgetController/AuraWidgetController.h"
 
@@ -13,6 +16,9 @@ AAuraPlayerController::AAuraPlayerController()
 {
 	// @TODO: Does this need to be set to true??
 	bReplicates = true;
+
+	Spline = CreateDefaultSubobject<USplineComponent>("Spline");
+	
 }
 
 void AAuraPlayerController::BeginPlay()
@@ -32,7 +38,7 @@ void AAuraPlayerController::BeginPlay()
 		
 		// Set up input mode
 		FInputModeGameAndUI InputMode;
-		InputMode.SetHideCursorDuringCapture(true);
+		InputMode.SetHideCursorDuringCapture(false);
 		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 		SetInputMode(InputMode);
 	}
@@ -108,25 +114,79 @@ void AAuraPlayerController::AuraMove(const FInputActionValue& InputActionValue)
 
 void AAuraPlayerController::AbilityInputTagPressed(const FInputActionValue& InputActionValue, const FGameplayTag InputTag)
 {
-	//check(InputConfig);
-	//const UInputAction* InputAction = InputConfig->FindAbilityInputActionForTag(InputTag);
-	UE_LOG(LogTemp, Warning, TEXT("Pressed: %s"), *InputTag.ToString());
-	
-	// TODO: Use tag to activate ability if ability mapped to tag
-}
-
-void AAuraPlayerController::AbilityInputTagReleased(const FInputActionValue& InputActionValue, const FGameplayTag InputTag)
-{
-	//check(InputConfig);
-	//const UInputAction* InputAction = InputConfig->FindAbilityInputActionForTag(InputTag);
-	UE_LOG(LogTemp, Warning, TEXT("Released: %s"), *InputTag.ToString());
+	// Want to know if we are targeting an enemy when an ability is pressed, to determine if left click should move or use ability
+	// TODO: Server is not setting or using these properties on autonomous proxy, do we care?
+	if (InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
+	{
+		bTargeting = GetEnemyUnderCursor() ? true : false;
+		bAutoRunning = false;
+	}
 }
 
 void AAuraPlayerController::AbilityInputTagHeld(const FInputActionValue& InputActionValue, const FGameplayTag InputTag)
 {
-	//check(InputConfig);
-	//const UInputAction* InputAction = InputConfig->FindAbilityInputActionForTag(InputTag);
-	UE_LOG(LogTemp, Warning, TEXT("Held: %s"), *InputTag.ToString());
+	// TODO: Server does not enforce targeting value, do we care?
+	if (!InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB) || bTargeting)
+	{
+		if (GetASC())
+		{
+			GetASC()->AbilityInputTagHeld(InputTag);
+		}
+		
+		return;
+	}
+
+	// Tag == LMB AND we are not targeting: click to move behavior
+	
+	FollowTime += GetWorld()->GetDeltaSeconds();
+	
+	FHitResult Hit;
+	if (GetHitResultUnderCursor(ECC_Visibility, false, Hit))
+	{
+		CachedDestination = Hit.ImpactPoint;
+	}
+
+	if (APawn* ControlledPawn = GetPawn())
+	{
+		const FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
+		ControlledPawn->AddMovementInput(WorldDirection);
+	}
+}
+
+void AAuraPlayerController::AbilityInputTagReleased(const FInputActionValue& InputActionValue, const FGameplayTag InputTag)
+{
+	//UE_LOG(LogTemp, Warning, TEXT("Input Tag Released: %s"), *InputTag.ToString());
+	
+	if (!GetASC())
+	{
+		return;
+	}
+	
+	GetASC()->AbilityInputTagReleased(InputTag);
+}
+
+UAuraAbilitySystemComponent* AAuraPlayerController::GetASC()
+{
+	if (!AuraAbilitySystemComponent)
+	{
+		const AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
+		AuraAbilitySystemComponent = Cast<UAuraAbilitySystemComponent>(AuraPlayerState ? AuraPlayerState->GetAbilitySystemComponent() : nullptr);
+	}
+
+	return AuraAbilitySystemComponent;
+}
+
+IEnemyInterface* AAuraPlayerController::GetEnemyUnderCursor() const
+{
+	FHitResult CursorHit;
+	if (GetHitResultUnderCursor(ECC_Visibility, false, CursorHit))
+	{
+		if (CursorHit.IsValidBlockingHit())
+		{
+			return Cast<IEnemyInterface>(CursorHit.GetActor());
+		}
+	}
+	return nullptr;
 }
 
 void AAuraPlayerController::PrintLocalRole(const FString& InMessage) const

@@ -2,6 +2,7 @@
 
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AuraGameplayTags.h"
+#include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "GameFramework/PlayerState.h"
 #include "Engine/EngineBaseTypes.h"
 
@@ -46,10 +47,50 @@ void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf
 	// Server functionality to add abilities
 	for (const TSubclassOf<UGameplayAbility>& AbilityClass : StartupAbilities)
 	{
-		// Create ability spec from class and give ability and activate
+		// Create ability spec from class
 		FGameplayAbilitySpec AbilitySpec(AbilityClass, 1);
-		//GiveAbility(AbilitySpec);
-		GiveAbilityAndActivateOnce(AbilitySpec);
+
+		// Add startup input tag to the abilities dynamic ability tags
+		if (const UAuraGameplayAbility* AuraGameplayAbility = Cast<UAuraGameplayAbility>(AbilitySpec.Ability))
+		{
+			AbilitySpec.DynamicAbilityTags.AddTag(AuraGameplayAbility->StartupInputTag);
+		}
+
+		// Give the ability
+		GiveAbility(AbilitySpec);
+		// Optional, will give and activate
+		//GiveAbilityAndActivateOnce(AbilitySpec);
+	}
+}
+
+void UAuraAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputTag)
+{
+	if (!InputTag.IsValid())
+	{
+		return;
+	}
+	
+	if (FGameplayAbilitySpec* AbilitySpec = FindAbilityForTag(InputTag))
+	{
+		AbilitySpecInputPressed(*AbilitySpec);
+		
+		if (!AbilitySpec->IsActive())
+		{
+			TryActivateAbility(AbilitySpec->Handle);
+		}
+	}
+}
+
+void UAuraAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)
+{
+	if (!InputTag.IsValid())
+	{
+		return;
+	}
+
+	if (FGameplayAbilitySpec* AbilitySpec = FindAbilityForTag(InputTag))
+	{
+		AbilitySpecInputReleased(*AbilitySpec);
 	}
 }
 
@@ -100,4 +141,10 @@ void UAuraAbilitySystemComponent::ClientEffectAppliedTags_Implementation(const F
 	
 	// Broadcast for widgetcontroller
 	EffectAssetTags.Broadcast(TagContainer);
+}
+
+FGameplayAbilitySpec* UAuraAbilitySystemComponent::FindAbilityForTag(const FGameplayTag& InTag)
+{
+	return GetActivatableAbilities().FindByPredicate([InTag](const FGameplayAbilitySpec& AbilitySpec)
+		{ return AbilitySpec.DynamicAbilityTags.HasTagExact(InTag); });
 }
