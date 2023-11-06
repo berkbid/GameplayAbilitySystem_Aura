@@ -32,6 +32,8 @@ protected:
 	
 	virtual void SetupInputComponent() override;
 
+	virtual void Tick(float DeltaSeconds) override;
+	
 	virtual void OnRep_PlayerState() override;
 	/** Server can init hud here because pc and ps are valid */
 	virtual void ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUDClass) override;
@@ -52,8 +54,7 @@ private:
 	
 	UAuraAbilitySystemComponent* GetASC();
 
-	/** Gets enemy interface actor under cursor */
-	IEnemyInterface* GetEnemyUnderCursor() const;
+	void AutoRun();
 	
 private:
 	UPROPERTY(EditAnywhere, Category="Input")
@@ -71,6 +72,7 @@ private:
 	// Movement
 	
 	FVector CachedDestination = FVector::ZeroVector;
+	bool bValidCachedDestination = false;
 	float FollowTime = 0.f;
 	float ShortPressThreshold = 0.5f;
 	bool bAutoRunning = false;

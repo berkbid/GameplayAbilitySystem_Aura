@@ -5,6 +5,8 @@
 #include "Player/AuraPlayerState.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
+#include "NavigationPath.h"
+#include "NavigationSystem.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "Components/SplineComponent.h"
 #include "Input/AuraInputComponent.h"
@@ -16,9 +18,7 @@ AAuraPlayerController::AAuraPlayerController()
 {
 	// @TODO: Does this need to be set to true??
 	bReplicates = true;
-
 	Spline = CreateDefaultSubobject<USplineComponent>("Spline");
-	
 }
 
 void AAuraPlayerController::BeginPlay()
@@ -53,6 +53,40 @@ void AAuraPlayerController::SetupInputComponent()
 	
 	AuraInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::AuraMove);
 	AuraInputComponent->BindAbilityActions(InputConfig, this, &ThisClass::AbilityInputTagPressed, &ThisClass::AbilityInputTagReleased, &ThisClass::AbilityInputTagHeld);
+}
+
+void AAuraPlayerController::Tick(float DeltaSeconds)
+{
+	// TODO: Should non-locally controlled PC even tick?
+	
+	Super::Tick(DeltaSeconds);
+	
+	AutoRun();
+}
+
+void AAuraPlayerController::AutoRun()
+{
+	if (!bAutoRunning)
+	{
+		return;
+	}
+
+	APawn* ControlledPawn = GetPawn();
+	if (IsValid(ControlledPawn)) // non-null and not pending kill
+	{
+		const FVector LocationOnSpline = Spline->FindLocationClosestToWorldLocation(ControlledPawn->GetActorLocation(), ESplineCoordinateSpace::World);
+		
+		// Could just use pawn location instead of location on spline
+		//const FVector Direction = Spline->FindDirectionClosestToWorldLocation(LocationOnSpline, ESplineCoordinateSpace::World);
+		const FVector Direction = Spline->FindTangentClosestToWorldLocation(LocationOnSpline, ESplineCoordinateSpace::World);
+		ControlledPawn->AddMovementInput(Direction);
+
+		const float DistanceToDestination = (LocationOnSpline - CachedDestination).Length();
+		if (DistanceToDestination <= AutoRunAcceptanceRadius)
+		{
+			bAutoRunning = false;
+		}
+	}
 }
 
 void AAuraPlayerController::ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUDClass)
@@ -118,8 +152,23 @@ void AAuraPlayerController::AbilityInputTagPressed(const FInputActionValue& Inpu
 	// TODO: Server is not setting or using these properties on autonomous proxy, do we care?
 	if (InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
 	{
-		bTargeting = GetEnemyUnderCursor() ? true : false;
+		FHitResult CursorHit;
+		GetHitResultUnderCursor(ECC_Visibility, false, CursorHit);
+		
+		// We are targeting an enemy if cursor hit is valid and the actor it his implements enemy interface
+		bTargeting = CursorHit.IsValidBlockingHit() && Cast<IEnemyInterface>(CursorHit.GetActor());
+
+		// Reset these values
 		bAutoRunning = false;
+		FollowTime = 0.f;
+		bValidCachedDestination = false;
+		
+		// This is experimental code, why not get cached destination on initial press if we aren't targeting with LMB
+		if (!bTargeting && CursorHit.IsValidBlockingHit())
+		{
+			CachedDestination = CursorHit.ImpactPoint;
+			bValidCachedDestination = true;
+		}
 	}
 }
 
@@ -141,28 +190,66 @@ void AAuraPlayerController::AbilityInputTagHeld(const FInputActionValue& InputAc
 	FollowTime += GetWorld()->GetDeltaSeconds();
 	
 	FHitResult Hit;
-	if (GetHitResultUnderCursor(ECC_Visibility, false, Hit))
+	if (GetHitResultUnderCursor(ECC_Visibility, false, Hit) && Hit.IsValidBlockingHit())
 	{
 		CachedDestination = Hit.ImpactPoint;
-	}
-
-	if (APawn* ControlledPawn = GetPawn())
-	{
-		const FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
-		ControlledPawn->AddMovementInput(WorldDirection);
+		bValidCachedDestination = true;
+		
+		if (APawn* ControlledPawn = GetPawn())
+		{
+			const FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
+			ControlledPawn->AddMovementInput(WorldDirection);
+		}
 	}
 }
 
 void AAuraPlayerController::AbilityInputTagReleased(const FInputActionValue& InputActionValue, const FGameplayTag InputTag)
 {
-	//UE_LOG(LogTemp, Warning, TEXT("Input Tag Released: %s"), *InputTag.ToString());
-	
-	if (!GetASC())
+	if (!InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB) || bTargeting)
 	{
+		if (GetASC())
+		{
+			GetASC()->AbilityInputTagReleased(InputTag);
+		}
 		return;
 	}
+
+	// Tag == LMB AND we are not targeting: click to move behavior
+
+	if (FollowTime <= ShortPressThreshold && bValidCachedDestination)
+	{
+		if (const APawn* ControlledPawn = GetPawn())
+		{
+			// TODO: How do we know we have a valid cached destination?
+			if (UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, ControlledPawn->GetActorLocation(), CachedDestination))
+			{
+				Spline->ClearSplinePoints();
+
+				// TODO: Could use this instead of clearing spline points then adding each individually?
+				//Spline->SetSplinePoints(NavPath->PathPoints, ESplineCoordinateSpace::World);
+				
+				for (const FVector& PointLoc : NavPath->PathPoints)
+				{
+					Spline->AddSplinePoint(PointLoc, ESplineCoordinateSpace::World);
+					//DrawDebugSphere(GetWorld(), PointLoc, 8.f, 8, FColor::Blue, false, 5.f);
+				}
+				
+				// Have auto run go to the last spline point instead of line trace location, as spline point is navigatable to through nav mesh
+				//CachedDestination = Spline->GetSplinePointAt(Spline->GetNumberOfSplinePoints() - 1, ESplineCoordinateSpace::World).Position;
+				const int32 LastPathPointIndex = NavPath->PathPoints.Num() - 1;
+				if (NavPath->PathPoints.IsValidIndex(LastPathPointIndex))
+				{
+					CachedDestination = NavPath->PathPoints[LastPathPointIndex];
+					// Only true if we have a valid cached destination
+					bAutoRunning = true;
+				}
+			}
+		}
+	}
 	
-	GetASC()->AbilityInputTagReleased(InputTag);
+	FollowTime = 0.f;
+	bTargeting = false;
+	bValidCachedDestination = false;
 }
 
 UAuraAbilitySystemComponent* AAuraPlayerController::GetASC()
@@ -174,19 +261,6 @@ UAuraAbilitySystemComponent* AAuraPlayerController::GetASC()
 	}
 
 	return AuraAbilitySystemComponent;
-}
-
-IEnemyInterface* AAuraPlayerController::GetEnemyUnderCursor() const
-{
-	FHitResult CursorHit;
-	if (GetHitResultUnderCursor(ECC_Visibility, false, CursorHit))
-	{
-		if (CursorHit.IsValidBlockingHit())
-		{
-			return Cast<IEnemyInterface>(CursorHit.GetActor());
-		}
-	}
-	return nullptr;
 }
 
 void AAuraPlayerController::PrintLocalRole(const FString& InMessage) const

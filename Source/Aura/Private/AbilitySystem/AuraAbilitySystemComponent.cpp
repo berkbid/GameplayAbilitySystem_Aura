@@ -11,21 +11,15 @@ void UAuraAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AAc
 	// This is called automatically on server and client on initialize component setting both owner actor and avatar actor to the player state
 	// If server calls this, client will call it automatically again on UAbilitySystemComponent::OnRep_OwningActor()
 	
+	Super::InitAbilityActorInfo(InOwnerActor, InAvatarActor);
+	
 	const AActor* ActorOwner = GetOwner();
 	check(ActorOwner);
-	const FString NetModeString = GetNetMode() < NM_Client ? TEXT("Server Net Mode") : TEXT("Client Net Mode");
 	const ENetRole LocalRole = ActorOwner->GetLocalRole();
 	const APlayerState* PSOwner = Cast<APlayerState>(ActorOwner);
-	const FString OwnerName = PSOwner? PSOwner->GetPlayerName() : ActorOwner->GetName();
-	
-	UE_LOG(LogTemp, Warning, TEXT("Player: %s, init owner actor: %s, Avatar actor: %s, Local Role: %s, Net Mode: %s"),
-		*OwnerName, *InOwnerActor->GetName(), *InAvatarActor->GetName(), *UEnum::GetValueAsString(LocalRole), *NetModeString);
-	
-	Super::InitAbilityActorInfo(InOwnerActor, InAvatarActor);
 	
 	// Delegate is only called on server, so only binding on server
 	// Only binding if owner of this ASC is a playerstate (Not important for AI which has ASC on character)
-	
 	if (LocalRole == ROLE_Authority && PSOwner)
 	{
 		// Only want to bind to delegate once
@@ -97,11 +91,6 @@ void UAuraAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& In
 void UAuraAbilitySystemComponent::EffectApplied(UAbilitySystemComponent* AbilitySystemComponent, const FGameplayEffectSpec& EffectSpec, FActiveGameplayEffectHandle ActiveEffectHandle)
 {
 	// Only server is in here
-	const FString NetModeString = GetNetMode() < NM_Client ? TEXT("Server Net Mode") : TEXT("Client Net Mode");
-	const ENetRole LocalRole = GetOwner()->GetLocalRole();
-	UE_LOG(LogTemp, Warning, TEXT("Effect applied to avatar: %s, for Local Role: %s, Net Mode: %s"),
-		*GetAvatarActor()->GetName(), *UEnum::GetValueAsString(LocalRole), *NetModeString);
-
 	FGameplayTagContainer TagContainer;
 	EffectSpec.GetAllAssetTags(TagContainer);
 	
@@ -133,13 +122,7 @@ void UAuraAbilitySystemComponent::EffectApplied(UAbilitySystemComponent* Ability
 
 void UAuraAbilitySystemComponent::ClientEffectAppliedTags_Implementation(const FGameplayTagContainer& TagContainer)
 {
-	const ENetRole LocalRole = GetOwner()->GetLocalRole();
-	const FString NetModeString = GetNetMode() < NM_Client ? TEXT("Server Net Mode") : TEXT("Client Net Mode");
-	
-	UE_LOG(LogTemp, Warning, TEXT("ClientEffectAppliedTags() for Local Role: %s, Net Mode: %s"),
-		*UEnum::GetValueAsString(LocalRole), *NetModeString);
-	
-	// Broadcast for widgetcontroller
+	// Broadcast for HUD widget controller
 	EffectAssetTags.Broadcast(TagContainer);
 }
 
@@ -147,4 +130,16 @@ FGameplayAbilitySpec* UAuraAbilitySystemComponent::FindAbilityForTag(const FGame
 {
 	return GetActivatableAbilities().FindByPredicate([InTag](const FGameplayAbilitySpec& AbilitySpec)
 		{ return AbilitySpec.DynamicAbilityTags.HasTagExact(InTag); });
+}
+
+void UAuraAbilitySystemComponent::PrintNetModeInfo() const
+{
+	const AActor* ActorOwner = GetOwner();
+	const FString NetModeString = GetNetMode() < NM_Client ? TEXT("Server Net Mode") : TEXT("Client Net Mode");
+	const ENetRole LocalRole = GetOwner()->GetLocalRole();
+	const APlayerState* PSOwner = Cast<APlayerState>(ActorOwner);
+	const FString OwnerName = PSOwner ? PSOwner->GetPlayerName() : ActorOwner->GetName();
+	
+	UE_LOG(LogTemp, Warning, TEXT("Ability system component - Player: %s, Avatar: %s, Local Role: %s, Net Mode: %s"),
+		*OwnerName, *GetAvatarActor()->GetName(), *UEnum::GetValueAsString(LocalRole), *NetModeString);
 }

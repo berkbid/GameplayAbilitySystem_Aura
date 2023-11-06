@@ -39,5 +39,6 @@ public:
 
 private:
 	FGameplayAbilitySpec* FindAbilityForTag(const FGameplayTag& InTag);
-	
+
+	void PrintNetModeInfo() const;
 };

@@ -22,7 +22,8 @@ public class Aura : ModuleRules
 			"UMG",
 			"EnhancedInput",
 			"GameplayTags",
-			"GameplayTasks"
+			"GameplayTasks",
+			"NavigationSystem"
 		});
 
 		// Uncomment if you are using Slate UI
