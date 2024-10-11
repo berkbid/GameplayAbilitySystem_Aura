@@ -1,7 +1,11 @@
 # Visual Studio 2015 user specific files
-.vs/
-.idea/
+.vs
 .vsconfig
+
+# Ignore JetBrain's IDE folders
+.idea
+!.idea/runConfigurations
+.gradle/
 
 # Compiled Object files
 *.slo
@@ -42,6 +46,7 @@
 *.sdf
 *.VC.db
 *.VC.opendb
+*.sln.DotSettings
 *.sln.DotSettings.user
 
 # Perforce ignore file
@@ -53,9 +58,10 @@ SourceArt/**/*.tga
 
 # Binary Files
 Binaries/*
-Plugins/*/Binaries/*
-Plugins/Nvidia/*/Binaries/*
-Plugins/Developer/*/Binaries/*
+Plugins/**/Binaries/*
+
+# Don't ignore third party libraries
+!ThirdParty/*
 
 # Builds
 Build/*
@@ -68,9 +74,6 @@ Build/*/**
 # Don't ignore icon files in Build
 !Build/**/*.ico
 
-# Don't ignore third party libraries
-!ThirdParty/*
-
 # Built data for maps
 *_BuiltData.uasset
 
@@ -79,10 +82,9 @@ Saved/*
 
 # Compiled source files for the engine to use
 Intermediate/*
-Plugins/*/Intermediate/*
-Plugins/*/*/Intermediate/*
+Plugins/**/Intermediate/*
 
-# Developer files
+# Developer plugin files such as for Rider
 Plugins/Developer/*
 
 # Cache files for the editor to use
