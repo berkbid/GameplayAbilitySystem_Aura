@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020 - 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+* Copyright (c) 2020 - 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 *
 * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
 * property and proprietary rights in and to this material, related
@@ -41,7 +41,7 @@ void UMoviePipelineDLSSSetting::SetupViewFamily(FSceneViewFamily& ViewFamily)
 		float OptimalScreenPercentage;
 		{
 			// find optimal screen percentage for quality mode
-			FVector2D DummyScreenRes;
+			FVector2D DummyScreenRes{};
 			bool bDummyFixed;
 			float DummyMin, DummyMax, DummySharpness;
 			UDLSSLibrary::GetDLSSModeInformation(MRQHelpers::EMoviePipelineDLSSQualityToUDLSSMode(DLSSQuality), DummyScreenRes,

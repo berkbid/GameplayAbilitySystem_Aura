@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 - 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+* Copyright (c) 2022 - 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 *
 * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
 * property and proprietary rights in and to this material, related
@@ -31,8 +31,12 @@ class STREAMLINERHI_API UStreamlineOverrideSettings : public UObject
 
 public:
 
-	/** Enable DLSS Frame Generation in play in editor viewports. Saved to local user config only. */
-	UPROPERTY(Config, EditAnywhere, Category = "Level Editor - Viewport (Local)", DisplayName = "Enable DLSS-FG in Play In Editor viewports")
+	/**
+	 * Enable DLSS Frame Generation in New Editor Window Play In Editor mode.
+	 * Saved to local user config only.
+	 * Note: DLSS Frame Generation is not supported in editor viewports
+	 */
+	UPROPERTY(Config, EditAnywhere, Category = "Level Editor - Viewport (Local)", DisplayName = "Enable DLSS-FG in New Editor Window (PIE) mode")
 	EStreamlineSettingOverride EnableDLSSFGInPlayInEditorViewportsOverride = EStreamlineSettingOverride::UseProjectSettings;
 
 	/**
@@ -58,8 +62,12 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Platforms", DisplayName = "Enable plugin features for the D3D11RHI (Reflex only)")
 	bool bEnableStreamlineD3D11 = PLATFORM_WINDOWS;
 
-	/** Enable DLSS Frame Generation in play in editor viewports. This project wide setting can be locally overridden in the NVIDIA DLSS Frame Generation (Local) settings.*/
-	UPROPERTY(Config, EditAnywhere, Category = "Level Editor - Viewport", DisplayName = "Enable DLSS-FG in Play In Editor viewports")
+	/**
+	 * Enable DLSS Frame Generation in New Editor Window Play In Editor mode.
+	 * This project wide setting can be locally overridden in the NVIDIA DLSS Frame Generation (Local) settings.
+	 * Note: DLSS Frame Generation is not supported in editor viewports
+	 */
+	UPROPERTY(Config, EditAnywhere, Category = "Level Editor - Viewport", DisplayName = "Enable DLSS-FG in New Editor Window (PIE) mode")
 	bool bEnableDLSSFGInPlayInEditorViewports = true;
 
 	/**

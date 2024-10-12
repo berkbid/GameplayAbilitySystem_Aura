@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020 - 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+* Copyright (c) 2020 - 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 *
 * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
 * property and proprietary rights in and to this material, related
@@ -224,7 +224,8 @@ void UDLSSLibrary::GetDLSSModeInformation(UDLSSMode DLSSMode, FVector2D ScreenRe
 	bIsSupported = IsDLSSModeSupported(DLSSMode);
 
 #if WITH_DLSS
-	if ((DLSSMode != UDLSSMode::Off) && bIsSupported || (DLSSMode == UDLSSMode::Auto))
+	// Auto mode is never a "supported" mode but if DLSS is supported we still need to follow this code path to get optimal screen percentage
+	if ((DLSSMode != UDLSSMode::Off) && bIsSupported || (DLSSMode == UDLSSMode::Auto) && IsDLSSSupported())
 	{
 		EDLSSQualityMode EDLSSMode;
 		if (DLSSMode != UDLSSMode::Auto)
@@ -851,6 +852,11 @@ bool UDLSSLibrary::TryInitDLSSLibrary()
 
 void FDLSSBlueprintModule::StartupModule()
 {
+	// write the plugin version to the log
+	// we use the DLSSBlueprint module to write this information because it is loaded on all platforms, in an early loading phase
+	TSharedPtr<IPlugin> ThisPlugin = IPluginManager::Get().FindPlugin(TEXT("DLSS"));
+	UE_LOG(LogDLSSBlueprint, Log, TEXT("Loaded DLSS-SR plugin version %s"), *ThisPlugin->GetDescriptor().VersionName);
+
 #if WITH_DLSS
 	// This initialization will likely not succeed unless this module has been moved to PostEngineInit, and that's ok
 	UDLSSLibrary::TryInitDLSSLibrary();

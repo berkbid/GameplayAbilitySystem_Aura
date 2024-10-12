@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020 - 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+* Copyright (c) 2020 - 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 *
 * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
 * property and proprietary rights in and to this material, related
@@ -392,7 +392,8 @@ void FDLSSModule::StartupModule()
 		}
 	}
 
-	UE_LOG(LogDLSS, Log, TEXT("NVIDIA NGX DLSS supported %u"), QueryDLSSSRSupport() == EDLSSSupport::Supported);
+	UE_LOG(LogDLSS, Log, TEXT("NVIDIA NGX DLSS supported SR=%u RR=%u"), QueryDLSSSRSupport() == EDLSSSupport::Supported, QueryDLSSRRSupport() == EDLSSSupport::Supported);
+	
 
 	// and the other related interfaces
 

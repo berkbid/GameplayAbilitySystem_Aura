@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 - 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+* Copyright (c) 2022 - 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 *
 * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
 * property and proprietary rights in and to this material, related
@@ -13,12 +13,16 @@
 #include "CoreMinimal.h"
 #include "RendererInterface.h"
 #include "ScreenPass.h"
+#include "Runtime/Launch/Resources/Version.h"
 
+#if ENGINE_MAJOR_VERSION == 4  || ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 1
+#define FTextureRHIRef FTexture2DRHIRef
+#endif
 
 extern STREAMLINESHADERS_API FRDGTextureRef AddStreamlineUIHintExtractionPass(
 	FRDGBuilder& GraphBuilder,
 	//	const FViewInfo& View,
 	const float InAlphaThresholdValue,
-	const FTexture2DRHIRef& InBackBuffer
+	const FTextureRHIRef& InBackBuffer
 	//	FRDGTextureRef InVelocityTexture
 );

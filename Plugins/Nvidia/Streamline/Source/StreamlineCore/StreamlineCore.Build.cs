@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 - 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+* Copyright (c) 2022 - 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 *
 * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
 * property and proprietary rights in and to this material, related
@@ -15,6 +15,22 @@ public class StreamlineCore : ModuleRules
 {
 	public StreamlineCore(ReadOnlyTargetRules Target) : base(Target)
 	{
+		// For UE 4.2x compat
+#if !UE_5_0_OR_LATER
+		if (CppStandard < CppStandardVersion.Cpp17)
+		{
+			CppStandard = CppStandardVersion.Cpp17;
+		}
+#endif
+
+
+
+		// that now gets defined in StreamlineViewExtension.h based on build config and r.Streamline.LogTrackedViews and -sllogviewtracking
+		//PrivateDefinitions.Add("DEBUG_STREAMLINE_VIEW_TRACKING=1");
+
+
+
+
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
 		PublicIncludePaths.AddRange(
@@ -61,6 +77,9 @@ public class StreamlineCore : ModuleRules
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
+		
+
+
 
 		if (Target.bBuildEditor == true)
 		{

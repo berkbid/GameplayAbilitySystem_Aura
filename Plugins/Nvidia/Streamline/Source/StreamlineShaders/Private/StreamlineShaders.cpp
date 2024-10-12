@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 - 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+* Copyright (c) 2022 - 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 *
 * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
 * property and proprietary rights in and to this material, related
@@ -15,10 +15,16 @@
 #include "ShaderCore.h"
 
 #define LOCTEXT_NAMESPACE "FStreamlineShadersModule"
+DEFINE_LOG_CATEGORY_STATIC(LogStreamlineShaders, Log, All);
 
 void FStreamlineShadersModule::StartupModule()
 {
-	FString PluginShaderDir = FPaths::Combine(IPluginManager::Get().FindPlugin(TEXT("Streamline"))->GetBaseDir(), TEXT("Shaders"));
+	// write the plugin version to the log
+	// we use the StreamlineShaders module to write this information because it is the first plugin module loaded on supported platforms
+	TSharedPtr<IPlugin> ThisPlugin = IPluginManager::Get().FindPlugin(TEXT("Streamline"));
+	UE_LOG(LogStreamlineShaders, Log, TEXT("Loaded Streamline plugin version %s"), *ThisPlugin->GetDescriptor().VersionName);
+
+	FString PluginShaderDir = FPaths::Combine(ThisPlugin->GetBaseDir(), TEXT("Shaders"));
 	AddShaderSourceDirectoryMapping(TEXT("/Plugin/Streamline"), PluginShaderDir);
 
 }

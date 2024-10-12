@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 - 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+* Copyright (c) 2022 - 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 *
 * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
 * property and proprietary rights in and to this material, related
@@ -33,4 +33,4 @@ class FSceneViewFamily;
 class FRDGBuilder;
 void AddStreamlineDLSSGStateRenderPass(FRDGBuilder& GraphBuilder, uint32 ViewID, const FIntRect& SecondaryViewRect);
 void BeginRenderViewFamilyDLSSG(FSceneViewFamily& InViewFamily);
-void GetDLSSGStatusFromStreamline();
+void GetDLSSGStatusFromStreamline(bool bQueryOncePerAppLifetimeValues = false);

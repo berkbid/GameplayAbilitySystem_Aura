@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020 - 2022 NVIDIA CORPORATION.  All rights reserved.
+* Copyright (c) 2020 - 2024 NVIDIA CORPORATION.  All rights reserved.
 *
 * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
 * property and proprietary rights in and to this material, related
@@ -16,7 +16,7 @@ public class DLSS : ModuleRules
 {
 	public virtual string [] SupportedDynamicallyLoadedNGXRHIModules(ReadOnlyTargetRules Target)
 	{
-		if(Target.Platform == UnrealTargetPlatform.Win64 )
+		if (Target.Platform.IsInGroup(UnrealPlatformGroup.Windows))
 		{
 			return new string[]
 			{
@@ -31,7 +31,11 @@ public class DLSS : ModuleRules
 	public DLSS(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-		
+#if !UE_5_3_OR_LATER
+		// bUseRTTI for typeid so we can detect incorrect custom upscaler history at runtime
+		bUseRTTI = true;
+#endif
+
 		PublicIncludePaths.AddRange(
 			new string[] {
 				// ... add public include paths required here ...

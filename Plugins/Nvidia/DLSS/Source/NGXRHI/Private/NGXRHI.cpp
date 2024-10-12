@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020 - 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+* Copyright (c) 2020 - 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 *
 * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
 * property and proprietary rights in and to this material, related
@@ -113,6 +113,21 @@ bool NGXRHI::bNGXInitialized = false;
 // the derived RHIs will set this to true during their initialization
 bool NGXRHI::bIsIncompatibleAPICaptureToolActive = false;
 
+static void RemoveDuplicateSlashesFromPath(FString& Path)
+{
+	if (Path.StartsWith(FString("//")))
+	{
+		// preserve the initial double slash to support network paths
+		FString NewString = FString("/");
+		NewString += FPaths::RemoveDuplicateSlashes(Path.RightChop(1));
+		Path = NewString;
+	}
+	else
+	{
+		FPaths::RemoveDuplicateSlashes(Path);
+	}
+}
+
 NGXRHI::NGXRHI(const FNGXRHICreateArguments& Arguments)
 	: DynamicRHI(Arguments.DynamicRHI)
 {
@@ -157,7 +172,7 @@ NGXRHI::NGXRHI(const FNGXRHICreateArguments& Arguments)
 	for (int32 i = 0; i < NGXDLLSearchPaths.Num(); ++i)
 	{
 		NGXDLLSearchPaths[i] = FPaths::ConvertRelativePathToFull(NGXDLLSearchPaths[i]);
-		FPaths::RemoveDuplicateSlashes(NGXDLLSearchPaths[i]);
+		RemoveDuplicateSlashesFromPath(NGXDLLSearchPaths[i]);
 		FPaths::MakePlatformFilename(NGXDLLSearchPaths[i]);
 
 		// After this we should not touch NGXDLLSearchPaths since that provides the backing store for NGXDLLSearchPathRawStrings	
@@ -447,6 +462,7 @@ uint32 FRHIDLSSArguments::GetNGXCommonDLSSFeatureFlags() const
 	DLSSFeatureFlags |= !bHighResolutionMotionVectors ? NVSDK_NGX_DLSS_Feature_Flags_MVLowRes : 0;
 	DLSSFeatureFlags |= Sharpness != 0.0f ? NVSDK_NGX_DLSS_Feature_Flags_DoSharpening : 0;
 	DLSSFeatureFlags |= bUseAutoExposure ? NVSDK_NGX_DLSS_Feature_Flags_AutoExposure : 0;
+	DLSSFeatureFlags |= bEnableAlphaUpscaling ? NVSDK_NGX_DLSS_Feature_Flags_AlphaUpscaling : 0;
 	return DLSSFeatureFlags;
 }
 
@@ -556,6 +572,25 @@ void NGXRHI::ApplyCommonNGXParameterSettings(NVSDK_NGX_Parameter* InOutParameter
 	NVSDK_NGX_Parameter_SetUI(InOutParameter, NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Balanced, static_cast<uint32>(InArguments.DLSSPreset));
 	NVSDK_NGX_Parameter_SetUI(InOutParameter, NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Performance, static_cast<uint32>(InArguments.DLSSPreset));
 	NVSDK_NGX_Parameter_SetUI(InOutParameter, NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_UltraPerformance, static_cast<uint32>(InArguments.DLSSPreset));
+
+	// if none of these static assertions fail, we can reuse the DLSS-SR preset values as the DLSS-RR preset values
+	static_assert(NVSDK_NGX_RayReconstruction_Hint_Render_Preset::NVSDK_NGX_RayReconstruction_Hint_Render_Preset_Default == NVSDK_NGX_DLSS_Hint_Render_Preset::NVSDK_NGX_DLSS_Hint_Render_Preset_Default);
+	static_assert(NVSDK_NGX_RayReconstruction_Hint_Render_Preset::NVSDK_NGX_RayReconstruction_Hint_Render_Preset_A == NVSDK_NGX_DLSS_Hint_Render_Preset::NVSDK_NGX_DLSS_Hint_Render_Preset_A);
+	static_assert(NVSDK_NGX_RayReconstruction_Hint_Render_Preset::NVSDK_NGX_RayReconstruction_Hint_Render_Preset_B == NVSDK_NGX_DLSS_Hint_Render_Preset::NVSDK_NGX_DLSS_Hint_Render_Preset_B);
+	static_assert(NVSDK_NGX_RayReconstruction_Hint_Render_Preset::NVSDK_NGX_RayReconstruction_Hint_Render_Preset_C == NVSDK_NGX_DLSS_Hint_Render_Preset::NVSDK_NGX_DLSS_Hint_Render_Preset_C);
+	static_assert(NVSDK_NGX_RayReconstruction_Hint_Render_Preset::NVSDK_NGX_RayReconstruction_Hint_Render_Preset_D == NVSDK_NGX_DLSS_Hint_Render_Preset::NVSDK_NGX_DLSS_Hint_Render_Preset_D);
+	static_assert(NVSDK_NGX_RayReconstruction_Hint_Render_Preset::NVSDK_NGX_RayReconstruction_Hint_Render_Preset_E == NVSDK_NGX_DLSS_Hint_Render_Preset::NVSDK_NGX_DLSS_Hint_Render_Preset_E);
+	static_assert(NVSDK_NGX_RayReconstruction_Hint_Render_Preset::NVSDK_NGX_RayReconstruction_Hint_Render_Preset_F == NVSDK_NGX_DLSS_Hint_Render_Preset::NVSDK_NGX_DLSS_Hint_Render_Preset_F);
+	static_assert(NVSDK_NGX_RayReconstruction_Hint_Render_Preset::NVSDK_NGX_RayReconstruction_Hint_Render_Preset_G == NVSDK_NGX_DLSS_Hint_Render_Preset::NVSDK_NGX_DLSS_Hint_Render_Preset_G);
+	if (NGXQueryFeature.bIsDlssRRAvailable)
+	{
+		NVSDK_NGX_Parameter_SetUI(InOutParameter, NVSDK_NGX_Parameter_RayReconstruction_Hint_Render_Preset_DLAA, static_cast<uint32>(InArguments.DLSSPreset));
+		NVSDK_NGX_Parameter_SetUI(InOutParameter, NVSDK_NGX_Parameter_RayReconstruction_Hint_Render_Preset_UltraQuality, static_cast<uint32>(InArguments.DLSSPreset));
+		NVSDK_NGX_Parameter_SetUI(InOutParameter, NVSDK_NGX_Parameter_RayReconstruction_Hint_Render_Preset_Quality, static_cast<uint32>(InArguments.DLSSPreset));
+		NVSDK_NGX_Parameter_SetUI(InOutParameter, NVSDK_NGX_Parameter_RayReconstruction_Hint_Render_Preset_Balanced, static_cast<uint32>(InArguments.DLSSPreset));
+		NVSDK_NGX_Parameter_SetUI(InOutParameter, NVSDK_NGX_Parameter_RayReconstruction_Hint_Render_Preset_Performance, static_cast<uint32>(InArguments.DLSSPreset));
+		NVSDK_NGX_Parameter_SetUI(InOutParameter, NVSDK_NGX_Parameter_RayReconstruction_Hint_Render_Preset_UltraPerformance, static_cast<uint32>(InArguments.DLSSPreset));
+	}
 }
 
 void NGXRHI::TickPoolElements()

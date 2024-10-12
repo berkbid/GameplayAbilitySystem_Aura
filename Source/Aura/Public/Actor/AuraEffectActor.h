@@ -11,7 +11,7 @@ class UGameplayEffect;
 class UAbilitySystemComponent;
 
 UENUM(BlueprintType)
-enum class EEffectApplicationPolicy
+enum class EEffectApplicationPolicy : uint8
 {
 	ApplyOnOverlap,
 	ApplyOnEndOverlap,
@@ -20,7 +20,7 @@ enum class EEffectApplicationPolicy
 
 // Only really applies to infinite gameplay effect
 UENUM(BlueprintType)
-enum class EEffectRemovalPolicy
+enum class EEffectRemovalPolicy : uint8
 {
 	RemovalOnEndOverlap,
 	DoNotRemoval

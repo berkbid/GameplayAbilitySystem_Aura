@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 - 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+* Copyright (c) 2022 - 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 *
 * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
 * property and proprietary rights in and to this material, related
@@ -17,6 +17,7 @@
 #include "StreamlineViewExtension.h"
 #include "StreamlineReflex.h"
 #include "StreamlineDLSSG.h"
+#include "StreamlineDeepDVC.h"
 
 #include "StreamlineRHI.h"
 #include "sl_helpers.h"
@@ -44,6 +45,27 @@ static TAutoConsoleVariable<bool> CVarStreamlineInitializePlugin(
 	true,
 	TEXT("Enable/disable initializing the Streamline plugin (default = true)"),
 	ECVF_ReadOnly);
+
+
+
+EStreamlineFeatureSupport TranslateStreamlineResult(sl::Result Result)
+{
+	switch (Result)
+	{
+
+	case sl::Result::eOk:					return EStreamlineFeatureSupport::Supported;
+	case sl::Result::eErrorOSDisabledHWS:   return EStreamlineFeatureSupport::NotSupportedHardwareSchedulingDisabled;
+	case sl::Result::eErrorOSOutOfDate: return EStreamlineFeatureSupport::NotSupportedOperatingSystemOutOfDate;
+	case sl::Result::eErrorDriverOutOfDate: return EStreamlineFeatureSupport::NotSupportedDriverOutOfDate;
+	case sl::Result::eErrorNoSupportedAdapterFound: return EStreamlineFeatureSupport::NotSupportedIncompatibleHardware;
+	case sl::Result::eErrorAdapterNotSupported: return EStreamlineFeatureSupport::NotSupportedIncompatibleHardware;
+	case sl::Result::eErrorMissingOrInvalidAPI: return EStreamlineFeatureSupport::NotSupportedIncompatibleRHI;
+
+	default:
+		/* Intentionally falls through*/
+		return EStreamlineFeatureSupport::NotSupported;
+	}
+}
  
 void FStreamlineCoreModule::StartupModule()
 {
@@ -59,7 +81,23 @@ void FStreamlineCoreModule::StartupModule()
 	if (GetPlatformStreamlineSupport() == EStreamlineSupport::Supported)
 	{
 		// set the view family extension that's gonna call into SL in the postprocessing pass
-		StreamlineViewExtension = FSceneViewExtensions::NewExtension<FStreamlineViewExtension>(GetStreamlineRHI());
+		bool bShouldCreateViewExtension = IsStreamlineDLSSGSupported() || IsStreamlineDeepDVCSupported();
+		if (FParse::Param(FCommandLine::Get(), TEXT("slviewextension")))
+		{
+			bShouldCreateViewExtension = true;
+		}
+		if (FParse::Param(FCommandLine::Get(), TEXT("slnoviewextension")))
+		{
+			bShouldCreateViewExtension = false;
+		}
+		if (bShouldCreateViewExtension)
+		{
+			StreamlineViewExtension = FSceneViewExtensions::NewExtension<FStreamlineViewExtension>(GetStreamlineRHI());
+		}
+		else
+		{
+			StreamlineViewExtension = nullptr;
+		}
 		
 		RegisterStreamlineReflexHooks();
 
@@ -67,6 +105,8 @@ void FStreamlineCoreModule::StartupModule()
 		{
 			RegisterStreamlineDLSSGHooks(GetStreamlineRHI());
 		}
+
+		LogStreamlineFeatureSupport(sl::kFeatureImGUI, *GetStreamlineRHI()->GetAdapterInfo());
 	}
 
 	UE_LOG(LogStreamline, Log, TEXT("NVIDIA Streamline supported %u"), QueryStreamlineSupport() == EStreamlineSupport::Supported);
@@ -135,6 +175,11 @@ EStreamlineSupport FStreamlineCoreModule::QueryStreamlineSupport() const
 EStreamlineFeatureSupport FStreamlineCoreModule::QueryDLSSGSupport() const
 {
 	return QueryStreamlineDLSSGSupport();
+}
+
+EStreamlineFeatureSupport FStreamlineCoreModule::QueryDeepDVCSupport() const
+{
+	return QueryStreamlineDeepDVCSupport();
 }
 
  FStreamlineRHI* FStreamlineCoreModule::GetStreamlineRHI()
