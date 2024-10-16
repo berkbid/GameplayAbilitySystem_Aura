@@ -154,20 +154,25 @@ void AAuraPlayerController::AbilityInputTagPressed(const FInputActionValue& Inpu
 	{
 		FHitResult CursorHit;
 		GetHitResultUnderCursor(ECC_Visibility, false, CursorHit);
+		const bool bValidBlockingHit = CursorHit.IsValidBlockingHit();
 		
-		// We are targeting an enemy if cursor hit is valid and the actor it his implements enemy interface
-		bTargeting = CursorHit.IsValidBlockingHit() && Cast<IEnemyInterface>(CursorHit.GetActor());
+		// We are targeting an enemy if cursor hit is valid and the actor it hits implements enemy interface
+		bTargeting = bValidBlockingHit && Cast<IEnemyInterface>(CursorHit.GetActor());
 
-		// Reset these values
+		// Reset auto run values since we are not auto-running on LMB press, only on release
 		bAutoRunning = false;
 		FollowTime = 0.f;
-		bValidCachedDestination = false;
 		
 		// This is experimental code, why not get cached destination on initial press if we aren't targeting with LMB
-		if (!bTargeting && CursorHit.IsValidBlockingHit())
+		if (!bTargeting && bValidBlockingHit)
 		{
 			CachedDestination = CursorHit.ImpactPoint;
 			bValidCachedDestination = true;
+		}
+		else
+		{
+			// Invalidate cached destination if we are targeting or we did not get valid blocking hit
+			bValidCachedDestination = false;
 		}
 	}
 }
@@ -175,6 +180,7 @@ void AAuraPlayerController::AbilityInputTagPressed(const FInputActionValue& Inpu
 void AAuraPlayerController::AbilityInputTagHeld(const FInputActionValue& InputActionValue, const FGameplayTag InputTag)
 {
 	// TODO: Server does not enforce targeting value, do we care?
+	// Pass the ability input tag held functionality to the ability system component if it isn't for movement purposes
 	if (!InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB) || bTargeting)
 	{
 		if (GetASC())
@@ -185,14 +191,13 @@ void AAuraPlayerController::AbilityInputTagHeld(const FInputActionValue& InputAc
 		return;
 	}
 
-	// Tag == LMB AND we are not targeting: click to move behavior
-	
+	// Click to move behavior since Tag == LMB and we are not targeting
 	FollowTime += GetWorld()->GetDeltaSeconds();
 	
-	FHitResult Hit;
-	if (GetHitResultUnderCursor(ECC_Visibility, false, Hit) && Hit.IsValidBlockingHit())
+	FHitResult CursorHit;
+	if (GetHitResultUnderCursor(ECC_Visibility, false, CursorHit) && CursorHit.IsValidBlockingHit())
 	{
-		CachedDestination = Hit.ImpactPoint;
+		CachedDestination = CursorHit.ImpactPoint;
 		bValidCachedDestination = true;
 		
 		if (APawn* ControlledPawn = GetPawn())
@@ -205,50 +210,50 @@ void AAuraPlayerController::AbilityInputTagHeld(const FInputActionValue& InputAc
 
 void AAuraPlayerController::AbilityInputTagReleased(const FInputActionValue& InputActionValue, const FGameplayTag InputTag)
 {
+	// Pass the ability input tag released functionality to the ability system component if it isn't for movement purposes
 	if (!InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB) || bTargeting)
 	{
 		if (GetASC())
 		{
 			GetASC()->AbilityInputTagReleased(InputTag);
 		}
+		
 		return;
 	}
 
-	// Tag == LMB AND we are not targeting: click to move behavior
+	// Click to move behavior since Tag == LMB and we are not targeting
 
+	// In order to auto run, requires a short LMB press/hold and a valid cached destination to create spline path for
 	if (FollowTime <= ShortPressThreshold && bValidCachedDestination)
 	{
-		if (const APawn* ControlledPawn = GetPawn())
+		const APawn* ControlledPawn = GetPawn();
+		
+		if (UNavigationPath* NavPath = IsValid(ControlledPawn) ? UNavigationSystemV1::FindPathToLocationSynchronously(this, ControlledPawn->GetActorLocation(), CachedDestination) : nullptr)
 		{
-			// TODO: How do we know we have a valid cached destination?
-			if (UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, ControlledPawn->GetActorLocation(), CachedDestination))
-			{
-				Spline->ClearSplinePoints();
+			Spline->ClearSplinePoints();
 
-				// TODO: Could use this instead of clearing spline points then adding each individually?
-				//Spline->SetSplinePoints(NavPath->PathPoints, ESplineCoordinateSpace::World);
-				
-				for (const FVector& PointLoc : NavPath->PathPoints)
-				{
-					Spline->AddSplinePoint(PointLoc, ESplineCoordinateSpace::World);
-					//DrawDebugSphere(GetWorld(), PointLoc, 8.f, 8, FColor::Blue, false, 5.f);
-				}
-				
-				// Have auto run go to the last spline point instead of line trace location, as spline point is navigatable to through nav mesh
-				//CachedDestination = Spline->GetSplinePointAt(Spline->GetNumberOfSplinePoints() - 1, ESplineCoordinateSpace::World).Position;
-				const int32 LastPathPointIndex = NavPath->PathPoints.Num() - 1;
-				if (NavPath->PathPoints.IsValidIndex(LastPathPointIndex))
-				{
-					CachedDestination = NavPath->PathPoints[LastPathPointIndex];
-					// Only true if we have a valid cached destination
-					bAutoRunning = true;
-				}
+			// TODO: Could use this instead of clearing spline points then adding each individually?
+			//Spline->SetSplinePoints(NavPath->PathPoints, ESplineCoordinateSpace::World);
+			
+			for (const FVector& PointLoc : NavPath->PathPoints)
+			{
+				Spline->AddSplinePoint(PointLoc, ESplineCoordinateSpace::World);
+				//DrawDebugSphere(GetWorld(), PointLoc, 8.f, 8, FColor::Blue, false, 5.f);
+			}
+			
+			// Have auto run go to the last spline point instead of line trace location, as spline point is navigatable to through nav mesh
+			//CachedDestination = Spline->GetSplinePointAt(Spline->GetNumberOfSplinePoints() - 1, ESplineCoordinateSpace::World).Position;
+			const int32 LastPathPointIndex = NavPath->PathPoints.Num() - 1;
+			if (NavPath->PathPoints.IsValidIndex(LastPathPointIndex))
+			{
+				CachedDestination = NavPath->PathPoints[LastPathPointIndex];
+				// Only true since we have a valid cached destination
+				bAutoRunning = true;
 			}
 		}
 	}
 	
 	FollowTime = 0.f;
-	bTargeting = false;
 	bValidCachedDestination = false;
 }
 

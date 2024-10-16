@@ -122,7 +122,7 @@ void UAuraAbilitySystemComponent::EffectApplied(UAbilitySystemComponent* Ability
 
 void UAuraAbilitySystemComponent::ClientEffectAppliedTags_Implementation(const FGameplayTagContainer& TagContainer)
 {
-	// Broadcast for HUD widget controller
+	// Broadcast for HUD widget controller, server already checked that the tag container contains "MessageTag"
 	EffectAssetTags.Broadcast(TagContainer);
 }
 

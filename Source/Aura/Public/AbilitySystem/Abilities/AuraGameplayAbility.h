@@ -18,4 +18,5 @@ public:
 	/** Use when giving abilities to character */
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	FGameplayTag StartupInputTag;
+	
 };

@@ -13,6 +13,17 @@ AAuraCharacterBase::AAuraCharacterBase()
 	Weapon->SetupAttachment(GetMesh(), FName("WeaponHandSocket"));
 }
 
+FVector AAuraCharacterBase::GetCombatSocketLocation()
+{
+	check(Weapon);
+	if (WeaponTipSocketName.IsNone())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s missing WeaponTipSocketName property"), *GetName());
+	}
+	
+	return Weapon->GetSocketLocation(WeaponTipSocketName);
+}
+
 void AAuraCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();

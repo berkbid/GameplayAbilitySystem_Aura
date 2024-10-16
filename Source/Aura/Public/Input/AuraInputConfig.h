@@ -7,7 +7,6 @@
 #include "GameplayTagContainer.h"
 #include "AuraInputConfig.generated.h"
 
-
 USTRUCT(BlueprintType)
 struct FAuraInputAction
 {

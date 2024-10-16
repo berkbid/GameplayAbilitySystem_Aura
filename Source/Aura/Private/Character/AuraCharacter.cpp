@@ -41,7 +41,7 @@ void AAuraCharacter::PossessedBy(AController* NewController)
 	Super::PossessedBy(NewController);
 
 	const ENetRole LocalRole = GetLocalRole();
-	UE_LOG(LogTemp, Warning, TEXT("Character: %s, possessedby local role: %s"), *GetName(), *UEnum::GetValueAsString(LocalRole));
+	UE_LOG(LogTemp, Warning, TEXT("Character: %s, possessed by local role: %s"), *GetName(), *UEnum::GetValueAsString(LocalRole));
 	
 	// Init for server. Only server is in here, not clients
 	InitAbilityActorInfo();
@@ -54,13 +54,12 @@ void AAuraCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 
-	/*
+	// Apparently client does need to do this here
 	// Client doesn't need to do this, client automatically does this UAbilitySystemComponent::OnRep_OwningActor()
 	//const ENetRole LocalRole = GetLocalRole();
 	//UE_LOG(LogTemp, Warning, TEXT("Character: %s, OnRep_PlayerState by local role: %s"), *GetName(), *UEnum::GetValueAsString(LocalRole));
-	// Init for clients. All clients are in here, not server
-	//InitAbilityActorInfo();
-	*/
+	//Init for clients. All clients are in here, not server
+	InitAbilityActorInfo();
 }
 
 int32 AAuraCharacter::GetPlayerLevel()

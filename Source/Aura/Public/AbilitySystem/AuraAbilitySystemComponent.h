@@ -29,15 +29,17 @@ public:
 protected:
 	void EffectApplied(UAbilitySystemComponent* AbilitySystemComponent, const FGameplayEffectSpec& EffectSpec, FActiveGameplayEffectHandle ActiveEffectHandle);
 
+	/** Currently only called if TagContainer contains MessageTag */
 	UFUNCTION(Reliable, Client)
 	void ClientEffectAppliedTags(const FGameplayTagContainer& TagContainer);
 	
 public:
-	FDelegateHandle EffectAppliedDelegate;
-	
+	/** Broadcast when effect is applied with a MessageTag Gameplay Tag */
 	FEffectAssetTags EffectAssetTags;
 
 private:
+	FDelegateHandle EffectAppliedDelegate;
+	
 	FGameplayAbilitySpec* FindAbilityForTag(const FGameplayTag& InTag);
 
 	void PrintNetModeInfo() const;
