@@ -52,6 +52,7 @@
 
 # Perforce ignore file
 *.p4ignore
+p4config.txt
 
 # Precompiled Assets
 SourceArt/**/*.png
