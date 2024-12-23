@@ -27,6 +27,8 @@ public:
 	
 	// ~ Begin ICombatInterface
 	virtual int32 GetPlayerLevel() override;
+	// UFUNCTION(BlueprintImplementableEvent)
+	// void SetFacingTarget(const FVector& FacingTarget) override;
 	// ~ End ICombatInterface
 	
 protected:
@@ -38,6 +40,5 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Components")
 	TObjectPtr<UCameraComponent> Camera;
-	
 	
 };

@@ -1,8 +1,7 @@
 // Copyright Berkeley Bidwell
 
 #include "AbilitySystem/AbilityTasks/AbilityTask_TargetDataUnderMouse.h"
-//#include "AbilitySystemComponent.h"
-#include "GameFramework/PlayerState.h"
+#include "AbilitySystemComponent.h"
 
 UAbilityTask_TargetDataUnderMouse* UAbilityTask_TargetDataUnderMouse::CreateTargetDataUnderMouse(UGameplayAbility* OwningAbility, FName TaskInstanceName)
 {
@@ -14,56 +13,140 @@ UAbilityTask_TargetDataUnderMouse* UAbilityTask_TargetDataUnderMouse::CreateTarg
 
 void UAbilityTask_TargetDataUnderMouse::Activate()
 {
-	if (Ability == nullptr)
+	// Both client and server are in here
+	
+	if (!Ability)
 	{
 		return;
 	}
 	
-	// Both client and server are in here
-	// Want to get line trace hit result under cursor and broadcast that location
+	const bool bIsLocallyControlled = Ability->IsLocallyControlled();
 	
-	if (APlayerController* PC = Ability->GetCurrentActorInfo()->PlayerController.Get())
+	const FGameplayAbilityActivationInfo ActivationInfo = Ability->GetCurrentActivationInfo();
+	const bool bHasAuthority = Ability->HasAuthority(&ActivationInfo);
+	
+	//const FGameplayAbilityActorInfo* Info = Ability->GetCurrentActorInfo();
+	//const bool bHasAuthority = Info->IsNetAuthority();
+	
+	UE_LOG(LogTemp, Display, TEXT("Activate TargetDataUnderMouse: Locally controlled: %s, Authority: %s"),
+		bIsLocallyControlled ? TEXT("true") : TEXT("false"), bHasAuthority ? TEXT("true") : TEXT("false"));
+	
+	// 3 cases
+	// 1. Client and locally controlled
+	// 2. Server and locally controlled
+	// 3. Server and NOT locally controlled
+	
+	if (bIsLocallyControlled)
 	{
-		FHitResult Hit;
-		PC->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
-		UE_LOG(LogTemp, Warning, TEXT("Cursor hit location: %s"), *Hit.Location.ToString());
-		
-		ValidMouseTargetData.Broadcast(Hit.Location);
+		// This case is for client and also for server when autonomous proxy
+		SendTargetDataToServer();
 	}
-
-	/*
-	//GetOwnerActor();
-	//GetAvatarActor();
-	//if (APlayerState* AbilityPlayerState = Cast<APlayerState>(Ability->GetGameplayTaskOwner(this)))
-	if (APlayerState* AbilityPlayerState = Cast<APlayerState>(GetOwnerActor()))
+	else // This case is only for server only when it is not the local controller
 	{
-		if (APlayerController* AbilityPlayerController = Cast<APlayerController>(AbilityPlayerState->GetOwner()))
+		if (UAbilitySystemComponent* ASC = AbilitySystemComponent.Get())
 		{
-			//FVector ReturnTargetData;
-			//AbilityPlayerController->GetMousePosition(ReturnTargetData.X, ReturnTargetData.Y);
+			const FGameplayAbilitySpecHandle SpecHandle = GetAbilitySpecHandle();
+			const FPredictionKey ActivationKey = GetActivationPredictionKey();
 			
-			FVector WorldLocation;
-			FVector WorldDirection;
-			AbilityPlayerController->DeprojectMousePositionToWorld(WorldLocation, WorldDirection);
-			UE_LOG(LogTemp, Warning, TEXT("Found world location: %s"), *WorldLocation.ToString());
+			// Bind to the target data set delegate callback (could have been set already, or not)
+			//FAbilityTargetDataSetDelegate& TargetDataSetDelegate = ASC->AbilityTargetDataSetDelegate(SpecHandle, ActivationKey);
+			//TargetDataSetDelegate.AddUObject(this, &UAbilityTask_TargetDataUnderMouse::OnTargetDataReplicatedCallback);
 			
-			ValidMouseTargetData.Broadcast(WorldLocation);
+			OnTargetDataReadDelegateHandle = ASC->AbilityTargetDataSetDelegate(SpecHandle, ActivationKey).AddUObject(this, &UAbilityTask_TargetDataUnderMouse::OnTargetDataReplicatedCallback);
+
+			// If Target Data is already set then call the delegate again to trigger the TargetDataSetDelegate callback
+			// TODO: What should EAbilityGenericReplicatedEvent::Type be?
+			const bool bCalledDelegate = ASC->CallReplicatedEventDelegateIfSet(EAbilityGenericReplicatedEvent::Type::GenericSignalFromClient, SpecHandle, ActivationKey);
+
+			// If the delegate was not called this means we are waiting on the target data, need to call this function
+			if (!bCalledDelegate)
+			{
+				SetWaitingOnRemotePlayerData();
+			}
 		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("did not find player controller owner for player state"));
-		}
+	}
+}
+
+void UAbilityTask_TargetDataUnderMouse::SendTargetDataToServer()
+{
+	UAbilitySystemComponent* ASC = AbilitySystemComponent.Get();
+	if (!Ability || !ASC)
+	{
+		return;
+	}
+	APlayerController* PC = Ability->GetCurrentActorInfo()->PlayerController.Get();
+	if (!PC)
+	{
+		return;
+	}
+	
+	// Says everything in this scope should be predicted
+	/** To be called in the callsite where the predictive code will take place.
+	 * This generates a new PredictionKey and acts as a synchonization point between client and server for that key.
+	 */
+	// From AbilityTask_WaitTargetData.cpp
+	FScopedPredictionWindow	ScopedPrediction(ASC, ShouldReplicateDataToServer());
+	//FScopedPredictionWindow	ScopedPrediction(ASC);
+	
+	FHitResult CursorHit;
+	PC->GetHitResultUnderCursor(ECC_Visibility, false, CursorHit);
+
+	// TODO: Why not use FGameplayAbilityTargetData_LocationInfo
+	// Construct TargetData and populate with HitResult
+	FGameplayAbilityTargetData_SingleTargetHit* TargetData = new FGameplayAbilityTargetData_SingleTargetHit(CursorHit);
+	
+	// Construct a target data handle with the target data
+	FGameplayAbilityTargetDataHandle DataHandle(TargetData);
+	
+	// Don't want to do this on server
+	if (IsPredictingClient())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Is predicting client, sending target data to server"));
+		
+		// Send the target data handle to the server
+		FGameplayTag ApplicationTag;
+		ASC->ServerSetReplicatedTargetData(GetAbilitySpecHandle(), GetActivationPredictionKey(),
+			DataHandle, ApplicationTag, ASC->ScopedPredictionKey);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("did not find gameplay task owner as player state"));
+		UE_LOG(LogTemp, Warning, TEXT("Is NOT predicting client, NOT sending target data to server"));
 	}
-	*/
 	
-	// if (UAbilitySystemComponent* ASC = AbilitySystemComponent.Get())
-	// {
-	// 	ASC->GetOwnerActor();
-	// }
+	// Broadcast target data handle locally, want to do for both local controlled server and client
+	// Technically client doesn't need to do this since it currently has no predictive functionality with the target data
+	if (ShouldBroadcastAbilityTaskDelegates())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SendTargetDataToServer(): Broadcast target data"));
+		ValidMouseTargetData.Broadcast(DataHandle);
+	}
+
+	// Task is complete now
+	EndTask();
+}
+
+void UAbilityTask_TargetDataUnderMouse::OnTargetDataReplicatedCallback(const FGameplayAbilityTargetDataHandle& DataHandle, FGameplayTag ActivationTag)
+{
+	// replicated data in GAS can be client to server also
+
+	// Tell ASC that target data has been received, don't need to store it anymore in cache
+	if (UAbilitySystemComponent* ASC = AbilitySystemComponent.Get())
+	{
+		// TODO: Should we be removing the delegate handle here?
+		ASC->AbilityTargetDataSetDelegate(GetAbilitySpecHandle(), GetActivationPredictionKey()).Remove(OnTargetDataReadDelegateHandle);
+		ASC->ConsumeClientReplicatedTargetData(GetAbilitySpecHandle(), GetActivationPredictionKey());
+	}
+	
+	// Finally, broadcast delegate now that we have target data in the data handle
+	if (ShouldBroadcastAbilityTaskDelegates())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("OnTargetDataReplicatedCallback(): Broadcast target data"));
+		ValidMouseTargetData.Broadcast(DataHandle);
+	}
+
+	// TODO: Should we end task after broadcasting?
+	// We are done. Kill us so we don't keep getting broadcast messages
+	EndTask();
 }
 
 void UAbilityTask_TargetDataUnderMouse::OnDestroy(bool AbilityIsEnding)
@@ -71,5 +154,24 @@ void UAbilityTask_TargetDataUnderMouse::OnDestroy(bool AbilityIsEnding)
 	Super::OnDestroy(AbilityIsEnding);
 
 	// Unregister any callbacks
-	
+
+	/*
+	if (UAbilitySystemComponent* ASC = AbilitySystemComponent.Get())
+	{
+		ASC->AbilityTargetDataSetDelegate(GetAbilitySpecHandle(), GetActivationPredictionKey()).Remove(OnTargetDataReadDelegateHandle);
+	}
+	*/
+}
+
+bool UAbilityTask_TargetDataUnderMouse::ShouldReplicateDataToServer() const
+{
+	if (!Ability)
+	{
+		return false;
+	}
+
+	// Send TargetData to the server IFF we are the client and this isn't a GameplayTargetActor that can produce data on the server	
+	const FGameplayAbilityActorInfo* Info = Ability->GetCurrentActorInfo();
+
+	return !Info->IsNetAuthority();
 }

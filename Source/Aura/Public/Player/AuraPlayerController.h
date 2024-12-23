@@ -29,6 +29,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
 	
 	virtual void SetupInputComponent() override;
 
@@ -48,6 +49,9 @@ protected:
 	
 private:
 	void AuraMove(const FInputActionValue& InputActionValue);
+	void ShiftPressed() { bShiftKeyDown = true; };
+	void ShiftReleased() { bShiftKeyDown = false; };
+	
 	void AbilityInputTagPressed(const FInputActionValue& InputActionValue, const FGameplayTag InputTag);
 	void AbilityInputTagHeld(const FInputActionValue& InputActionValue, const FGameplayTag InputTag);
 	void AbilityInputTagReleased(const FInputActionValue& InputActionValue, const FGameplayTag InputTag);
@@ -62,7 +66,13 @@ private:
 	
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> MoveAction;
+	
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> ShiftAction;
 
+	/** Whether the shift key is currently down */
+	bool bShiftKeyDown = false;
+	
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UAuraInputConfig> InputConfig;
 

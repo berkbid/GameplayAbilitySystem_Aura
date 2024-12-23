@@ -50,9 +50,13 @@ void AAuraPlayerController::SetupInputComponent()
 
 	UAuraInputComponent* AuraInputComponent = CastChecked<UAuraInputComponent>(InputComponent);
 	check(MoveAction);
+	check(ShiftAction);
 	
 	AuraInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::AuraMove);
+	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Started, this, &AAuraPlayerController::ShiftPressed);
+	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Completed, this, &AAuraPlayerController::ShiftReleased);
 	AuraInputComponent->BindAbilityActions(InputConfig, this, &ThisClass::AbilityInputTagPressed, &ThisClass::AbilityInputTagReleased, &ThisClass::AbilityInputTagHeld);
+	
 }
 
 void AAuraPlayerController::Tick(float DeltaSeconds)
@@ -181,7 +185,7 @@ void AAuraPlayerController::AbilityInputTagHeld(const FInputActionValue& InputAc
 {
 	// TODO: Server does not enforce targeting value, do we care?
 	// Pass the ability input tag held functionality to the ability system component if it isn't for movement purposes
-	if (!InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB) || bTargeting)
+	if (!InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB) || bTargeting || bShiftKeyDown)
 	{
 		if (GetASC())
 		{
@@ -210,37 +214,37 @@ void AAuraPlayerController::AbilityInputTagHeld(const FInputActionValue& InputAc
 
 void AAuraPlayerController::AbilityInputTagReleased(const FInputActionValue& InputActionValue, const FGameplayTag InputTag)
 {
-	// Pass the ability input tag released functionality to the ability system component if it isn't for movement purposes
-	if (!InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB) || bTargeting)
+	// Telling ASC of input released regardless, could be inside if statement below
+	if (GetASC())
 	{
-		if (GetASC())
-		{
-			GetASC()->AbilityInputTagReleased(InputTag);
-		}
-		
+		GetASC()->AbilityInputTagReleased(InputTag);
+	}
+	
+	// If input tag is not LMB then return and don't proceed to click to move behavior
+	if (!InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB) || bTargeting || bShiftKeyDown)
+	{
 		return;
 	}
-
-	// Click to move behavior since Tag == LMB and we are not targeting
-
+	
+	// Click to move behavior
 	// In order to auto run, requires a short LMB press/hold and a valid cached destination to create spline path for
 	if (FollowTime <= ShortPressThreshold && bValidCachedDestination)
 	{
 		const APawn* ControlledPawn = GetPawn();
-		
+	
 		if (UNavigationPath* NavPath = IsValid(ControlledPawn) ? UNavigationSystemV1::FindPathToLocationSynchronously(this, ControlledPawn->GetActorLocation(), CachedDestination) : nullptr)
 		{
 			Spline->ClearSplinePoints();
 
 			// TODO: Could use this instead of clearing spline points then adding each individually?
 			//Spline->SetSplinePoints(NavPath->PathPoints, ESplineCoordinateSpace::World);
-			
+		
 			for (const FVector& PointLoc : NavPath->PathPoints)
 			{
 				Spline->AddSplinePoint(PointLoc, ESplineCoordinateSpace::World);
 				//DrawDebugSphere(GetWorld(), PointLoc, 8.f, 8, FColor::Blue, false, 5.f);
 			}
-			
+		
 			// Have auto run go to the last spline point instead of line trace location, as spline point is navigatable to through nav mesh
 			//CachedDestination = Spline->GetSplinePointAt(Spline->GetNumberOfSplinePoints() - 1, ESplineCoordinateSpace::World).Position;
 			const int32 LastPathPointIndex = NavPath->PathPoints.Num() - 1;
@@ -252,7 +256,7 @@ void AAuraPlayerController::AbilityInputTagReleased(const FInputActionValue& Inp
 			}
 		}
 	}
-	
+
 	FollowTime = 0.f;
 	bValidCachedDestination = false;
 }

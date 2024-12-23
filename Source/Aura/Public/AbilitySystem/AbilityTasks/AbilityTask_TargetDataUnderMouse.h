@@ -8,7 +8,7 @@
 
 class UGameplayAbility;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMouseTargetDataDelegate, const FVector&, Data);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMouseTargetDataDelegate, const FGameplayAbilityTargetDataHandle&, Data);
 
 /**
  * 
@@ -31,7 +31,15 @@ protected:
 	
 	virtual void OnDestroy(bool AbilityIsEnding) override;
 	
+	virtual bool ShouldReplicateDataToServer() const;
+	
 	UPROPERTY(BlueprintAssignable)
 	FMouseTargetDataDelegate ValidMouseTargetData;
-	
+
+private:
+	void SendTargetDataToServer();
+
+	void OnTargetDataReplicatedCallback(const FGameplayAbilityTargetDataHandle& DataHandle, FGameplayTag ActivationTag);
+
+	FDelegateHandle OnTargetDataReadDelegateHandle;
 };
