@@ -70,6 +70,10 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 	
 	// See AbilityTask_SpawnActor for interesting code
 	const FVector SocketLocation = CombatInterfaceAvatar->GetCombatSocketLocation();
+	
+	// TODO: If server draws debug sphere will client see it?
+	DrawDebugSphere(GetWorld(), SocketLocation, 20, 30, FColor::Yellow, false, 5.f);
+	
 	FRotator Rotation = (ProjectileTargetLocation - SocketLocation).Rotation();
 	// Parallel to ground
 	Rotation.Pitch = 0.f;
@@ -93,6 +97,10 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 		
 		// Finish spawning projectile from deferred spawn
 		Projectile->FinishSpawning(SpawnTransform);	
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to cast projectile"));
 	}
 }
 

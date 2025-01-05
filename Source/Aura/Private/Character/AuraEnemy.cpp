@@ -10,7 +10,7 @@ AAuraEnemy::AAuraEnemy()
 {
 	// Could use mesh if we want to for cursor over events
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-
+	
 	AbilitySystemComponent = CreateDefaultSubobject<UAuraAbilitySystemComponent>("AbilitySystemComponent");
 	// Can we set this in constructor of aura ability system component?
 	AbilitySystemComponent->SetIsReplicated(true);
