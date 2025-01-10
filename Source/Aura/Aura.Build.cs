@@ -19,6 +19,8 @@ public class Aura : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new string[]
 		{
+			"Slate",
+			"SlateCore",
 			"UMG",
 			"EnhancedInput",
 			"GameplayTags",
