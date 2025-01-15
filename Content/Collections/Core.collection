@@ -1,0 +1,7 @@
+FileVersion:2
+Type:Static
+Guid:AE2276C8-4DC5-83A0-FF9E-B790F66A5904
+ParentGuid:00000000-0000-0000-0000-000000000000
+
+/Game/Blueprints/Game/B_AuraGameMode.B_AuraGameMode
+/Game/Blueprints/Player/B_AuraPlayerController.B_AuraPlayerController

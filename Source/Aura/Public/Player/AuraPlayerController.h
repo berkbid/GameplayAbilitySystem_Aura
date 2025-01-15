@@ -2,11 +2,13 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "GameplayTagContainer.h"
 #include "AuraPlayerController.generated.h"
 
+class AAuraHUD;
+class UObject;
+class AHUD;
 class IEnemyInterface;
 struct FGameplayTag;
 class UInputMappingContext;
@@ -27,9 +29,14 @@ class AURA_API AAuraPlayerController : public APlayerController
 public:
 	AAuraPlayerController();
 
+	UFUNCTION(BlueprintCallable, Category = "Aura|PlayerController")
+	AAuraHUD* GetAuraHud() const;
+	
+	UFUNCTION(BlueprintCallable, Category = "Aura|PlayerController")
+	UAuraAbilitySystemComponent* GetASC();
+	
 protected:
 	virtual void BeginPlay() override;
-
 	
 	virtual void SetupInputComponent() override;
 
@@ -40,7 +47,10 @@ protected:
 	virtual void ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUDClass) override;
 	
 	void InitHUD();
-
+	
+	UFUNCTION(BlueprintCallable, Category = "Aura|PlayerController")
+	void ToggleEscapeMenu();
+	
 	void PrintLocalRole(const FString& InMessage = "") const;
 
 protected:
@@ -56,9 +66,10 @@ private:
 	void AbilityInputTagHeld(const FInputActionValue& InputActionValue, const FGameplayTag InputTag);
 	void AbilityInputTagReleased(const FInputActionValue& InputActionValue, const FGameplayTag InputTag);
 	
-	UAuraAbilitySystemComponent* GetASC();
-
 	void AutoRun();
+
+	/** Update input mode for gameplay or for UI is parameter is false */
+	void UpdateInputMode(bool bGameInputMode);
 	
 private:
 	UPROPERTY(EditAnywhere, Category="Input")
@@ -69,7 +80,10 @@ private:
 	
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> ShiftAction;
-
+	
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> MenuAction;
+	
 	/** Whether the shift key is currently down */
 	bool bShiftKeyDown = false;
 	

@@ -14,6 +14,8 @@
 #include "UI/HUD/AuraHUD.h"
 #include "UI/WidgetController/AuraWidgetController.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(AuraPlayerController)
+
 AAuraPlayerController::AAuraPlayerController()
 {
 	// @TODO: Does this need to be set to true??
@@ -37,10 +39,7 @@ void AAuraPlayerController::BeginPlay()
 		DefaultMouseCursor = EMouseCursor::Default;
 		
 		// Set up input mode
-		FInputModeGameAndUI InputMode;
-		InputMode.SetHideCursorDuringCapture(false);
-		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-		SetInputMode(InputMode);
+		UpdateInputMode(true);
 	}
 }
 
@@ -51,10 +50,12 @@ void AAuraPlayerController::SetupInputComponent()
 	UAuraInputComponent* AuraInputComponent = CastChecked<UAuraInputComponent>(InputComponent);
 	check(MoveAction);
 	check(ShiftAction);
+	check(MenuAction);
 	
 	AuraInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::AuraMove);
 	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Started, this, &AAuraPlayerController::ShiftPressed);
 	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Completed, this, &AAuraPlayerController::ShiftReleased);
+	AuraInputComponent->BindAction(MenuAction, ETriggerEvent::Started, this, &AAuraPlayerController::ToggleEscapeMenu);
 	AuraInputComponent->BindAbilityActions(InputConfig, this, &ThisClass::AbilityInputTagPressed, &ThisClass::AbilityInputTagReleased, &ThisClass::AbilityInputTagHeld);
 	
 }
@@ -93,6 +94,24 @@ void AAuraPlayerController::AutoRun()
 	}
 }
 
+void AAuraPlayerController::UpdateInputMode(bool bGameInputMode)
+{
+	if (bGameInputMode)
+	{
+		// Set up input mode
+		FInputModeGameAndUI InputMode;
+		InputMode.SetHideCursorDuringCapture(false);
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		SetInputMode(InputMode);
+	}
+	else
+	{
+		FInputModeUIOnly InputModeUIOnly;
+		InputModeUIOnly.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		SetInputMode(InputModeUIOnly);
+	}
+}
+
 void AAuraPlayerController::ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUDClass)
 {
 	Super::ClientSetHUD_Implementation(NewHUDClass);
@@ -123,14 +142,21 @@ void AAuraPlayerController::InitHUD()
 
 	if (IsLocalController())
 	{
-		AAuraHUD* AuraHUD = CastChecked<AAuraHUD>(GetHUD());
 		AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
 		check(AuraPlayerState);
-
-		// Only issue with doing it here is the Ability Actor Info (owner/avatar) might not be set yet
-		AuraHUD->InitHUD(FWidgetControllerParams(
-			this, AuraPlayerState, AuraPlayerState->GetAbilitySystemComponent(), AuraPlayerState->GetAttributeSet()));
+		
+		if (AAuraHUD* AuraHUD = GetAuraHud())
+		{
+			// Only issue with doing it here is the Ability Actor Info (owner/avatar) might not be set yet
+			AuraHUD->InitHUD(FWidgetControllerParams(
+				this, AuraPlayerState, AuraPlayerState->GetAbilitySystemComponent(), AuraPlayerState->GetAttributeSet()));	
+		}
 	}
+}
+
+AAuraHUD* AAuraPlayerController::GetAuraHud() const
+{
+	return CastChecked<AAuraHUD>(GetHUD(), ECastCheckedType::NullAllowed);
 }
 
 void AAuraPlayerController::AuraMove(const FInputActionValue& InputActionValue)
@@ -147,6 +173,16 @@ void AAuraPlayerController::AuraMove(const FInputActionValue& InputActionValue)
 
 		ControlledPawn->AddMovementInput(ForwardDirection, InputAxisVector.Y);
 		ControlledPawn->AddMovementInput(RightDirection, InputAxisVector.X);
+	}
+}
+
+void AAuraPlayerController::ToggleEscapeMenu()
+{
+	if (AAuraHUD* AuraHUD = GetAuraHud())
+	{
+		const bool bEscapeMenuActive = AuraHUD->ToggleEscapeMenu();
+		// If escape menu active, input mode should be UI only
+		UpdateInputMode(!bEscapeMenuActive);
 	}
 }
 

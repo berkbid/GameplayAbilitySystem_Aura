@@ -20,8 +20,7 @@ void UAuraListView::ValidateCompiledDefaults(IWidgetCompilerLog& InCompileLog) c
 
 #endif
 
-UUserWidget& UAuraListView::OnGenerateEntryWidgetInternal(UObject* Item, TSubclassOf<UUserWidget> DesiredEntryClass,
-	const TSharedRef<STableViewBase>& OwnerTable)
+UUserWidget& UAuraListView::OnGenerateEntryWidgetInternal(UObject* Item, TSubclassOf<UUserWidget> DesiredEntryClass, const TSharedRef<STableViewBase>& OwnerTable)
 {
 	return Super::OnGenerateEntryWidgetInternal(Item, DesiredEntryClass, OwnerTable);
 }

@@ -5,6 +5,14 @@
 #include "UI/WidgetController/AttributeMenuWidgetController.h"
 #include "UI/WidgetController/HUDWidgetController.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(AuraHUD)
+
+AAuraHUD::AAuraHUD(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	PrimaryActorTick.bStartWithTickEnabled = false;
+}
+
 void AAuraHUD::InitHUD(const FWidgetControllerParams& InControllerParams)
 {
 	checkf(HudClass, TEXT("HUD widget class uninitialized, please fill out B_AuraHUD"));
@@ -41,4 +49,26 @@ UAttributeMenuWidgetController* AAuraHUD::GetAttributeMenuWidgetController(const
 		AttributeMenuWidgetController->SetWidgetControllerParams(InControllerParams);
 	}
 	return AttributeMenuWidgetController;
+}
+
+bool AAuraHUD::ToggleEscapeMenu()
+{
+	if (AuraMenu)
+	{
+		AuraMenu->RemoveFromParent();
+		AuraMenu = nullptr;
+		return false;
+	}
+
+	if (ensure(!MenuClass.IsNull()))
+	{
+		if (UClass* MenuClassPtr = MenuClass.LoadSynchronous())
+		{
+			AuraMenu = CreateWidget<UUserWidget>(GetWorld(), MenuClassPtr);
+			AuraMenu->AddToViewport();
+			return true;
+		}
+	}
+	
+	return false;
 }
