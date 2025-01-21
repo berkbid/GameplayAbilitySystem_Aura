@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "UI/WidgetController/AuraWidgetController.h"
 #include "AttributeMenuWidgetController.generated.h"
 
 struct FGameplayTag;
 class UAttributeInfo;
+class UObject;
 struct FAuraAttributeInfo;
 struct FGameplayAttribute;
 

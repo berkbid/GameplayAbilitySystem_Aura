@@ -6,7 +6,10 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Aura/Aura.h"
 
-AAuraEnemy::AAuraEnemy()
+#include UE_INLINE_GENERATED_CPP_BY_NAME(AuraEnemy)
+
+AAuraEnemy::AAuraEnemy(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	// Could use mesh if we want to for cursor over events
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);

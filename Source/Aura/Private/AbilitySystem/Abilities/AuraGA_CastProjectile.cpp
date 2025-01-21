@@ -4,6 +4,10 @@
 #include "Actor/AuraProjectile.h"
 #include "Interaction/CombatInterface.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(AuraGA_CastProjectile)
+
+class APawn;
+
 void UAuraGA_CastProjectile::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
                                              const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
                                              const FGameplayEventData* TriggerEventData)

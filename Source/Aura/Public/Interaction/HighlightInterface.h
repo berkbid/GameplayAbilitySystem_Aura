@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "UObject/Interface.h"
 #include "HighlightInterface.generated.h"
 
-// This class does not need to be modified.
+class UObject;
+
 UINTERFACE(MinimalAPI)
 class UHighlightInterface : public UInterface
 {

@@ -2,11 +2,13 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Abilities/Tasks/AbilityTask.h"
 #include "AbilityTask_TargetDataUnderMouse.generated.h"
 
 class UGameplayAbility;
+class UObject;
+struct FGameplayTag;
+struct FGameplayAbilityTargetDataHandle;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMouseTargetDataDelegate, const FGameplayAbilityTargetDataHandle&, Data);
 

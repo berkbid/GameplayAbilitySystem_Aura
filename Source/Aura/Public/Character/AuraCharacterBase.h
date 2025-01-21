@@ -2,16 +2,18 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
 #include "Interaction/CombatInterface.h"
 #include "AuraCharacterBase.generated.h"
 
+class AActor;
+class USkeletalMeshComponent;
 class UGameplayAbility;
 class UGameplayEffect;
 class UAbilitySystemComponent;
 class UAttributeSet;
+class UObject;
 
 UCLASS(Abstract)
 class AURA_API AAuraCharacterBase : public ACharacter, public IAbilitySystemInterface, public ICombatInterface
@@ -19,7 +21,7 @@ class AURA_API AAuraCharacterBase : public ACharacter, public IAbilitySystemInte
 	GENERATED_BODY()
 
 public:
-	AAuraCharacterBase();
+	AAuraCharacterBase(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	// IAbilitySystemInterface
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }

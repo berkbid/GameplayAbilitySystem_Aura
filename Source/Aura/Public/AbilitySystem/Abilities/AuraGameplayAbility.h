@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Abilities/GameplayAbility.h"
 #include "AuraGameplayAbility.generated.h"
+
+class UObject;
+struct FGameplayTag;
 
 /**
  * 

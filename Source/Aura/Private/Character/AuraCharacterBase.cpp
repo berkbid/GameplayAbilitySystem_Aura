@@ -6,10 +6,17 @@
 #include "Aura/Aura.h"
 #include "Components/CapsuleComponent.h"
 
-AAuraCharacterBase::AAuraCharacterBase()
-{
-	PrimaryActorTick.bCanEverTick = false;
+#include UE_INLINE_GENERATED_CPP_BY_NAME(AuraCharacterBase)
 
+AAuraCharacterBase::AAuraCharacterBase(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	// Avoid ticking characters if possible.
+	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bStartWithTickEnabled = false;
+
+	SetNetCullDistanceSquared(900000000.0f);
+	
 	// Set capsule to ignore collision with camera channel
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 

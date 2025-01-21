@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
 #include "AbilitySystemInterface.h"
 #include "Interaction/CombatInterface.h"
@@ -10,6 +9,7 @@
 
 class UAbilitySystemComponent;
 class UAttributeSet;
+class UObject;
 
 /**
  * 
@@ -20,7 +20,7 @@ class AURA_API AAuraPlayerState : public APlayerState, public IAbilitySystemInte
 	GENERATED_BODY()
 
 public:
-    AAuraPlayerState();
+	AAuraPlayerState(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	

@@ -4,7 +4,7 @@
 #include "Modules/ModuleManager.h"
 
 /**
- * FLyraGameModule
+ * FAura
  */
 class FAura : public FDefaultGameModuleImpl
 {
@@ -17,4 +17,4 @@ class FAura : public FDefaultGameModuleImpl
 	}
 };
 
-IMPLEMENT_PRIMARY_GAME_MODULE( FAura, Aura, "Aura" );
+IMPLEMENT_PRIMARY_GAME_MODULE(FAura, Aura, "Aura");

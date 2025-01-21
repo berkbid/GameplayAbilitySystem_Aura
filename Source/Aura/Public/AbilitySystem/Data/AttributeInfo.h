@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "GameplayTagContainer.h"
 #include "AttributeInfo.generated.h"
+
+class UObject;
 
 USTRUCT(BlueprintType)
 struct FAuraAttributeInfo

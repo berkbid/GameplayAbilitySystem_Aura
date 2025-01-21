@@ -2,9 +2,12 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "GameplayModMagnitudeCalculation.h"
 #include "MMC_MaxHealth.generated.h"
+
+class UObject;
+struct FGameplayEffectSpec;
+struct FGameplayEffectAttributeCaptureDefinition;
 
 /**
  * 

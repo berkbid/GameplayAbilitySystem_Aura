@@ -2,14 +2,20 @@
 
 #include "Actor/AuraProjectile.h"
 #include "Components/SphereComponent.h"
+#include "Components/AudioComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Aura/Aura.h"
-#include "Components/AudioComponent.h"
+
+#include UE_INLINE_GENERATED_CPP_BY_NAME(AuraProjectile)
+
+struct FHitResult;
 
 AAuraProjectile::AAuraProjectile()
 {
+	PrimaryActorTick.bCanEverTick = false;
+	
 	Sphere = CreateDefaultSubobject<USphereComponent>("Sphere");
 	SetRootComponent(Sphere);
 	Sphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -26,8 +32,6 @@ AAuraProjectile::AAuraProjectile()
 	// Automatically set to root component
 	//ProjectileMovement->UpdatedComponent = Sphere;
 	
-	PrimaryActorTick.bCanEverTick = false;
-
 	// Want the projectiles to replicate
 	bReplicates = true;
 }

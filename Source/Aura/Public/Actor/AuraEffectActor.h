@@ -2,13 +2,14 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "ActiveGameplayEffectHandle.h"
 #include "GameFramework/Actor.h"
 #include "AuraEffectActor.generated.h"
 
 class UGameplayEffect;
+class USceneComponent;
 class UAbilitySystemComponent;
+class UObject;
 
 UENUM(BlueprintType)
 enum class EEffectApplicationPolicy : uint8

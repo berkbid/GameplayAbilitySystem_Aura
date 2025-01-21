@@ -2,6 +2,11 @@
 
 #include "AbilitySystem/AbilityTasks/AbilityTask_TargetDataUnderMouse.h"
 #include "AbilitySystemComponent.h"
+#include "GameFramework/PlayerController.h"
+
+#include UE_INLINE_GENERATED_CPP_BY_NAME(AbilityTask_TargetDataUnderMouse)
+
+struct FGameplayTag;
 
 UAbilityTask_TargetDataUnderMouse* UAbilityTask_TargetDataUnderMouse::CreateTargetDataUnderMouse(UGameplayAbility* OwningAbility, FName TaskInstanceName)
 {

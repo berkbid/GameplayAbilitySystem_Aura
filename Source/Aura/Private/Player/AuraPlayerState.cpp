@@ -5,7 +5,10 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Net/UnrealNetwork.h"
 
-AAuraPlayerState::AAuraPlayerState()
+#include UE_INLINE_GENERATED_CPP_BY_NAME(AuraPlayerState)
+
+AAuraPlayerState::AAuraPlayerState(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	AbilitySystemComponent = CreateDefaultSubobject<UAuraAbilitySystemComponent>("AbilitySystemComponent");
 	// Can we set this in constructor of aura ability system component?

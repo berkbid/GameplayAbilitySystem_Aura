@@ -2,8 +2,14 @@
 
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Player/AuraPlayerState.h"
+#include "GameFramework/PlayerController.h"
+#include "Engine/World.h"
 #include "UI/HUD/AuraHUD.h"
 #include "UI/WidgetController/AuraWidgetController.h"
+
+#include UE_INLINE_GENERATED_CPP_BY_NAME(AuraAbilitySystemLibrary)
+
+class UAttributeSet;
 
 UHUDWidgetController* UAuraAbilitySystemLibrary::GetHUDWidgetController(const UObject* WorldContextObject)
 {

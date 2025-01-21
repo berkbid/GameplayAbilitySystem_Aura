@@ -8,6 +8,8 @@
 //#include "AbilitySystemInterface.h"
 //#include "AbilitySystem/AuraAttributeSet.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(AuraEffectActor)
+
 AAuraEffectActor::AAuraEffectActor()
 {
 	PrimaryActorTick.bCanEverTick = false;

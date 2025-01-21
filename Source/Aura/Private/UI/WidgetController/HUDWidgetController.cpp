@@ -4,6 +4,8 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(HUDWidgetController)
+
 void UHUDWidgetController::BroadcastInitialValues()
 {
 	const UAuraAttributeSet* AttributeSet = CastChecked<UAuraAttributeSet>(WidgetControllerParams.AttributeSet);

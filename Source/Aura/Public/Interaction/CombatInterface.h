@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "UObject/Interface.h"
 #include "CombatInterface.generated.h"
+
+class UObject;
 
 UINTERFACE(MinimalAPI, BlueprintType)
 class UCombatInterface : public UInterface

@@ -2,10 +2,12 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "GameplayTagContainer.h"
 #include "AuraInputConfig.generated.h"
+
+class UObject;
+class UInputAction;
 
 USTRUCT(BlueprintType)
 struct FAuraInputAction
@@ -16,7 +18,7 @@ struct FAuraInputAction
 	
 	/** Const so can't be changed at runtime */
 	UPROPERTY(EditDefaultsOnly)
-	const class UInputAction* InputAction = nullptr;
+	const UInputAction* InputAction = nullptr;
 
 	UPROPERTY(EditDefaultsOnly)
 	FGameplayTag InputTag = FGameplayTag();

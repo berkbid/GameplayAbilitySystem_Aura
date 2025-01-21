@@ -2,12 +2,14 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "UI/WidgetController/AuraWidgetController.h"
 #include "GameplayTagContainer.h"
 #include "HUDWidgetController.generated.h"
 
 class UAuraUserWidget;
+class UDataTable;
+class UTexture2D;
+class UObject;
 struct FOnAttributeChangeData;
 
 USTRUCT(BlueprintType)
@@ -63,7 +65,7 @@ public:
 	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Widget Data", meta=(RequiredAssetDataTags="RowStructure=/Script/Aura.UIWidgetRow"))
-	TObjectPtr<class UDataTable> MessageWidgetDataTable;
+	TObjectPtr<UDataTable> MessageWidgetDataTable;
 
 	template<typename T>
 	static T* GetDataTableRowByTag(UDataTable* DataTable, const FGameplayTag& Tag);
@@ -74,4 +76,3 @@ T* UHUDWidgetController::GetDataTableRowByTag(UDataTable* DataTable, const FGame
 {
 	return DataTable ? DataTable->FindRow<T>(Tag.GetTagName(), TEXT("")) : nullptr;
 }
-

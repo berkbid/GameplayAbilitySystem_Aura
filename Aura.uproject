@@ -81,6 +81,18 @@
 		{
 			"Name": "OnlineServicesOSSAdapter",
 			"Enabled": true
+		},
+		{
+			"Name": "GameFeatures",
+			"Enabled": true
+		},
+		{
+			"Name": "ModularGameplay",
+			"Enabled": true
+		},		
+		{
+			"Name": "AuraTests",
+			"Enabled": true
 		}
 	]
 }

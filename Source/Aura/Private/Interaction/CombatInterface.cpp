@@ -1,9 +1,9 @@
 // Copyright Berkeley Bidwell
 
-
 #include "Interaction/CombatInterface.h"
 
-// Add default functionality here for any ICombatInterface functions that are not pure virtual.
+#include UE_INLINE_GENERATED_CPP_BY_NAME(CombatInterface)
+
 int32 ICombatInterface::GetPlayerLevel()
 {
 	return 0;

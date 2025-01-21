@@ -16,7 +16,8 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraPlayerController)
 
-AAuraPlayerController::AAuraPlayerController()
+AAuraPlayerController::AAuraPlayerController(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	// @TODO: Does this need to be set to true??
 	bReplicates = true;

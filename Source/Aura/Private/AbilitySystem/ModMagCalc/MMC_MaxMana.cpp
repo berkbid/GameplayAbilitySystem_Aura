@@ -4,6 +4,8 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Interaction/CombatInterface.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MMC_MaxMana)
+
 UMMC_MaxMana::UMMC_MaxMana()
 {
 	IntelligenceDef.AttributeToCapture = UAuraAttributeSet::GetIntelligenceAttribute();

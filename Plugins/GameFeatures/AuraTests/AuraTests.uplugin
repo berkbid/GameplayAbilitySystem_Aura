@@ -1,0 +1,27 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "AuraTests",
+	"Description": "Tests for Aura",
+	"Category": "Game Features",
+	"CreatedBy": "Berkeley Bidwell",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"EnabledByDefault": false,
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"ExplicitlyLoaded": true,
+	"BuiltInInitialFeatureState": "Registered",
+	"Modules": [
+		{
+			"Name": "AuraTestsRuntime",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}

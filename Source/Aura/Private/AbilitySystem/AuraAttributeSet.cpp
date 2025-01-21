@@ -1,11 +1,15 @@
 // Copyright Berkeley Bidwell
 
 #include "AbilitySystem/AuraAttributeSet.h"
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AuraGameplayTags.h"
 #include "GameplayEffectExtension.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/Controller.h"
 #include "Net/UnrealNetwork.h"
+
+#include UE_INLINE_GENERATED_CPP_BY_NAME(AuraAttributeSet)
 
 UAuraAttributeSet::UAuraAttributeSet()
 {
@@ -89,6 +93,11 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	}
 }
 
+UAuraAbilitySystemComponent* UAuraAttributeSet::GetAuraAbilitySystemComponent() const
+{
+	return Cast<UAuraAbilitySystemComponent>(GetOwningAbilitySystemComponent());
+}
+
 void UAuraAttributeSet::FillEffectProperties(const FGameplayEffectModCallbackData& Data, FEffectProperties& OutEffectProperties) const
 {
 	// Source = causer of the effect, Target = target of the effect (owner of this attribute set)
@@ -109,7 +118,7 @@ void UAuraAttributeSet::FillEffectProperties(const FGameplayEffectModCallbackDat
 			{
 				if (const APawn* Pawn = Cast<APawn>(OutEffectProperties.SourceAvatarActor))
 				{
-					OutEffectProperties.SourceController = Cast<APlayerController>(Pawn->GetController());
+					OutEffectProperties.SourceController = Pawn->GetController();
 				}
 			}
 			
@@ -242,7 +251,7 @@ FEffectProperties::FEffectProperties(const FGameplayEffectModCallbackData& Data)
 			{
 				if (const APawn* Pawn = Cast<APawn>(SourceAvatarActor))
 				{
-					SourceController = Cast<APlayerController>(Pawn->GetController());
+					SourceController = Pawn->GetController();
 				}
 			}
 			

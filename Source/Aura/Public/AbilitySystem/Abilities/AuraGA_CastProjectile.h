@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "AuraGA_CastProjectile.generated.h"
 
 class AAuraProjectile;
+class UObject;
 
 /**
  * 

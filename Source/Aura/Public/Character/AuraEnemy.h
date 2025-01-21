@@ -2,10 +2,12 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Character/AuraCharacterBase.h"
 #include "Interaction/EnemyInterface.h"
 #include "AuraEnemy.generated.h"
+
+class AActor;
+class UObject;
 
 /**
  * 
@@ -16,8 +18,8 @@ class AURA_API AAuraEnemy : public AAuraCharacterBase, public IEnemyInterface
 	GENERATED_BODY()
 
 public:
-	AAuraEnemy();
-
+	AAuraEnemy(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	
 	// ~ Begin AActor Interface.
 	virtual void NotifyActorBeginCursorOver() override;
 	virtual void NotifyActorEndCursorOver() override;

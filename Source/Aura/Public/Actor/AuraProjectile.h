@@ -2,16 +2,21 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "AuraProjectile.generated.h"
 
+namespace EEndPlayReason { enum Type : int; }
+
 class UProjectileMovementComponent;
 class USphereComponent;
+class UPrimitiveComponent;
 class UNiagaraSystem;
 class USoundBase;
+class UAudioComponent;
+class UObject;
+struct FHitResult;
 
-UCLASS()
+UCLASS(Blueprintable, BlueprintType)
 class AURA_API AAuraProjectile : public AActor
 {
 	GENERATED_BODY()

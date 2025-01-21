@@ -7,7 +7,10 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Player/AuraPlayerState.h"
 
-AAuraCharacter::AAuraCharacter()
+#include UE_INLINE_GENERATED_CPP_BY_NAME(AuraCharacter)
+
+AAuraCharacter::AAuraCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>("SpringArm");
 	SpringArm->TargetArmLength = 750.f;

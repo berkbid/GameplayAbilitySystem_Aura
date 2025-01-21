@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "AuraWidgetController.generated.h"
 
@@ -10,6 +9,7 @@ class APlayerController;
 class APlayerState;
 class UAbilitySystemComponent;
 class UAttributeSet;
+class UObject;
 
 USTRUCT(BlueprintType)
 struct FWidgetControllerParams

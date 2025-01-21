@@ -1,6 +1,5 @@
 // Copyright Berkeley Bidwell
 
-
 #include "Interaction/EnemyInterface.h"
 
-// Add default functionality here for any IEnemyInterface functions that are not pure virtual.
+#include UE_INLINE_GENERATED_CPP_BY_NAME(EnemyInterface)

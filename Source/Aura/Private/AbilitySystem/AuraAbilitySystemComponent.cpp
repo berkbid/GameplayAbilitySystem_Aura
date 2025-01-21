@@ -1,10 +1,19 @@
 // Copyright Berkeley Bidwell
 
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AuraGameplayTags.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
+#include "AuraGameplayTags.h"
 #include "GameFramework/PlayerState.h"
-#include "Engine/EngineBaseTypes.h"
+//#include "Engine/EngineBaseTypes.h"
+
+#include UE_INLINE_GENERATED_CPP_BY_NAME(AuraAbilitySystemComponent)
+
+enum ENetRole : int;
+
+UAuraAbilitySystemComponent::UAuraAbilitySystemComponent(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+}
 
 void UAuraAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)
 {
@@ -130,14 +139,14 @@ void UAuraAbilitySystemComponent::ClientEffectAppliedTags_Implementation(const F
 FGameplayAbilitySpec* UAuraAbilitySystemComponent::FindAbilityForTag(const FGameplayTag& InTag)
 {
 	return GetActivatableAbilities().FindByPredicate([InTag](const FGameplayAbilitySpec& AbilitySpec)
-		{ return AbilitySpec.DynamicAbilityTags.HasTagExact(InTag); });
+		{ return AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InTag); });
 }
 
 void UAuraAbilitySystemComponent::PrintNetModeInfo() const
 {
 	const AActor* ActorOwner = GetOwner();
 	const FString NetModeString = GetNetMode() < NM_Client ? TEXT("Server Net Mode") : TEXT("Client Net Mode");
-	const ENetRole LocalRole = GetOwner()->GetLocalRole();
+	const ENetRole LocalRole = ActorOwner->GetLocalRole();
 	const APlayerState* PSOwner = Cast<APlayerState>(ActorOwner);
 	const FString OwnerName = PSOwner ? PSOwner->GetPlayerName() : ActorOwner->GetName();
 	

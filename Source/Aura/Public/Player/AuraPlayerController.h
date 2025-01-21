@@ -19,7 +19,9 @@ class UAuraAbilitySystemComponent;
 class USplineComponent;
 
 /**
- * 
+ * AAuraPlayerController
+ *
+ *	The base player controller class used by this project.
  */
 UCLASS()
 class AURA_API AAuraPlayerController : public APlayerController
@@ -27,7 +29,7 @@ class AURA_API AAuraPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
-	AAuraPlayerController();
+	AAuraPlayerController(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	UFUNCTION(BlueprintCallable, Category = "Aura|PlayerController")
 	AAuraHUD* GetAuraHud() const;

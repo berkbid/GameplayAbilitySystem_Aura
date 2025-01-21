@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "AuraAbilitySystemLibrary.generated.h"
 
 class UAttributeMenuWidgetController;
 class UHUDWidgetController;
+class UObject;
 
 /**
  * 

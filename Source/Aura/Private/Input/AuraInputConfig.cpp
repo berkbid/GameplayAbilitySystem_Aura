@@ -2,6 +2,8 @@
 
 #include "Input/AuraInputConfig.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(AuraInputConfig)
+
 const UInputAction* UAuraInputConfig::FindAbilityInputActionForTag(const FGameplayTag& InputTag, bool bLogNotFound) const
 {
 	if (const FAuraInputAction* FoundInputAction = AbilityInputActions.FindByPredicate([InputTag](const FAuraInputAction& AuraInputAction)
