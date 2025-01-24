@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "UObject/NoExportTypes.h"
 #include "AuraWidgetController.generated.h"
 
 class APlayerController;
@@ -36,9 +35,12 @@ struct FWidgetControllerParams
 };
 
 /**
- * Responsible for getting data and broadcasting for widgets to listen to
+ * UAuraWidgetController
+ *
+ * Base class for all Widget Controllers.
+ * Responsible for getting data and broadcasting for widgets to listen to.
  */
-UCLASS(BlueprintType, Blueprintable)
+UCLASS(Abstract, BlueprintType, Blueprintable)
 class AURA_API UAuraWidgetController : public UObject
 {
 	GENERATED_BODY()

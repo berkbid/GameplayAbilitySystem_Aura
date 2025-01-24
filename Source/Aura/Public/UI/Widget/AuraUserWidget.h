@@ -2,14 +2,15 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "AuraUserWidget.generated.h"
+
+class UObject;
 
 /**
  * Knows about AuraWidgetController
  */
-UCLASS(Abstract)
+UCLASS(Abstract, meta = (DisableNativeTick))
 class AURA_API UAuraUserWidget : public UUserWidget
 {
 	GENERATED_BODY()

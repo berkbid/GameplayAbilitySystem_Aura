@@ -15,7 +15,7 @@ struct FWidgetControllerParams;
 /**
  * This class seems to only exist on local controller
  */
-UCLASS()
+UCLASS(Config = Game)
 class AURA_API AAuraHUD : public AHUD
 {
 	GENERATED_BODY()

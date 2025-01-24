@@ -13,7 +13,9 @@
 				"GameplayAbilities",
 				"UMG",
 				"CoreUObject",
-				"EnhancedInput"
+				"EnhancedInput",
+				"CommonGame",
+				"ModularGameplayActors"
 			]
 		}
 	],
@@ -63,6 +65,14 @@
 			"Enabled": true
 		},
 		{
+			"Name": "CommonGame",
+			"Enabled": true
+		},
+		{
+			"Name": "CommonUI",
+			"Enabled": true
+		},
+		{
 			"Name": "OnlineFramework",
 			"Enabled": true
 		},
@@ -89,7 +99,11 @@
 		{
 			"Name": "ModularGameplay",
 			"Enabled": true
-		},		
+		},
+		{
+			"Name": "ModularGameplayActors",
+			"Enabled": true
+		},
 		{
 			"Name": "AuraTests",
 			"Enabled": true

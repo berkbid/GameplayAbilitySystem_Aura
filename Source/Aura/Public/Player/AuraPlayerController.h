@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "GameFramework/PlayerController.h"
+#include "CommonPlayerController.h"
 #include "GameplayTagContainer.h"
 #include "AuraPlayerController.generated.h"
 
@@ -24,7 +24,7 @@ class USplineComponent;
  *	The base player controller class used by this project.
  */
 UCLASS()
-class AURA_API AAuraPlayerController : public APlayerController
+class AURA_API AAuraPlayerController : public ACommonPlayerController
 {
 	GENERATED_BODY()
 
