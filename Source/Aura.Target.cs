@@ -21,7 +21,7 @@ public class AuraTarget : TargetRules
 	{
 		ILogger Logger = Target.Logger;
 		
-		Target.DefaultBuildSettings = BuildSettingsVersion.Latest;
+		Target.DefaultBuildSettings = BuildSettingsVersion.V5;
 		Target.IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
 		
 		bool bIsTest = Target.Configuration == UnrealTargetConfiguration.Test;
