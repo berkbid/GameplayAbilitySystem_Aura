@@ -87,8 +87,12 @@ void AAuraCharacter::InitAbilityActorInfo()
 	
 	AbilitySystemComponent->InitAbilityActorInfo(AuraPlayerState, this);
 
+	// This is where course does HUD->InitHUD(), but we are doing that in player controller instead
+
+	
 	// Setting initial attribute values using a gameplay effect
 	// Technically only server needs to set this as the values will be replicated down to client
+	// The course does not do this authority check here
 	if (HasAuthority())
 	{
 		InitializeDefaultAttributes();

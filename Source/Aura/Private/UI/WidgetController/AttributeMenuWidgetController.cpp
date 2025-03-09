@@ -21,7 +21,7 @@ void UAttributeMenuWidgetController::BindCallBacksToDependencies()
 	const UAuraAttributeSet* AS = CastChecked<UAuraAttributeSet>(WidgetControllerParams.AttributeSet);
 	check(WidgetControllerParams.AbilitySystemComponent);
 
-	// For each gameplay attribute, bind to it's value changing, then broadcast the attribute info using the tag and the new value
+	// For each gameplay attribute, bind to its value changing, then broadcast the attribute info using the tag and the new value
 	for (const TPair<FGameplayTag, FGameplayAttribute>& Pair : AS->TagsToAttributes)
 	{
 		WidgetControllerParams.AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(Pair.Value).AddLambda(

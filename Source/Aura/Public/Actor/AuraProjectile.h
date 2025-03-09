@@ -3,6 +3,7 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
+#include "GameplayEffectTypes.h"
 #include "AuraProjectile.generated.h"
 
 namespace EEndPlayReason { enum Type : int; }
@@ -16,6 +17,9 @@ class UAudioComponent;
 class UObject;
 struct FHitResult;
 
+/**
+ * Base class for projectile actor such as Fireball
+ */
 UCLASS(Blueprintable, BlueprintType)
 class AURA_API AAuraProjectile : public AActor
 {
@@ -23,6 +27,9 @@ class AURA_API AAuraProjectile : public AActor
 	
 public:	
 	AAuraProjectile();
+
+	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
+	FGameplayEffectSpecHandle DamageEffectSpecHandle;
 	
 protected:
 	virtual void BeginPlay() override;

@@ -6,6 +6,7 @@
 #include "AuraGA_CastProjectile.generated.h"
 
 class AAuraProjectile;
+class UGameplayEffect;
 class UObject;
 
 /**
@@ -31,9 +32,12 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Projectile")
 	void UpdateTargetLocation(const FVector& InTargetLocation);
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintreadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AAuraProjectile> AuraProjectileClass;
-
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TSubclassOf<UGameplayEffect> DamageEffectClass;
+	
 	/** Target location from mouse target data when activating ability */
 	UPROPERTY(BlueprintReadOnly)
 	FVector TargetLocation = FVector::ZeroVector;

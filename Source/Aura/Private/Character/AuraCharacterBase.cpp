@@ -19,11 +19,12 @@ AAuraCharacterBase::AAuraCharacterBase(const FObjectInitializer& ObjectInitializ
 	
 	// Set capsule to ignore collision with camera channel
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-
+	// Mesh handles overlaps, disable capsule overlap so there is no double overlap events
+	GetCapsuleComponent()->SetGenerateOverlapEvents(false);
+	
 	// Set mesh to ignore collision with camera channel
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-		
-	// Overlap with projectiles
+	// Set mesh to Overlap with projectiles
 	GetMesh()->SetCollisionResponseToChannel(ECC_Projectile, ECR_Overlap);
 	// Needs to generate overlap events for projectile to overlap
 	GetMesh()->SetGenerateOverlapEvents(true);

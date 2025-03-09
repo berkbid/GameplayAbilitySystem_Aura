@@ -1,6 +1,8 @@
 // Copyright Berkeley Bidwell
 
 #include "Actor/AuraProjectile.h"
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/AudioComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
@@ -75,9 +77,16 @@ void AAuraProjectile::Destroyed()
 
 void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT("AuraProjectile::OnSphereOverlap - %s, %s overlap with %s"), HasAuthority() ? TEXT("Authority") : TEXT("Not Authority"),
+	UE_LOG(LogTemp, Warning, TEXT("AuraProjectile::OnSphereOverlap - %s, %s overlap with component %s, and actor: %s"), HasAuthority() ? TEXT("Authority") : TEXT("Not Authority"),
 																OverlappedComponent ? *OverlappedComponent->GetName() : TEXT("NONE"),
-																OtherComp ? *OtherComp->GetName() : TEXT("NONE"));
+																OtherComp ? *OtherComp->GetName() : TEXT("NONE"),
+																OtherActor ? *OtherActor->GetName() : TEXT("NONE"));
+	if (OtherActor == GetInstigator())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Overlapped with instigator actor, doing nothing."));
+		return;
+	}
+	
 	if (!bPlayedDestroyedEffects)
 	{
 		PlayDestroyEffects();
@@ -86,12 +95,20 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 	// Only server should destroy
 	if (HasAuthority())
 	{
+		// Pass gameplay effect to other actor
+		if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor))
+		{
+			if (DamageEffectSpecHandle.Data.IsValid())
+			{
+				if (const FGameplayEffectSpec* EffectSpec = DamageEffectSpecHandle.Data.Get())
+				{
+					TargetASC->ApplyGameplayEffectSpecToSelf(*EffectSpec);
+				}
+			}
+		}
+		
 		Destroy();
 	}
-	// else
-	// {
-	// 	bPlayedDestroyedEffects = true;
-	// }
 }
 
 void AAuraProjectile::PlayDestroyEffects()

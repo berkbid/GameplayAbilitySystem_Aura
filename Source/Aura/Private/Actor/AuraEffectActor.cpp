@@ -5,9 +5,6 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 
-//#include "AbilitySystemInterface.h"
-//#include "AbilitySystem/AuraAttributeSet.h"
-
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraEffectActor)
 
 AAuraEffectActor::AAuraEffectActor()
@@ -94,7 +91,7 @@ void AAuraEffectActor::OnEndOverlap(AActor* TargetActor)
 		ApplyEffectToTarget(TargetActor, InstantGameplayEffectClass);
 	}
 	
-	if (DurationEffectApplicationPolicy == EEffectApplicationPolicy::ApplyOnOverlap)
+	if (DurationEffectApplicationPolicy == EEffectApplicationPolicy::ApplyOnEndOverlap)
 	{
 		ApplyEffectToTarget(TargetActor, DurationGameplayEffectClass);
 	}

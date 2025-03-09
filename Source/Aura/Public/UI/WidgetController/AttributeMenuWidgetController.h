@@ -36,6 +36,7 @@ protected:
 	TObjectPtr<UAttributeInfo> AttributeInfo;
 
 private:
-	/** Gets the attribute info for a given attribute tag, and populates the value field with the gameplay attribute, then broadcasts the info */
+	/** Gets the attribute info for a given attribute tag, and populates the value field with the gameplay attribute,
+	 * then broadcasts the info */
 	void BroadcastAttributeInfo(const FGameplayTag& AttributeTag, const FGameplayAttribute& Attribute) const;
 };

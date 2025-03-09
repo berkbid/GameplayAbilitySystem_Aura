@@ -2,6 +2,9 @@
 
 #include "Character/AuraEnemy.h"
 #include "Components/CapsuleComponent.h"
+#include "UI/Component/HealthBarWidgetComponent.h"
+#include "UI/WidgetController/EnemyWidgetController.h"
+#include "UI/Widget/AuraUserWidget.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Aura/Aura.h"
@@ -11,6 +14,10 @@
 AAuraEnemy::AAuraEnemy(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	// Create widget component for health bar and attach to capsule
+	HealthBar = CreateDefaultSubobject<UHealthBarWidgetComponent>(TEXT("HealthBar"));
+	HealthBar->SetupAttachment(GetCapsuleComponent());
+	
 	// Could use mesh if we want to for cursor over events
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	
@@ -18,7 +25,8 @@ AAuraEnemy::AAuraEnemy(const FObjectInitializer& ObjectInitializer)
 	// Can we set this in constructor of aura ability system component?
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
-	
+
+	// Apparently create default subobject can be used for regular objects that aren't components
 	AttributeSet = CreateDefaultSubobject<UAuraAttributeSet>("AttributeSet");
 
 	// Set stencil values for highlight post process
@@ -33,12 +41,45 @@ void AAuraEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 	
-/*
-	// This seems to not even be necessary, ASC automatically inits this with correct owner/avatar on initializecomponent
+	InitAbilityActorInfo();
+
+	// Set the widget controller on the health bar component's widget
+	if (UAuraUserWidget* HealthBarAuraUserWidget = Cast<UAuraUserWidget>(HealthBar->GetUserWidgetObject()))
+	{
+		HealthBarAuraUserWidget->SetWidgetController(GetEnemyWidgetController());
+	}
+}
+
+void AAuraEnemy::InitAbilityActorInfo()
+{
 	check(AbilitySystemComponent);
-	// All clients and server are in here
+
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
-*/
+	
+	// Only doing this as server (values get replicated to clients), course does not do this check
+	if (HasAuthority())
+	{
+		InitializeDefaultAttributes();
+	}
+}
+
+UEnemyWidgetController* AAuraEnemy::GetEnemyWidgetController()
+{
+	if (!EnemyWidgetController)
+	{
+		checkf(EnemyWidgetControllerClass, TEXT("Enemy missing enemy widget controller class reference! Please fill out B_EnemyBase"));
+		
+		EnemyWidgetController = NewObject<UEnemyWidgetController>(this, EnemyWidgetControllerClass);
+
+		FWidgetControllerParams WidgetParams;
+		WidgetParams.AbilitySystemComponent = AbilitySystemComponent;
+		WidgetParams.AttributeSet = AttributeSet;
+		WidgetParams.PlayerState = GetPlayerState();
+		
+		EnemyWidgetController->SetWidgetControllerParams(WidgetParams);
+	}
+	
+	return EnemyWidgetController;
 }
 
 void AAuraEnemy::NotifyActorBeginCursorOver()

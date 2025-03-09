@@ -1,6 +1,7 @@
 // Copyright Berkeley Bidwell
 
 #include "AbilitySystem/Abilities/AuraGA_CastProjectile.h"
+#include "AbilitySystemComponent.h"
 #include "Actor/AuraProjectile.h"
 #include "Interaction/CombatInterface.h"
 
@@ -24,7 +25,7 @@ bool UAuraGA_CastProjectile::CanActivateAbility(const FGameplayAbilitySpecHandle
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags,
 	const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
 {
-	return Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags);
+	return Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags);                    
 }
 
 void UAuraGA_CastProjectile::EndAbility(const FGameplayAbilitySpecHandle Handle,
@@ -77,8 +78,11 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 	
 	// TODO: If server draws debug sphere will client see it?
 	DrawDebugSphere(GetWorld(), SocketLocation, 20, 30, FColor::Yellow, false, 5.f);
-	
+
+	// TODO: If the projectiletargetlocation is further than the socket location, use socket location, else use avatar actor location
+	//FRotator Rotation = (ProjectileTargetLocation - AvatarActor->GetActorLocation()).Rotation();
 	FRotator Rotation = (ProjectileTargetLocation - SocketLocation).Rotation();
+	
 	// Parallel to ground
 	Rotation.Pitch = 0.f;
 	
@@ -96,7 +100,18 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 
 	if (IsValid(Projectile))
 	{
-		// TODO: Give projectile gameplay effect spec for causing damage
+		if (!ensure(DamageEffectClass))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Gameplay Ability for projectile missing damage effect class for damage gameplay effect"));
+		}
+		
+		
+		if (const UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo())
+		//if (const UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetAvatarActorFromActorInfo()))
+		{
+			// Give projectile gameplay effect spec for causing damage
+			Projectile->DamageEffectSpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), SourceASC->MakeEffectContext());
+		}
 		
 		
 		// Finish spawning projectile from deferred spawn

@@ -76,7 +76,7 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	Super::PostGameplayEffectExecute(Data);
 
 	// Access to lots of data post gameplay effect execute
-	FEffectProperties Props(Data);
+	FEffectProperties EffectProperties(Data);
 
 	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
 	{
@@ -84,6 +84,11 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 		const float ClampedHealth = FMath::Clamp(GetHealth(), 0.f, GetMaxHealth());
 		//UE_LOG(LogTemp, Warning, TEXT("Post GE health value: %f, setting health clamped: %f"), GetHealth(), ClampedHealth);
 		SetHealth(ClampedHealth);
+		
+		if (EffectProperties.TargetAvatarActor)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Changed health on %s, Health: %f"), *EffectProperties.TargetAvatarActor->GetName(), GetHealth());
+		}
 	}
 	else if (Data.EvaluatedData.Attribute == GetManaAttribute())
 	{
