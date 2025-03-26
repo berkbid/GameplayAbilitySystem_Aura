@@ -4,6 +4,7 @@
 
 #include "Character/AuraCharacterBase.h"
 #include "Interaction/EnemyInterface.h"
+#include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "AuraEnemy.generated.h"
 
 class UEnemyWidgetController;
@@ -41,11 +42,17 @@ protected:
 	
 	virtual void InitAbilityActorInfo() override;
 
+	// Override to initialize default attributes using aura ability system library
+	virtual void InitializeDefaultAttributes() const override;
+	
 protected:
 	// Only server needs to know level of AI enemies, so not replicated
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class Defaults")
 	int32 Level = 1;
-
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Character Class Defaults")
+	ECharacterClass CharacterClass = ECharacterClass::Warrior;
+	
 	/** Class for enemy widget controller */
 	UPROPERTY(EditDefaultsOnly, Category="UI")
 	TSubclassOf<UEnemyWidgetController> EnemyWidgetControllerClass;

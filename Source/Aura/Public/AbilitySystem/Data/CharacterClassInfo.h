@@ -1,0 +1,53 @@
+// Copyright Berkeley Bidwell
+
+#pragma once
+
+#include "Engine/DataAsset.h"
+#include "CharacterClassInfo.generated.h"
+
+class UObject;
+class UGameplayEffect;
+
+UENUM(BlueprintType)
+enum class ECharacterClass : uint8
+{
+	Warrior,
+	Ranger,
+	Elementalist
+};
+
+USTRUCT(BlueprintType)
+struct FCharacterClassDefaultInfo
+{
+	GENERATED_BODY()
+
+	/** Gameplay effect to apply primary attributes */
+	UPROPERTY(EditDefaultsOnly, Category = "Class Defaults")
+	TSubclassOf<UGameplayEffect> PrimaryAttributes;
+	
+};
+
+/**
+ * 
+ */
+UCLASS()
+class AURA_API UCharacterClassInfo : public UDataAsset
+{
+	GENERATED_BODY()
+
+public:
+	UFUNCTION(BlueprintPure, Category = "Common Class Defaults")
+	FCharacterClassDefaultInfo GetClassDefaultInfo(ECharacterClass CharacterClass) const;
+	
+public:
+	/** Gameplay effect to apply secondary attributes */
+	UPROPERTY(EditDefaultsOnly, Category = "Common Class Defaults")
+	TSubclassOf<UGameplayEffect> SecondaryAttributes;
+	
+	/** Gameplay effect to apply vital attributes */
+	UPROPERTY(EditDefaultsOnly, Category = "Common Class Defaults")
+	TSubclassOf<UGameplayEffect> VitalAttributes;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Character Class Defaults")
+	TMap<ECharacterClass, FCharacterClassDefaultInfo> CharacterClassInformation;
+};

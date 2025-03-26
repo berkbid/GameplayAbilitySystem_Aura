@@ -7,6 +7,7 @@
 
 class AActor;
 class UObject;
+class UCharacterClassInfo;
 
 /**
  * AAuraGameModeBase
@@ -20,5 +21,9 @@ class AURA_API AAuraGameModeBase : public AModularGameModeBase
 	
 public:
 	AAuraGameModeBase(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+
+public:
+	UPROPERTY(EditDefaultsOnly, Category = "Character Class Defaults")
+	TObjectPtr<UCharacterClassInfo> CharacterClassInfo;
 	
 };

@@ -1,9 +1,14 @@
 // Copyright Berkeley Bidwell
 
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
+
+#include "AbilitySystemComponent.h"
+#include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "Player/AuraPlayerState.h"
 #include "GameFramework/PlayerController.h"
 #include "Engine/World.h"
+#include "Game/AuraGameModeBase.h"
+#include "Kismet/GameplayStatics.h"
 #include "UI/HUD/AuraHUD.h"
 #include "UI/WidgetController/AuraWidgetController.h"
 
@@ -59,4 +64,35 @@ UAttributeMenuWidgetController* UAuraAbilitySystemLibrary::GetAttributeMenuWidge
 	
 	UE_LOG(LogTemp, Warning, TEXT("Failed to get attribute menu widget controller"));
 	return nullptr;
+}
+
+void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* WorldContextObject, ECharacterClass CharacterClass, float CharacterLevel, UAbilitySystemComponent* ASC)
+{
+	checkf(ASC, TEXT("Failed to initialize default attributes, null ASC."));
+	
+	AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
+	if (UCharacterClassInfo* ClassInfo = AuraGameMode ? AuraGameMode->CharacterClassInfo : nullptr)
+	{
+		AActor* AvatarActor = ASC->GetAvatarActor();
+
+		// Set the source object on the effect context, using same effect context for each gameplay effect. Course creates separate ones.
+		FGameplayEffectContextHandle EffectContextHandle = ASC->MakeEffectContext();
+		EffectContextHandle.AddSourceObject(AvatarActor);
+		
+		// Get class default info for primary attributes
+		const FCharacterClassDefaultInfo& ClassDefaultInfo = ClassInfo->GetClassDefaultInfo(CharacterClass);
+
+		// Apply primary attributes
+		const FGameplayEffectSpecHandle PrimaryAttributesSpecHandle = ASC->MakeOutgoingSpec(ClassDefaultInfo.PrimaryAttributes, CharacterLevel, EffectContextHandle);
+		PrimaryAttributesSpecHandle.Data.Get()->GetContext().AddSourceObject(AvatarActor);
+		ASC->ApplyGameplayEffectSpecToSelf(*PrimaryAttributesSpecHandle.Data.Get());
+
+		// Apply secondary attributes
+		const FGameplayEffectSpecHandle SecondaryAttributesSpecHandle = ASC->MakeOutgoingSpec(ClassInfo->SecondaryAttributes, CharacterLevel, EffectContextHandle);
+		ASC->ApplyGameplayEffectSpecToSelf(*SecondaryAttributesSpecHandle.Data.Get());
+
+		// Apply vital attributes
+		const FGameplayEffectSpecHandle VitalAttributesSpecHandle = ASC->MakeOutgoingSpec(ClassInfo->VitalAttributes, CharacterLevel, EffectContextHandle);
+		ASC->ApplyGameplayEffectSpecToSelf(*VitalAttributesSpecHandle.Data.Get());
+	}
 }

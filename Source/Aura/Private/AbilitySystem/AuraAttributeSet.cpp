@@ -96,6 +96,23 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 		//UE_LOG(LogTemp, Warning, TEXT("Post GE Mana value: %f, setting Mana clamped: %f"), GetMana(), ClampedMana);
 		SetMana(ClampedMana);
 	}
+	
+	// If we are getting a changed incoming damage (meta attribute)
+	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute())
+	{
+		// Use the meta attribute value, then consume the data and zero it out
+		const float LocalIncomingDamage = GetIncomingDamage();
+		SetIncomingDamage(0.f);
+
+		if (LocalIncomingDamage > 0.f)
+		{
+			const float NewHealth = GetHealth() - LocalIncomingDamage;
+			SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
+
+			const bool bFatalDamage = NewHealth <= 0.f;
+			
+		}
+	}
 }
 
 UAuraAbilitySystemComponent* UAuraAttributeSet::GetAuraAbilitySystemComponent() const

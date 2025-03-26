@@ -37,10 +37,21 @@ protected:
 	/** Initializes the ability system component with owner actor/avatar */
 	virtual void InitAbilityActorInfo() override;
 	
+	virtual void InitializeDefaultAttributes() const override;
+	
 	UPROPERTY(EditAnywhere, Category = "Components")
 	TObjectPtr<USpringArmComponent> SpringArm;
 
 	UPROPERTY(EditAnywhere, Category = "Components")
 	TObjectPtr<UCameraComponent> Camera;
+
+	// Could potentially move these 3 gameplay effects to the base class if we wanted enemies to utilize them
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attributes")
+	TSubclassOf<UGameplayEffect> DefaultPrimaryAttributesClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attributes")
+	TSubclassOf<UGameplayEffect> DefaultSecondaryAttributesClass;
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attributes")
+	TSubclassOf<UGameplayEffect> DefaultVitalAttributesClass;
 };

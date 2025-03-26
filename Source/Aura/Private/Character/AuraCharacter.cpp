@@ -98,3 +98,11 @@ void AAuraCharacter::InitAbilityActorInfo()
 		InitializeDefaultAttributes();
 	}
 }
+
+void AAuraCharacter::InitializeDefaultAttributes() const
+{
+	ApplyGameplayEffectToSelf(DefaultPrimaryAttributesClass, 1.f);
+	ApplyGameplayEffectToSelf(DefaultSecondaryAttributesClass, 1.f);
+	// Set vital after secondary because we want to set health/mana equal to max health/mana
+	ApplyGameplayEffectToSelf(DefaultVitalAttributesClass, 1.f);
+}

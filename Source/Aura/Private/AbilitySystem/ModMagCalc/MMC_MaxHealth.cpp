@@ -42,6 +42,10 @@ float UMMC_MaxHealth::CalculateBaseMagnitude_Implementation(const FGameplayEffec
 	{
 		PlayerLevel = CombatInterface->GetPlayerLevel();
 	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Gameplay effect spec missing source object to retrieve player level!"));
+	}
 	UE_LOG(LogTemp, Warning, TEXT("Recalculating Max Health based on vigor and player level"));
 	return 80.f + Vigor * 2.5f + 10.f * PlayerLevel;
 }

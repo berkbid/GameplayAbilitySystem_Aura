@@ -40,7 +40,7 @@ protected:
 	virtual void InitAbilityActorInfo() {};
 
 	/** Call to set initial primary and secondary attribute values */
-	void InitializeDefaultAttributes() const;
+	virtual void InitializeDefaultAttributes() const {};
 	
 	void ApplyGameplayEffectToSelf(const TSubclassOf<UGameplayEffect>& InGameplayEffectClass, float Level) const;
 
@@ -57,15 +57,6 @@ protected:
 
 	UPROPERTY(Transient, BlueprintReadOnly)
 	TObjectPtr<UAttributeSet> AttributeSet;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attributes")
-	TSubclassOf<UGameplayEffect> DefaultPrimaryAttributesClass;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attributes")
-	TSubclassOf<UGameplayEffect> DefaultSecondaryAttributesClass;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attributes")
-	TSubclassOf<UGameplayEffect> DefaultVitalAttributesClass;
 
 private:
 	UPROPERTY(EditAnywhere, Category="Abilities")
