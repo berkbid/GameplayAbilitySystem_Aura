@@ -1,7 +1,6 @@
 // Copyright Berkeley Bidwell
 
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
-
 #include "AbilitySystemComponent.h"
 #include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "Player/AuraPlayerState.h"
@@ -69,9 +68,8 @@ UAttributeMenuWidgetController* UAuraAbilitySystemLibrary::GetAttributeMenuWidge
 void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* WorldContextObject, ECharacterClass CharacterClass, float CharacterLevel, UAbilitySystemComponent* ASC)
 {
 	checkf(ASC, TEXT("Failed to initialize default attributes, null ASC."));
-	
-	AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
-	if (UCharacterClassInfo* ClassInfo = AuraGameMode ? AuraGameMode->CharacterClassInfo : nullptr)
+
+	if (UCharacterClassInfo* ClassInfo = GetCharacterClassInfo(WorldContextObject))
 	{
 		AActor* AvatarActor = ASC->GetAvatarActor();
 
@@ -95,4 +93,26 @@ void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* World
 		const FGameplayEffectSpecHandle VitalAttributesSpecHandle = ASC->MakeOutgoingSpec(ClassInfo->VitalAttributes, CharacterLevel, EffectContextHandle);
 		ASC->ApplyGameplayEffectSpecToSelf(*VitalAttributesSpecHandle.Data.Get());
 	}
+}
+
+void UAuraAbilitySystemLibrary::GiveCommonStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC)
+{
+	checkf(ASC, TEXT("Failed to initialize default attributes, null ASC."));
+	
+	if (UCharacterClassInfo* ClassInfo = GetCharacterClassInfo(WorldContextObject))
+	{
+		for (const TSubclassOf<UGameplayAbility>& AbilityClass : ClassInfo->CommonAbilities)
+		{
+			// Create ability spec from class
+			const FGameplayAbilitySpec AbilitySpec(AbilityClass, 1);
+			// Give the ability to the ASC
+			ASC->GiveAbility(AbilitySpec);
+		}
+	}
+}
+
+UCharacterClassInfo* UAuraAbilitySystemLibrary::GetCharacterClassInfo(const UObject* WorldContextObject)
+{
+	AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
+	return AuraGameMode ? AuraGameMode->CharacterClassInfo : nullptr;
 }

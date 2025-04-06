@@ -6,7 +6,9 @@
 #include "GameplayTagContainer.h"
 #include "AuraPlayerController.generated.h"
 
+class UDamageTextWidgetComponent;
 class AAuraHUD;
+class ACharacter;
 class UObject;
 class AHUD;
 class IEnemyInterface;
@@ -36,6 +38,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Aura|PlayerController")
 	UAuraAbilitySystemComponent* GetASC();
+
+	UFUNCTION(Client, Reliable)
+	void ShowDamageNumber(float DamageAmount, ACharacter* TargetCharacter);
 	
 protected:
 	virtual void BeginPlay() override;
@@ -106,5 +111,8 @@ private:
 	
 	UPROPERTY(Transient, VisibleAnywhere)
 	TObjectPtr<USplineComponent> Spline;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TSubclassOf<UDamageTextWidgetComponent> DamageTextComponentClass;
 	
 };

@@ -24,7 +24,7 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
-	// ~ Begin IAbilitySystemInterface.
+	// ~ Begin IAbilitySystemInterface
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	// ~ End IAbilitySystemInterface
 
@@ -35,7 +35,7 @@ public:
 	//void SetLevel(int32 NewLevel) {Level = NewLevel; }
 	
 	// ~ Begin ICombatInterface
-	virtual int32 GetPlayerLevel() override { return Level; }
+	virtual int32 GetPlayerLevel() const override { return Level; }
 	// ~ End ICombatInterface
 	
 protected:

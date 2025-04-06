@@ -4,6 +4,7 @@
 #include "AbilitySystemComponent.h"
 #include "Actor/AuraProjectile.h"
 #include "Interaction/CombatInterface.h"
+#include "AuraGameplayTags.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraGA_CastProjectile)
 
@@ -109,8 +110,21 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 		if (const UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo())
 		//if (const UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetAvatarActorFromActorInfo()))
 		{
+			// Create spec handle using the GE_Damage
+			const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), SourceASC->MakeEffectContext());
+
+			// Set the damage gameplay tag and damage magnitude KV pair on the spec handle since the GE damage uses "Set by caller" magnitude calculation type
+			const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
+			//UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, GameplayTags.Damage, 50.f);
+
+			// Get the damage multiplier using the Damage scalable float curve
+			const float ScaledDamage = Damage.GetValueAtLevel(GetAbilityLevel());
+			
+			// Set the damage magnitude on the spec handle since the GE uses set by caller for magnitude calculation type
+			SpecHandle.Data.Get()->SetSetByCallerMagnitude(GameplayTags.Damage, ScaledDamage);
+			
 			// Give projectile gameplay effect spec for causing damage
-			Projectile->DamageEffectSpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), SourceASC->MakeEffectContext());
+			Projectile->DamageEffectSpecHandle = SpecHandle;
 		}
 		
 		

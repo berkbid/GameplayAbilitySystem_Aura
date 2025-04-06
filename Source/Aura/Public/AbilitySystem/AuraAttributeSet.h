@@ -159,6 +159,13 @@ public:
 	FGameplayAttributeData Mana;
 	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, Mana);
 
+	/*
+	 * Meta Attributes (non-replicated)
+	 */
+	UPROPERTY(BlueprintReadOnly, Category = "Meta Attributes")
+	FGameplayAttributeData IncomingDamage;
+	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, IncomingDamage);
+	
 protected:
 	/*
 	 * Primary Attributes
@@ -208,16 +215,11 @@ protected:
 	UFUNCTION()
 	void OnRep_Mana(const FGameplayAttributeData& OldMana) const;
 	
-	/*
-	 * Meta Attributes (non-replicated)
-	 */
-	UPROPERTY(BlueprintReadOnly, Category = "Meta Attributes")
-	FGameplayAttributeData IncomingDamage;
-	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, IncomingDamage);
-	
 protected:
 
 
 private:
 	void FillEffectProperties(const FGameplayEffectModCallbackData& Data, FEffectProperties& OutEffectProperties) const;
+
+	void ShowFloatingText(const FEffectProperties& EffectProperties, float Damage) const;
 };

@@ -48,9 +48,6 @@ void AAuraCharacter::PossessedBy(AController* NewController)
 	
 	// Init for server. Only server is in here, not clients
 	InitAbilityActorInfo();
-	
-	// Have server add character abilities
-	AddCharacterAbilities();
 }
 
 void AAuraCharacter::OnRep_PlayerState()
@@ -63,16 +60,6 @@ void AAuraCharacter::OnRep_PlayerState()
 	//UE_LOG(LogTemp, Warning, TEXT("Character: %s, OnRep_PlayerState by local role: %s"), *GetName(), *UEnum::GetValueAsString(LocalRole));
 	//Init for clients. All clients are in here, not server
 	InitAbilityActorInfo();
-}
-
-int32 AAuraCharacter::GetPlayerLevel()
-{
-	if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(GetPlayerState()))
-	{
-		return CombatInterface->GetPlayerLevel();
-	}
-	
-	return 1;
 }
 
 void AAuraCharacter::InitAbilityActorInfo()
@@ -96,6 +83,7 @@ void AAuraCharacter::InitAbilityActorInfo()
 	if (HasAuthority())
 	{
 		InitializeDefaultAttributes();
+		AddCharacterAbilities();
 	}
 }
 
@@ -105,4 +93,14 @@ void AAuraCharacter::InitializeDefaultAttributes() const
 	ApplyGameplayEffectToSelf(DefaultSecondaryAttributesClass, 1.f);
 	// Set vital after secondary because we want to set health/mana equal to max health/mana
 	ApplyGameplayEffectToSelf(DefaultVitalAttributesClass, 1.f);
+}
+
+int32 AAuraCharacter::GetPlayerLevel() const
+{
+	if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(GetPlayerState()))
+	{
+		return CombatInterface->GetPlayerLevel();
+	}
+	
+	return 1;
 }

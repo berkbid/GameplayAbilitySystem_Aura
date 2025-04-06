@@ -5,12 +5,15 @@
 #include "Player/AuraPlayerState.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
+#include "MovieSceneTracksComponentTypes.h"
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "Components/SplineComponent.h"
+#include "GameFramework/Character.h"
 #include "Input/AuraInputComponent.h"
 #include "Interaction/EnemyInterface.h"
+#include "UI/Component/DamageTextWidgetComponent.h"
 #include "UI/HUD/AuraHUD.h"
 #include "UI/WidgetController/AuraWidgetController.h"
 
@@ -307,6 +310,25 @@ UAuraAbilitySystemComponent* AAuraPlayerController::GetASC()
 	}
 
 	return AuraAbilitySystemComponent;
+}
+
+void AAuraPlayerController::ShowDamageNumber_Implementation(float DamageAmount, ACharacter* TargetCharacter)
+{
+	// Only local controller should execute this logic
+	if (!IsLocalController())
+	{
+		return;
+	}
+	
+	if (IsValid(TargetCharacter) && DamageTextComponentClass)
+	{
+		// TODO: Can some of this be done on server only?
+		UDamageTextWidgetComponent* DamageText = NewObject<UDamageTextWidgetComponent>(TargetCharacter, DamageTextComponentClass);
+		DamageText->RegisterComponent();
+		DamageText->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+		DamageText->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+		DamageText->SetDamageText(DamageAmount);
+	}
 }
 
 void AAuraPlayerController::PrintLocalRole(const FString& InMessage) const

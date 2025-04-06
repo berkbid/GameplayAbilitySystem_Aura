@@ -48,6 +48,12 @@ public:
 	FGameplayTag InputTag_2;
 	FGameplayTag InputTag_3;
 	FGameplayTag InputTag_4;
+
+	// Tag for GE set by caller
+	FGameplayTag Damage;
+
+	// Tag to indicate reacting to a hit
+	FGameplayTag Effects_HitReact;
 	
 protected:
 

@@ -8,7 +8,9 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/AuraAttributeSet.h"
+#include "AuraGameplayTags.h"
 #include "Aura/Aura.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraEnemy)
 
@@ -21,6 +23,9 @@ AAuraEnemy::AAuraEnemy(const FObjectInitializer& ObjectInitializer)
 	
 	// Could use mesh if we want to for cursor over events
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+
+	// Synchronize the movement max walk speed with local variable BaseWalkSpeed
+	GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
 	
 	AbilitySystemComponent = CreateDefaultSubobject<UAuraAbilitySystemComponent>("AbilitySystemComponent");
 	// Can we set this in constructor of aura ability system component?
@@ -43,7 +48,13 @@ void AAuraEnemy::BeginPlay()
 	Super::BeginPlay();
 	
 	InitAbilityActorInfo();
-
+	
+	// Bing to when ability system component gameplay tag Effects.HitReact is added or removed
+	const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
+	FOnGameplayEffectTagCountChanged& OnGameplayEffectTagCountChanged =
+		AbilitySystemComponent->RegisterGameplayTagEvent(AuraGameplayTags.Effects_HitReact, EGameplayTagEventType::NewOrRemoved);
+	OnGameplayEffectTagCountChanged.AddUObject(this, &AAuraEnemy::OnHitReactTagCountChanged);
+	
 	// Set the widget controller on the health bar component's widget
 	if (UAuraUserWidget* HealthBarAuraUserWidget = Cast<UAuraUserWidget>(HealthBar->GetUserWidgetObject()))
 	{
@@ -61,12 +72,34 @@ void AAuraEnemy::InitAbilityActorInfo()
 	if (HasAuthority())
 	{
 		InitializeDefaultAttributes();
+		AddCharacterAbilities();
 	}
+}
+
+void AAuraEnemy::AddCharacterAbilities() const
+{
+	// Give startup abilities to the enemies, which are located in CharacterClassInfo
+	UAuraAbilitySystemLibrary::GiveCommonStartupAbilities(this, AbilitySystemComponent);
 }
 
 void AAuraEnemy::InitializeDefaultAttributes() const
 {
 	UAuraAbilitySystemLibrary::InitializeDefaultAttributes(this, CharacterClass, Level, AbilitySystemComponent);
+}
+
+void AAuraEnemy::OnHitReactTagCountChanged(const FGameplayTag GameplayTag, int32 TagCount)
+{
+	// Both server and client are in here
+	
+	bHitReacting = TagCount > 0;
+	GetCharacterMovement()->MaxWalkSpeed = bHitReacting ? 0.f : BaseWalkSpeed;
+
+}
+
+void AAuraEnemy::Die()
+{
+	SetLifeSpan(LifeSpan);
+	Super::Die();
 }
 
 UEnemyWidgetController* AAuraEnemy::GetEnemyWidgetController()

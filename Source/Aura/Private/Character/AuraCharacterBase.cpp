@@ -45,6 +45,43 @@ FVector AAuraCharacterBase::GetCombatSocketLocation()
 	return Weapon->GetSocketLocation(WeaponTipSocketName);
 }
 
+UAnimMontage* AAuraCharacterBase::GetHitReactMontage_Implementation() const
+{
+	return HitReactMontage;
+}
+
+void AAuraCharacterBase::Die()
+{
+	// Called on server
+
+	// Drop weapon
+	Weapon->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
+
+	// Allow clients as well to handle death
+	MulticastHandleDeath();
+}
+
+void AAuraCharacterBase::MulticastHandleDeath_Implementation()
+{
+	// Handle client and server actions for death
+
+	// Ragdoll weapon
+	Weapon->SetSimulatePhysics(true);
+	Weapon->SetEnableGravity(true);
+	Weapon->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+
+	// Ragdoll character mesh
+	GetMesh()->SetSimulatePhysics(true);
+	GetMesh()->SetEnableGravity(true);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	GetMesh()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	
+	// Disable collision on capsule
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	Dissolve();
+}
+
 void AAuraCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -84,5 +121,32 @@ void AAuraCharacterBase::AddCharacterAbilities() const
 	// Have ability system component add abilities
 	UAuraAbilitySystemComponent* ASC = CastChecked<UAuraAbilitySystemComponent>(AbilitySystemComponent);
 	ASC->AddCharacterAbilities(StartupAbilities);
+}
+
+void AAuraCharacterBase::Dissolve()
+{
+	TArray<UMaterialInstanceDynamic*> DynamicMaterialInstances;
 	
+	if (IsValid(BodyDissolveMaterialInstance))
+	{
+		UMaterialInstanceDynamic* DynamicMatInst = UMaterialInstanceDynamic::Create(BodyDissolveMaterialInstance, this);
+		
+		GetMesh()->SetMaterial(0, DynamicMatInst);
+
+		DynamicMaterialInstances.Add(DynamicMatInst);
+	}
+
+	if (IsValid(WeaponDissolveMaterialInstance))
+	{
+		UMaterialInstanceDynamic* DynamicMatInst = UMaterialInstanceDynamic::Create(WeaponDissolveMaterialInstance, this);
+		
+		Weapon->SetMaterial(0, DynamicMatInst);
+		
+		DynamicMaterialInstances.Add(DynamicMatInst);
+	}
+	
+	if (!DynamicMaterialInstances.IsEmpty())
+	{
+		StartDissolveTimeline(DynamicMaterialInstances);
+	}
 }

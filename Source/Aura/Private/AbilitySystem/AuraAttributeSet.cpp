@@ -7,7 +7,10 @@
 #include "GameplayEffectExtension.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/Controller.h"
+#include "Interaction/CombatInterface.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Player/AuraPlayerController.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraAttributeSet)
 
@@ -73,6 +76,8 @@ void UAuraAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, 
 
 void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
+	// Only server is in here
+	
 	Super::PostGameplayEffectExecute(Data);
 
 	// Access to lots of data post gameplay effect execute
@@ -111,6 +116,52 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 
 			const bool bFatalDamage = NewHealth <= 0.f;
 			
+			if (bFatalDamage)
+			{
+				// Call die function on combat interface of target actor if fatal damage
+				if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(EffectProperties.TargetAvatarActor))
+				{
+					CombatInterface->Die();
+				}
+			}
+			else
+			{
+				if (EffectProperties.TargetASC)
+				{
+					// Create tag container with hit react tag
+					FGameplayTagContainer TagContainer;
+					const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
+					TagContainer.AddTag(AuraGameplayTags.Effects_HitReact);
+					
+					// Activate hit react gameplay ability
+					EffectProperties.TargetASC->TryActivateAbilitiesByTag(TagContainer);
+				}
+			}
+
+			ShowFloatingText(EffectProperties, LocalIncomingDamage);
+		}
+	}
+}
+
+void UAuraAttributeSet::ShowFloatingText(const FEffectProperties& EffectProperties, float Damage) const
+{
+	if (EffectProperties.SourceCharacter != EffectProperties.TargetCharacter)
+	{
+		// TODO: This isn't working for client and server
+		//if (AAuraPlayerController* AuraPC = Cast<AAuraPlayerController>(UGameplayStatics::GetPlayerController(EffectProperties.SourceCharacter, 0)))
+		//if (AAuraPlayerController* AuraPC = Cast<AAuraPlayerController>(EffectProperties.SourceController))
+		//if (AAuraPlayerController* AuraPC = Cast<AAuraPlayerController>(EffectProperties.SourceCharacter ? EffectProperties.SourceCharacter->GetController() : nullptr))
+		//{
+		//	AuraPC->ShowDamageNumber(Damage, EffectProperties.TargetCharacter);
+		//}
+
+		// Solution for now, only local controller should execute
+		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+		{
+			if (AAuraPlayerController* AuraPC = Cast<AAuraPlayerController>(It->Get()))
+			{
+				AuraPC->ShowDamageNumber(Damage, EffectProperties.TargetCharacter);
+			}
 		}
 	}
 }
@@ -118,52 +169,6 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 UAuraAbilitySystemComponent* UAuraAttributeSet::GetAuraAbilitySystemComponent() const
 {
 	return Cast<UAuraAbilitySystemComponent>(GetOwningAbilitySystemComponent());
-}
-
-void UAuraAttributeSet::FillEffectProperties(const FGameplayEffectModCallbackData& Data, FEffectProperties& OutEffectProperties) const
-{
-	// Source = causer of the effect, Target = target of the effect (owner of this attribute set)
-	 
-	OutEffectProperties.EffectContextHandle =  Data.EffectSpec.GetContext();
-	OutEffectProperties.SourceASC = OutEffectProperties.EffectContextHandle.GetOriginalInstigatorAbilitySystemComponent();
-	
-	if (OutEffectProperties.SourceASC)
-	{
-		if (OutEffectProperties.SourceASC->AbilityActorInfo.IsValid() && OutEffectProperties.SourceASC->AbilityActorInfo->AvatarActor.IsValid())
-		{
-			// SOURCE INFO
-			OutEffectProperties.SourceAvatarActor = OutEffectProperties.SourceASC->AbilityActorInfo->AvatarActor.Get();
-			OutEffectProperties.SourceController = OutEffectProperties.SourceASC->AbilityActorInfo->PlayerController.IsValid() ? OutEffectProperties.SourceASC->AbilityActorInfo->PlayerController.Get() : nullptr;
-			
-			// Fall back to trying to get controller from pawn if invalid
-			if (!OutEffectProperties.SourceController)
-			{
-				if (const APawn* Pawn = Cast<APawn>(OutEffectProperties.SourceAvatarActor))
-				{
-					OutEffectProperties.SourceController = Pawn->GetController();
-				}
-			}
-			
-			// Get source character
-			if (OutEffectProperties.SourceController)
-			{
-				OutEffectProperties.SourceCharacter = Cast<ACharacter>(OutEffectProperties.SourceController->GetPawn());
-			}
-			//OutEffectProperties.SourceCharacter = Cast<ACharacter>(OutEffectProperties.SourceAvatarActor);
-		}
-	}
-	
-	// TARGET INFO
-		
-	if (Data.Target.AbilityActorInfo.IsValid() && Data.Target.AbilityActorInfo->AvatarActor.IsValid())
-	{
-		OutEffectProperties.TargetAvatarActor = Data.Target.AbilityActorInfo->AvatarActor.Get();
-		OutEffectProperties.TargetController = Data.Target.AbilityActorInfo->PlayerController.IsValid() ? Data.Target.AbilityActorInfo->PlayerController.Get(): nullptr;
-		OutEffectProperties.TargetCharacter = Cast<ACharacter>(OutEffectProperties.TargetAvatarActor);
-		//OutEffectProperties.TargetASC = &Data.Target;
-		//OutEffectProperties.TargetASC = GetOwningAbilitySystemComponent();
-		OutEffectProperties.TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OutEffectProperties.TargetAvatarActor);
-	}
 }
 
 void UAuraAttributeSet::OnRep_Strength(const FGameplayAttributeData& OldStrength) const
@@ -249,6 +254,12 @@ void UAuraAttributeSet::OnRep_MaxMana(const FGameplayAttributeData& OldMaxMana) 
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, MaxMana, OldMaxMana);
 	//UE_LOG(LogTemp, Warning, TEXT("OnRep_MaxMana - Old: %f, New: %f"), OldMaxMana.GetCurrentValue(), MaxMana.GetCurrentValue());
+}
+
+void UAuraAttributeSet::FillEffectProperties(const FGameplayEffectModCallbackData& Data, FEffectProperties& OutEffectProperties) const
+{
+	// Source = causer of the effect, Target = target of the effect (owner of this attribute set)
+	OutEffectProperties = FEffectProperties(Data);
 }
 
 FEffectProperties::FEffectProperties(const FGameplayEffectModCallbackData& Data)
