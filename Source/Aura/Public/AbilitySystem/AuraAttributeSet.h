@@ -221,5 +221,5 @@ protected:
 private:
 	void FillEffectProperties(const FGameplayEffectModCallbackData& Data, FEffectProperties& OutEffectProperties) const;
 
-	void ShowFloatingText(const FEffectProperties& EffectProperties, float Damage) const;
+	void ShowFloatingText(const FEffectProperties& EffectProperties, float Damage, bool bBlockedHit, bool bCriticalHit) const;
 };

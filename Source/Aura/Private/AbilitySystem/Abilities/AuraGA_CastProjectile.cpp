@@ -110,8 +110,19 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 		if (const UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo())
 		//if (const UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetAvatarActorFromActorInfo()))
 		{
+			// Set some extra fields in the effect context handle
+			FGameplayEffectContextHandle EffectContextHandle = SourceASC->MakeEffectContext();
+			EffectContextHandle.SetAbility(this);
+			EffectContextHandle.AddSourceObject(Projectile);
+			TArray<TWeakObjectPtr<AActor>> Actors;
+			Actors.Add(Projectile);
+			EffectContextHandle.AddActors(Actors);
+			FHitResult HitResult;
+			HitResult.Location = ProjectileTargetLocation;
+			EffectContextHandle.AddHitResult(HitResult);
+			
 			// Create spec handle using the GE_Damage
-			const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), SourceASC->MakeEffectContext());
+			const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), EffectContextHandle);
 
 			// Set the damage gameplay tag and damage magnitude KV pair on the spec handle since the GE damage uses "Set by caller" magnitude calculation type
 			const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
