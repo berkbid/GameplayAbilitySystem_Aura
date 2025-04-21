@@ -20,7 +20,5 @@ public:
 	/** Use when giving abilities to character */
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	FGameplayTag StartupInputTag;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Damage")
-	FScalableFloat Damage;
+	
 };

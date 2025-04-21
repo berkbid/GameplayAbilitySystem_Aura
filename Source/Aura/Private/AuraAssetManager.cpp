@@ -19,8 +19,9 @@ UAuraAssetManager& UAuraAssetManager::Get()
 void UAuraAssetManager::StartInitialLoading()
 {
 	Super::StartInitialLoading();
-	
-	FAuraGameplayTags::InitializeNativeGameplayTags();
+
+	// Instead of this, the FAuraGameplayTags::Get() will call this function the first time it is called
+	//FAuraGameplayTags::InitializeNativeGameplayTags();
 
 	// Necessary to use target data in ability tasks (No longer necessary in 5.3+)
 	//UAbilitySystemGlobals::Get().InitGlobalData();

@@ -81,6 +81,8 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 																OverlappedComponent ? *OverlappedComponent->GetName() : TEXT("NONE"),
 																OtherComp ? *OtherComp->GetName() : TEXT("NONE"),
 																OtherActor ? *OtherActor->GetName() : TEXT("NONE"));
+	
+	//if (DamageEffectSpecHandle.Data.IsValid() && DamageEffectSpecHandle.Data.Get()->GetContext().GetEffectCauser() == OtherActor)
 	if (OtherActor == GetInstigator())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Overlapped with instigator actor, doing nothing."));

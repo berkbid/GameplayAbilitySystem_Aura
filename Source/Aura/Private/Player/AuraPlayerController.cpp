@@ -315,18 +315,18 @@ UAuraAbilitySystemComponent* AAuraPlayerController::GetASC()
 void AAuraPlayerController::ShowDamageNumber_Implementation(float DamageAmount, ACharacter* TargetCharacter, bool bBlockedHit, bool bCriticalHit)
 {
 	// Only local controller should execute this logic
-	if (!IsLocalController())
+	if (IsLocalController() && IsValid(TargetCharacter) && IsValid(GetPawn()) && DamageTextComponentClass)
 	{
-		return;
-	}
-	
-	if (IsValid(TargetCharacter) && DamageTextComponentClass)
-	{
-		// TODO: Can some of this be done on server only?
-		UDamageTextWidgetComponent* DamageText = NewObject<UDamageTextWidgetComponent>(TargetCharacter, DamageTextComponentClass);
+		// For some reason, server requires Outer to be GetPawn() when attacking another aura character, not enemies
+		UDamageTextWidgetComponent* DamageText = NewObject<UDamageTextWidgetComponent>(GetPawn(), DamageTextComponentClass);
+		//UDamageTextWidgetComponent* DamageText = NewObject<UDamageTextWidgetComponent>(TargetCharacter, DamageTextComponentClass);
+		
 		DamageText->RegisterComponent();
-		DamageText->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+
+		const bool bAttachSuccess = DamageText->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+		
 		DamageText->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+		
 		DamageText->SetDamageText(DamageAmount, bBlockedHit, bCriticalHit);
 	}
 }

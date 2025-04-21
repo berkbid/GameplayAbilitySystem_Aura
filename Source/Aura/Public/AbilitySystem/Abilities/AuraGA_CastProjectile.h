@@ -2,18 +2,17 @@
 
 #pragma once
 
-#include "AbilitySystem/Abilities/AuraGameplayAbility.h"
+#include "AuraDamageGameplayAbility.h"
 #include "AuraGA_CastProjectile.generated.h"
 
 class AAuraProjectile;
-class UGameplayEffect;
 class UObject;
 
 /**
  * 
  */
 UCLASS()
-class AURA_API UAuraGA_CastProjectile : public UAuraGameplayAbility
+class AURA_API UAuraGA_CastProjectile : public UAuraDamageGameplayAbility
 {
 	GENERATED_BODY()
 	
@@ -34,9 +33,6 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AAuraProjectile> AuraProjectileClass;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TSubclassOf<UGameplayEffect> DamageEffectClass;
 	
 	/** Target location from mouse target data when activating ability */
 	UPROPERTY(BlueprintReadOnly)

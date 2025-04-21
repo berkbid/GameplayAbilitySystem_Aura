@@ -77,8 +77,7 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 	// See AbilityTask_SpawnActor for interesting code
 	const FVector SocketLocation = CombatInterfaceAvatar->GetCombatSocketLocation();
 	
-	// TODO: If server draws debug sphere will client see it?
-	DrawDebugSphere(GetWorld(), SocketLocation, 20, 30, FColor::Yellow, false, 5.f);
+	//DrawDebugSphere(GetWorld(), SocketLocation, 20, 30, FColor::Yellow, false, 5.f);
 
 	// TODO: If the projectiletargetlocation is further than the socket location, use socket location, else use avatar actor location
 	//FRotator Rotation = (ProjectileTargetLocation - AvatarActor->GetActorLocation()).Rotation();
@@ -128,11 +127,15 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 			const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
 			//UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, GameplayTags.Damage, 50.f);
 
-			// Get the damage multiplier using the Damage scalable float curve
-			const float ScaledDamage = Damage.GetValueAtLevel(GetAbilityLevel());
-			
-			// Set the damage magnitude on the spec handle since the GE uses set by caller for magnitude calculation type
-			SpecHandle.Data.Get()->SetSetByCallerMagnitude(GameplayTags.Damage, ScaledDamage);
+			// Allows for multiple damage types
+			for (const TPair<FGameplayTag, FScalableFloat>& Pair : DamageTypes)
+			{
+				// Get the damage multiplier using the Damage scalable float curve
+				const float ScaledDamage = Pair.Value.GetValueAtLevel(GetAbilityLevel());
+				
+				// Set the damage magnitude on the spec handle since the GE uses set by caller for magnitude calculation type
+				SpecHandle.Data.Get()->SetSetByCallerMagnitude(Pair.Key, ScaledDamage);
+			}
 			
 			// Give projectile gameplay effect spec for causing damage
 			Projectile->DamageEffectSpecHandle = SpecHandle;

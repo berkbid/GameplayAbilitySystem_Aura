@@ -63,7 +63,6 @@ protected:
 protected:
 	UPROPERTY(EditDefaultsOnly)
 	float AutoRunAcceptanceRadius = 50.f;
-	
 private:
 	void AuraMove(const FInputActionValue& InputActionValue);
 	void ShiftPressed() { bShiftKeyDown = true; };
