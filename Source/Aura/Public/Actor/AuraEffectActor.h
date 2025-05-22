@@ -49,8 +49,11 @@ protected:
 	
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Applied Effects")
-	bool bDestroyOnEffectRemoval = false;
-
+	bool bDestroyOnEffectApplication = false;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Applied Effects")
+	bool bApplyEffectsToEnemies = false;
+	
 	UPROPERTY(BlueprintReadOnly, Category="Applied Effects")
 	TMap<TObjectPtr<UAbilitySystemComponent>, FActiveGameplayEffectHandle> ActiveEffectHandles;
 	

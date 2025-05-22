@@ -4,6 +4,7 @@
 #include "Components/SceneComponent.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "Aura/Aura.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraEffectActor)
 
@@ -26,6 +27,12 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, TSubclassOf<UGam
 {
 	// Only execute on server ?
 	if (!HasAuthority())
+	{
+		return;
+	}
+	
+	// Only apply effect if supposed to
+	if (TargetActor && TargetActor->ActorHasTag(ACTOR_TAG_ENEMY) && !bApplyEffectsToEnemies)
 	{
 		return;
 	}
@@ -57,7 +64,8 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, TSubclassOf<UGam
 					
 					ActiveEffectHandles.Add(AbilitySystemComponent, ActiveEffectHandle);
 				}
-				else if (bDestroyOnEffectRemoval)
+				// Non-infinite GE duration policies can be destroyed only
+				else if (bDestroyOnEffectApplication)
 				{
 					Destroy();
 				}
@@ -68,6 +76,11 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, TSubclassOf<UGam
 
 void AAuraEffectActor::OnOverlap(AActor* TargetActor)
 {
+	if (TargetActor && TargetActor->ActorHasTag(ACTOR_TAG_ENEMY) && !bApplyEffectsToEnemies)
+	{
+		return;
+	}
+	
 	if (InstantEffectApplicationPolicy == EEffectApplicationPolicy::ApplyOnOverlap)
 	{
 		ApplyEffectToTarget(TargetActor, InstantGameplayEffectClass);
@@ -86,6 +99,11 @@ void AAuraEffectActor::OnOverlap(AActor* TargetActor)
 
 void AAuraEffectActor::OnEndOverlap(AActor* TargetActor)
 {
+	if (TargetActor && TargetActor->ActorHasTag(ACTOR_TAG_ENEMY) && !bApplyEffectsToEnemies)
+	{
+		return;
+	}
+	
 	if (InstantEffectApplicationPolicy == EEffectApplicationPolicy::ApplyOnEndOverlap)
 	{
 		ApplyEffectToTarget(TargetActor, InstantGameplayEffectClass);

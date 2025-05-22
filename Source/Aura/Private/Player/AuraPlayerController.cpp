@@ -5,7 +5,6 @@
 #include "Player/AuraPlayerState.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
-#include "MovieSceneTracksComponentTypes.h"
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"

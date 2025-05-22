@@ -17,7 +17,6 @@ class AURA_API UAuraUIManagerSubsystem : public UGameUIManagerSubsystem
 	GENERATED_BODY()
 	
 public:
-
 	UAuraUIManagerSubsystem();
 
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;

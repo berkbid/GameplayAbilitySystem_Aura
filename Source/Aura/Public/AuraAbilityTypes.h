@@ -5,6 +5,7 @@
 #include "GameplayEffectTypes.h"
 #include "AuraAbilityTypes.generated.h"
 
+class UObject;
 class UPackageMap;
 
 /**

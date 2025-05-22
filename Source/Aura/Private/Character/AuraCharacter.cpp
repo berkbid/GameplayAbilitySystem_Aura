@@ -6,6 +6,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Player/AuraPlayerState.h"
+#include "Aura/Aura.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraCharacter)
 
@@ -37,6 +38,8 @@ AAuraCharacter::AAuraCharacter(const FObjectInitializer& ObjectInitializer)
 	bUseControllerRotationYaw = false;
 	
 	//bReplicates = true;
+
+	Tags.Emplace(ACTOR_TAG_PLAYER);
 }
 
 void AAuraCharacter::PossessedBy(AController* NewController)
@@ -71,7 +74,8 @@ void AAuraCharacter::InitAbilityActorInfo()
 	AttributeSet = AuraPlayerState->GetAttributeSet();
 	
 	check(AbilitySystemComponent);
-	
+
+	// Call on both client and server
 	AbilitySystemComponent->InitAbilityActorInfo(AuraPlayerState, this);
 
 	// This is where course does HUD->InitHUD(), but we are doing that in player controller instead

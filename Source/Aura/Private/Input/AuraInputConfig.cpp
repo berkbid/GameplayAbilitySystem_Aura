@@ -7,7 +7,7 @@
 const UInputAction* UAuraInputConfig::FindAbilityInputActionForTag(const FGameplayTag& InputTag, bool bLogNotFound) const
 {
 	if (const FAuraInputAction* FoundInputAction = AbilityInputActions.FindByPredicate([InputTag](const FAuraInputAction& AuraInputAction)
-		{ return AuraInputAction.InputTag == InputTag; }))
+		{ return AuraInputAction.InputAction && AuraInputAction.InputTag == InputTag; }))
 	{
 		return FoundInputAction->InputAction;
 	}

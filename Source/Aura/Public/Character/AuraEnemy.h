@@ -2,15 +2,18 @@
 
 #pragma once
 
-#include "GameplayTagContainer.h"
 #include "Character/AuraCharacterBase.h"
+#include "GameplayTagContainer.h"
 #include "Interaction/EnemyInterface.h"
 #include "AuraEnemy.generated.h"
 
 class UEnemyWidgetController;
 class AActor;
+class AController;
 class UObject;
 class UHealthBarWidgetComponent;
+class UBehaviorTree;
+class AAuraAIController;
 
 /**
  * 
@@ -23,10 +26,17 @@ class AURA_API AAuraEnemy : public AAuraCharacterBase, public IEnemyInterface
 public:
 	AAuraEnemy(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 	
+	UFUNCTION(BlueprintCallable, Category = "Aura|AI")
+	AAuraAIController* GetAuraAIController() const;
+	
 	// ~ Begin AActor Interface.
 	virtual void NotifyActorBeginCursorOver() override;
 	virtual void NotifyActorEndCursorOver() override;
 	// ~ End AActor Interface
+
+	// ~ Begin APawn Interface.
+	virtual void PossessedBy(AController* NewController) override;
+	// ~ End APawn Interface
 	
 	// ~ Begin ICombatInterface
 	virtual int32 GetPlayerLevel() const override { return Level; }
@@ -66,6 +76,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="UI")
 	TSubclassOf<UEnemyWidgetController> EnemyWidgetControllerClass;
 
+	UPROPERTY(EditDefaultsOnly, Category="AI")
+	TObjectPtr<UBehaviorTree> BehaviorTree;
+	
 private:
 	void OnHitReactTagCountChanged(const FGameplayTag GameplayTag, int32 TagCount);
 

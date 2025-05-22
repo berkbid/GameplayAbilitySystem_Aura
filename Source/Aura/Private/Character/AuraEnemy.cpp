@@ -9,7 +9,10 @@
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AuraGameplayTags.h"
+#include "AI/AuraAIController.h"
 #include "Aura/Aura.h"
+#include "BehaviorTree/BehaviorTree.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraEnemy)
@@ -26,6 +29,7 @@ AAuraEnemy::AAuraEnemy(const FObjectInitializer& ObjectInitializer)
 
 	// Synchronize the movement max walk speed with local variable BaseWalkSpeed
 	GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
 	
 	AbilitySystemComponent = CreateDefaultSubobject<UAuraAbilitySystemComponent>("AbilitySystemComponent");
 	// Can we set this in constructor of aura ability system component?
@@ -41,6 +45,12 @@ AAuraEnemy::AAuraEnemy(const FObjectInitializer& ObjectInitializer)
 	{
 		Weapon->CustomDepthStencilValue = CUSTOM_DEPTH_RED;
 	}
+
+	Tags.Emplace(ACTOR_TAG_ENEMY);
+
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationYaw = false;
+	bUseControllerRotationRoll = false;
 }
 
 void AAuraEnemy::BeginPlay()
@@ -62,6 +72,31 @@ void AAuraEnemy::BeginPlay()
 	}
 }
 
+void AAuraEnemy::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if (!HasAuthority())
+	{
+		return;
+	}
+	
+	if (AAuraAIController* AIController = GetAuraAIController())
+	{
+		check(BehaviorTree);
+		AIController->GetBlackboardComponent()->InitializeBlackboard(*BehaviorTree->BlackboardAsset);
+		AIController->RunBehaviorTree(BehaviorTree);
+		// Set some initial blackboard values
+		AIController->GetBlackboardComponent()->SetValueAsBool(FName("HitReacting"), false);
+		AIController->GetBlackboardComponent()->SetValueAsBool(FName("bRangedAttacker"), CharacterClass != ECharacterClass::Warrior);
+	}
+}
+
+AAuraAIController* AAuraEnemy::GetAuraAIController() const
+{
+	return CastChecked<AAuraAIController>(Controller, ECastCheckedType::NullAllowed);
+}
+
 void AAuraEnemy::InitAbilityActorInfo()
 {
 	check(AbilitySystemComponent);
@@ -79,7 +114,7 @@ void AAuraEnemy::InitAbilityActorInfo()
 void AAuraEnemy::AddCharacterAbilities() const
 {
 	// Give startup abilities to the enemies, which are located in CharacterClassInfo
-	UAuraAbilitySystemLibrary::GiveCommonStartupAbilities(this, AbilitySystemComponent);
+	UAuraAbilitySystemLibrary::GiveCommonStartupAbilities(this, AbilitySystemComponent, CharacterClass);
 }
 
 void AAuraEnemy::InitializeDefaultAttributes() const
@@ -94,6 +129,14 @@ void AAuraEnemy::OnHitReactTagCountChanged(const FGameplayTag GameplayTag, int32
 	bHitReacting = TagCount > 0;
 	GetCharacterMovement()->MaxWalkSpeed = bHitReacting ? 0.f : BaseWalkSpeed;
 
+	// Server update the blackboard value for bHitReacting
+	if (HasAuthority())
+	{
+		if (AAuraAIController* AIController = GetAuraAIController())
+		{
+			AIController->GetBlackboardComponent()->SetValueAsBool(FName("bHitReacting"), bHitReacting);
+		}
+	}
 }
 
 void AAuraEnemy::Die()

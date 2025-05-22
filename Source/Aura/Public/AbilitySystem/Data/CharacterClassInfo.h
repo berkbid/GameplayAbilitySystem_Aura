@@ -26,7 +26,10 @@ struct FCharacterClassDefaultInfo
 	/** Gameplay effect to apply primary attributes */
 	UPROPERTY(EditDefaultsOnly, Category = "Class Defaults")
 	TSubclassOf<UGameplayEffect> PrimaryAttributes;
-	
+
+	/** Common abilities specific to this class to grant by default */
+	UPROPERTY(EditDefaultsOnly, Category = "Class Defaults")
+	TArray<TSubclassOf<UGameplayAbility>> StartupAbilities;
 };
 
 /**

@@ -5,6 +5,7 @@
 #include "AuraAbilityTypes.h"
 #include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "Player/AuraPlayerState.h"
+#include "Interaction/CombatInterface.h"
 #include "GameFramework/PlayerController.h"
 #include "Engine/World.h"
 #include "Game/AuraGameModeBase.h"
@@ -96,16 +97,31 @@ void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* World
 	}
 }
 
-void UAuraAbilitySystemLibrary::GiveCommonStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC)
+void UAuraAbilitySystemLibrary::GiveCommonStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC, ECharacterClass CharacterClass)
 {
 	checkf(ASC, TEXT("Failed to initialize default attributes, null ASC."));
 	
 	if (UCharacterClassInfo* ClassInfo = GetCharacterClassInfo(WorldContextObject))
 	{
+		// Grant common abilities for all classes
 		for (const TSubclassOf<UGameplayAbility>& AbilityClass : ClassInfo->CommonAbilities)
 		{
 			// Create ability spec from class
 			const FGameplayAbilitySpec AbilitySpec(AbilityClass, 1);
+			// Give the ability to the ASC
+			ASC->GiveAbility(AbilitySpec);
+		}
+
+		// Grant startup abilities for specific character class
+		const FCharacterClassDefaultInfo& ClassDefaultInfo = ClassInfo->GetClassDefaultInfo(CharacterClass);
+		for (const TSubclassOf<UGameplayAbility>& AbilityClass : ClassDefaultInfo.StartupAbilities)
+		{
+			// Get player level to give the ability of the correct level (if spawning character with higher level than 1)
+			ICombatInterface* CombatInterface = Cast<ICombatInterface>(ASC->GetAvatarActor());
+			const int32 PlayerLevel = CombatInterface ? CombatInterface->GetPlayerLevel() : 1;
+	
+			// Create ability spec from class
+			const FGameplayAbilitySpec AbilitySpec(AbilityClass, PlayerLevel);
 			// Give the ability to the ASC
 			ASC->GiveAbility(AbilitySpec);
 		}

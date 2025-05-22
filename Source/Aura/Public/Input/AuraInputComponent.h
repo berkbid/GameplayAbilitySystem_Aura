@@ -9,9 +9,11 @@
 class UObject;
 
 /**
- * 
+* UAuraInputComponent
+ *
+ *	Component used to manage input mappings and bindings using an input config data asset.
  */
-UCLASS()
+UCLASS(Config = Input)
 class AURA_API UAuraInputComponent : public UEnhancedInputComponent
 {
 	GENERATED_BODY()

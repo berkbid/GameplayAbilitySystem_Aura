@@ -82,7 +82,7 @@ void UAuraAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, 
 {
 	Super::PreAttributeChange(Attribute, NewValue);
 
-	// Not clamping here anymore, seems to be problematic apparently and has no use
+	// Not clamping here anymore, seems problematic apparently and has no use
 }
 
 void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
@@ -94,6 +94,7 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	// Access to lots of data post gameplay effect execute
 	FEffectProperties EffectProperties(Data);
 
+	// TODO: Remove this, GE should not be changing health attribute but the damage meta attribute instead
 	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
 	{
 		// GetHealth() returns clamped value in PreAttributeChange but not actual value, so we cannot test if it is in range, need to call SetHealth always
@@ -123,6 +124,7 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 		if (LocalIncomingDamage > 0.f)
 		{
 			const float NewHealth = GetHealth() - LocalIncomingDamage;
+			SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
 			SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
 
 			const bool bFatalDamage = NewHealth <= 0.f;

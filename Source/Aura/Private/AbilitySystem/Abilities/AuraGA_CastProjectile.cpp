@@ -53,16 +53,15 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 {
 	// Spawn projectile on server
 	const bool bIsServer = HasAuthority(&CurrentActivationInfo);
-	//const bool bIsServer = GetCurrentActorInfo()->IsNetAuthority();
-	//const bool bIsServer = GetAvatarActorFromActorInfo()->HasAuthority();
+	//const bool bIsServerNew = GetCurrentActorInfo()->IsNetAuthority();
+	//const bool bIsServerNewNew = GetAvatarActorFromActorInfo()->HasAuthority();
 	
 	if (!bIsServer)
 	{
-		UE_LOG(LogTemp, Display, TEXT("Cast projectile: Not server, returning"));
+		UE_LOG(LogTemp, Warning, TEXT("Cast projectile: Not server, returning"));
 		return;
 	}
-	UE_LOG(LogTemp, Display, TEXT("Cast projectile: Server"));
-	
+	UE_LOG(LogTemp, Warning, TEXT("Cast projectile: Server"));
 
 	checkf(AuraProjectileClass, TEXT("Missing projectile class for: %s"), *GetName());
 	AActor* AvatarActor = GetAvatarActorFromActorInfo();
@@ -124,7 +123,7 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 			const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), EffectContextHandle);
 
 			// Set the damage gameplay tag and damage magnitude KV pair on the spec handle since the GE damage uses "Set by caller" magnitude calculation type
-			const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
+			//const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
 			//UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, GameplayTags.Damage, 50.f);
 
 			// Allows for multiple damage types

@@ -16,7 +16,8 @@
 				"EnhancedInput",
 				"CommonGame",
 				"ModularGameplayActors",
-				"CommonUI"
+				"CommonUI",
+				"AIModule"
 			]
 		}
 	],

@@ -77,10 +77,11 @@ void AAuraProjectile::Destroyed()
 
 void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT("AuraProjectile::OnSphereOverlap - %s, %s overlap with component %s, and actor: %s"), HasAuthority() ? TEXT("Authority") : TEXT("Not Authority"),
-																OverlappedComponent ? *OverlappedComponent->GetName() : TEXT("NONE"),
-																OtherComp ? *OtherComp->GetName() : TEXT("NONE"),
-																OtherActor ? *OtherActor->GetName() : TEXT("NONE"));
+	// TODO: Why does client get on sphere overlap multiple times and server only once?
+	//UE_LOG(LogTemp, Warning, TEXT("AuraProjectile::OnSphereOverlap - %s, %s overlap with component %s, and actor: %s"), HasAuthority() ? TEXT("Authority") : TEXT("Not Authority"),
+																//OverlappedComponent ? *OverlappedComponent->GetName() : TEXT("NONE"),
+																//OtherComp ? *OtherComp->GetName() : TEXT("NONE"),
+																//OtherActor ? *OtherActor->GetName() : TEXT("NONE"));
 	
 	//if (DamageEffectSpecHandle.Data.IsValid() && DamageEffectSpecHandle.Data.Get()->GetContext().GetEffectCauser() == OtherActor)
 	if (OtherActor == GetInstigator())

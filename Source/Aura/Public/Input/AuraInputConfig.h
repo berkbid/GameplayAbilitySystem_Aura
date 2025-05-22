@@ -29,7 +29,7 @@ struct FAuraInputAction
  * Input actions linked to gameplay tags
  * from Lyra
  */
-UCLASS()
+UCLASS(BlueprintType, Const)
 class AURA_API UAuraInputConfig : public UDataAsset
 {
 	GENERATED_BODY()
