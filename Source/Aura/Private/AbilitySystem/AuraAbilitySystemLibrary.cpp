@@ -167,3 +167,49 @@ void UAuraAbilitySystemLibrary::SetIsCriticalHit(FGameplayEffectContextHandle& C
 		GameplayEffectContext->SetIsCriticalHit(bInIsCritical);
 	}
 }
+
+void UAuraAbilitySystemLibrary::GetLivePlayersWithinRadius(const UObject* WorldContextObject, TArray<AActor*>& OutOverlappingActors, const TArray<AActor*>& ActorsToIgnore, float Radius, const FVector& Origin)
+{
+	FCollisionQueryParams SphereParams;
+	SphereParams.AddIgnoredActors(ActorsToIgnore);
+
+	// query scene to see what we hit
+	TArray<FOverlapResult> Overlaps;
+	if (const UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull))
+	{
+		World->OverlapMultiByObjectType(Overlaps, Origin, FQuat::Identity, FCollisionObjectQueryParams(FCollisionObjectQueryParams::InitType::AllDynamicObjects), FCollisionShape::MakeSphere(Radius), SphereParams);
+	}
+
+	for (const FOverlapResult& Overlap : Overlaps)
+	{
+		AActor* const OverlapActor = Overlap.GetActor();
+		
+		// Add actor to out actor array if it is not dead
+		if (IsValid(OverlapActor) && OverlapActor->Implements<UCombatInterface>() && !ICombatInterface::Execute_IsDead(OverlapActor))
+		{
+			OutOverlappingActors.AddUnique(OverlapActor);
+		}
+	}
+}
+
+bool UAuraAbilitySystemLibrary::IsNotFriend(const AActor* FirstActor, const AActor* SecondActor)
+{
+	if (!FirstActor || !SecondActor)
+	{
+		// Default return the actors are friends
+		return false;
+	}
+	
+	if (FirstActor->ActorHasTag(FName("Player")))
+	{
+		return SecondActor->ActorHasTag(FName("Enemy"));
+	}
+	
+	if (FirstActor->ActorHasTag(FName("Enemy")))
+	{
+		return SecondActor->ActorHasTag(FName("Player"));
+	}
+
+	// If the first or second actor doesn't have either tag, or they have the same tag, return false meaning they are friends
+	return false;
+}

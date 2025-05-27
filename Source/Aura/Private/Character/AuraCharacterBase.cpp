@@ -2,6 +2,7 @@
 
 #include "Character/AuraCharacterBase.h"
 #include "AbilitySystemComponent.h"
+#include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "Aura/Aura.h"
 #include "Components/CapsuleComponent.h"
@@ -32,17 +33,26 @@ AAuraCharacterBase::AAuraCharacterBase(const FObjectInitializer& ObjectInitializ
 	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>("Weapon");
 	Weapon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Weapon->SetupAttachment(GetMesh(), FName("WeaponHandSocket"));
+
+	// Default name for weapon skeletal mesh tip socket
+	WeaponTipSocketName = FName("TipSocket");
 }
 
-FVector AAuraCharacterBase::GetCombatSocketLocation()
+FVector AAuraCharacterBase::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const
 {
-	check(Weapon);
-	if (WeaponTipSocketName.IsNone())
+	const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
+	
+	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_Weapon))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s missing WeaponTipSocketName property"), *GetName());
+		check(IsValid(Weapon));
+		if (WeaponTipSocketName.IsNone())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s missing WeaponTipSocketName property"), *GetName());
+		}
+		return Weapon->GetSocketLocation(WeaponTipSocketName);
 	}
 	
-	return Weapon->GetSocketLocation(WeaponTipSocketName);
+	return FVector();
 }
 
 UAnimMontage* AAuraCharacterBase::GetHitReactMontage_Implementation() const
@@ -54,6 +64,8 @@ void AAuraCharacterBase::Die()
 {
 	// Called on server
 
+	// TODO: Should we check if !bDead ?
+	
 	// Drop weapon
 	Weapon->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
 
@@ -61,10 +73,23 @@ void AAuraCharacterBase::Die()
 	MulticastHandleDeath();
 }
 
+bool AAuraCharacterBase::IsDead_Implementation() const
+{
+	return !IsValid(this) || bDead;
+}
+
+AActor* AAuraCharacterBase::GetAvatar_Implementation()
+{
+	return this;
+}
+
 void AAuraCharacterBase::MulticastHandleDeath_Implementation()
 {
 	// Handle client and server actions for death
-
+	
+	// Set variable state for server and client instead of replicating it
+	bDead = true;
+	
 	// Ragdoll weapon
 	Weapon->SetSimulatePhysics(true);
 	Weapon->SetEnableGravity(true);

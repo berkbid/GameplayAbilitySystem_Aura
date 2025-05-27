@@ -6,6 +6,7 @@
 #include "EnemyInterface.generated.h"
 
 class UObject;
+class AActor;
 
 UINTERFACE(MinimalAPI)
 class UEnemyInterface : public UInterface
@@ -21,5 +22,9 @@ class AURA_API IEnemyInterface
 	GENERATED_BODY()
 
 public:
-	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void SetCombatTarget(AActor* InCombatTarget);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	AActor* GetCombatTarget() const;
 };

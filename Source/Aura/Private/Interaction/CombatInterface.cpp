@@ -9,9 +9,9 @@ int32 ICombatInterface::GetPlayerLevel() const
 	return 0;
 }
 
-FVector ICombatInterface::GetCombatSocketLocation()
+FVector ICombatInterface::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const
 {
-	return FVector();
+	return FVector::ZeroVector;
 }
 
 void ICombatInterface::Die()

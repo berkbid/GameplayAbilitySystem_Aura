@@ -51,6 +51,9 @@ AAuraEnemy::AAuraEnemy(const FObjectInitializer& ObjectInitializer)
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
+
+	LeftHandSocketName = FName("LeftHandSocket");
+	RightHandSocketName = FName("RightHandSocket");
 }
 
 void AAuraEnemy::BeginPlay()
@@ -143,6 +146,45 @@ void AAuraEnemy::Die()
 {
 	SetLifeSpan(LifeSpan);
 	Super::Die();
+}
+
+FVector AAuraEnemy::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const
+{
+	const FVector& FoundLocation = Super::GetCombatSocketLocation_Implementation(MontageTag);
+	if (!FoundLocation.Equals(FVector()))
+	{
+		return FoundLocation;
+	}
+	
+	const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
+	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_LeftHand))
+	{
+		if (LeftHandSocketName.IsNone())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s missing LeftHandSocketName property"), *GetName());
+		}
+		return GetMesh()->GetSocketLocation(LeftHandSocketName);
+	}
+	
+	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_RightHand))
+	{
+		if (RightHandSocketName.IsNone())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s missing RightHandSocketName property"), *GetName());
+		}
+		return GetMesh()->GetSocketLocation(RightHandSocketName);
+	}
+	return FVector();
+}
+
+void AAuraEnemy::SetCombatTarget_Implementation(AActor* InCombatTarget)
+{
+	CombatTarget = InCombatTarget;
+}
+
+AActor* AAuraEnemy::GetCombatTarget_Implementation() const
+{
+	return CombatTarget;
 }
 
 UEnemyWidgetController* AAuraEnemy::GetEnemyWidgetController()

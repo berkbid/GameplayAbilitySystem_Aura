@@ -3,7 +3,6 @@
 #pragma once
 
 #include "Character/AuraCharacterBase.h"
-#include "GameplayTagContainer.h"
 #include "Interaction/EnemyInterface.h"
 #include "AuraEnemy.generated.h"
 
@@ -43,17 +42,28 @@ public:
 	virtual void Die() override;
 	// ~ End ICombatInterface
 
+	// ~ Begin IEnemyInterface
+	virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const override;
+	virtual void SetCombatTarget_Implementation(AActor* InCombatTarget) override;
+	virtual AActor* GetCombatTarget_Implementation() const override;
+	// ~ End IEnemyInterface
+	
 	UFUNCTION(BlueprintPure, Category ="UI")
 	UEnemyWidgetController* GetEnemyWidgetController();
 
 	UPROPERTY(BlueprintReadOnly, Category="Combat")
 	bool bHitReacting = false;
 	
-	UPROPERTY(BlueprintReadOnly, Category="Combat")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
 	float BaseWalkSpeed = 250.f;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
 	float LifeSpan = 5.f;
+
+	// TODO: Perhaps hold soft object ptr
+	/** Current combat target set from behavior tree on server */
+	UPROPERTY(Transient, BlueprintReadWrite, Category="Combat")
+	TObjectPtr<AActor> CombatTarget;
 	
 protected:
 	// ~ Begin AActor Interface.
@@ -78,6 +88,11 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="AI")
 	TObjectPtr<UBehaviorTree> BehaviorTree;
+	
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	FName LeftHandSocketName;
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	FName RightHandSocketName;
 	
 private:
 	void OnHitReactTagCountChanged(const FGameplayTag GameplayTag, int32 TagCount);

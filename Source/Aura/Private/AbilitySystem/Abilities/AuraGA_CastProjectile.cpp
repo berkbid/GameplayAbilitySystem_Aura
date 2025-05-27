@@ -66,15 +66,14 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 	checkf(AuraProjectileClass, TEXT("Missing projectile class for: %s"), *GetName());
 	AActor* AvatarActor = GetAvatarActorFromActorInfo();
 	
-	ICombatInterface* CombatInterfaceAvatar = Cast<ICombatInterface>(AvatarActor);
-	if (!CombatInterfaceAvatar)
+	if (!AvatarActor || !AvatarActor->Implements<UCombatInterface>())
 	{
 		UE_LOG(LogTemp, Error, TEXT("Attempting to cast projectile with avatar: %s that does not implement combat interface!"), AvatarActor ? *AvatarActor->GetName() : TEXT("NONE"));
 		return;
 	}
 	
 	// See AbilityTask_SpawnActor for interesting code
-	const FVector SocketLocation = CombatInterfaceAvatar->GetCombatSocketLocation();
+	const FVector SocketLocation = ICombatInterface::Execute_GetCombatSocketLocation(AvatarActor, FAuraGameplayTags::Get().Montage_Attack_Weapon);
 	
 	//DrawDebugSphere(GetWorld(), SocketLocation, 20, 30, FColor::Yellow, false, 5.f);
 

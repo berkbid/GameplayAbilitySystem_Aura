@@ -165,11 +165,20 @@ void UAuraAttributeSet::ShowFloatingText(const FEffectProperties& EffectProperti
 		// TODO: This isn't working for client and server
 		//if (AAuraPlayerController* AuraPC = Cast<AAuraPlayerController>(UGameplayStatics::GetPlayerController(EffectProperties.SourceCharacter, 0)))
 		//if (AAuraPlayerController* AuraPC = Cast<AAuraPlayerController>(EffectProperties.SourceController))
+
+		// If source is aura (aura doing damage), get PC from source
 		if (AAuraPlayerController* AuraPC = Cast<AAuraPlayerController>(EffectProperties.SourceCharacter ? EffectProperties.SourceCharacter->GetController() : nullptr))
 		{
 			AuraPC->ShowDamageNumber(Damage, EffectProperties.TargetCharacter, bBlockedHit, bCriticalHit);
+			return;
 		}
-
+		
+		// If target is aura (enemy doing damage), get PC from target
+		if (AAuraPlayerController* AuraPC = Cast<AAuraPlayerController>(EffectProperties.TargetCharacter ? EffectProperties.TargetCharacter->GetController() : nullptr))
+		{
+			AuraPC->ShowDamageNumber(Damage, EffectProperties.TargetCharacter, bBlockedHit, bCriticalHit);
+		}
+		
 		// Solution for now, only local controller should execute
 		// TODO: Only damage dealer should be showing the damage number, correct?
 		// for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
