@@ -61,7 +61,6 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 		UE_LOG(LogTemp, Warning, TEXT("Cast projectile: Not server, returning"));
 		return;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("Cast projectile: Server"));
 
 	checkf(AuraProjectileClass, TEXT("Missing projectile class for: %s"), *GetName());
 	AActor* AvatarActor = GetAvatarActorFromActorInfo();
@@ -73,7 +72,7 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 	}
 	
 	// See AbilityTask_SpawnActor for interesting code
-	const FVector SocketLocation = ICombatInterface::Execute_GetCombatSocketLocation(AvatarActor, FAuraGameplayTags::Get().Montage_Attack_Weapon);
+	const FVector SocketLocation = ICombatInterface::Execute_GetCombatSocketLocation(AvatarActor, FAuraGameplayTags::Get().CombatSocket_Weapon);
 	
 	//DrawDebugSphere(GetWorld(), SocketLocation, 20, 30, FColor::Yellow, false, 5.f);
 
@@ -88,6 +87,8 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 	// Spawn at socket location of weapon of who is calling this
 	SpawnTransform.SetLocation(SocketLocation);
 	SpawnTransform.SetRotation(Rotation.Quaternion());
+
+	UE_LOG(LogTemp, Warning, TEXT("Cast projectile(Server): Transform: %s"), *SpawnTransform.ToString());
 	
 	AAuraProjectile* Projectile = GetWorld()->SpawnActorDeferred<AAuraProjectile>(
 		AuraProjectileClass,
@@ -103,9 +104,8 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 			UE_LOG(LogTemp, Warning, TEXT("Gameplay Ability for projectile missing damage effect class for damage gameplay effect"));
 		}
 		
-		
-		if (const UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo())
 		//if (const UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetAvatarActorFromActorInfo()))
+		if (const UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo())
 		{
 			// Set some extra fields in the effect context handle
 			FGameplayEffectContextHandle EffectContextHandle = SourceASC->MakeEffectContext();

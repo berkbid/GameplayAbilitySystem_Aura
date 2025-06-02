@@ -48,6 +48,10 @@ public:
 	virtual AActor* GetCombatTarget_Implementation() const override;
 	// ~ End IEnemyInterface
 	
+	// AAuraCharacterBase
+	virtual void MulticastHandleDeath() override;
+	// ~AAuraCharacterBase
+	
 	UFUNCTION(BlueprintPure, Category ="UI")
 	UEnemyWidgetController* GetEnemyWidgetController();
 

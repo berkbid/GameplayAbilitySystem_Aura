@@ -15,8 +15,10 @@ class UGameplayEffect;
 class UAbilitySystemComponent;
 class UAttributeSet;
 class UAnimMontage;
+class UNiagaraSystem;
 class UMaterialInstance;
 class UMaterialInstanceDynamic;
+class USoundBase;
 class UObject;
 
 UCLASS(Abstract)
@@ -38,6 +40,8 @@ public:
 	virtual bool IsDead_Implementation() const override;
 	virtual AActor* GetAvatar_Implementation() override;
 	virtual TArray<FTaggedMontage> GetAttackMontages_Implementation() const override { return AttackMontages; }
+	virtual UNiagaraSystem* GetBloodEffect_Implementation() override { return BloodEffect; }
+	virtual FTaggedMontage GetTaggedMontageByTag_Implementation(const FGameplayTag& MontageTag) const override;
 	// ~ICombatInterface
 
 	UFUNCTION(NetMulticast, reliable)
@@ -69,7 +73,7 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void StartDissolveTimeline(const TArray<UMaterialInstanceDynamic*>& DynamicMaterialInstances);
 	
-	UPROPERTY(EditAnywhere, Category = "Combat")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent> Weapon;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
@@ -93,6 +97,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TObjectPtr<UMaterialInstance> WeaponDissolveMaterialInstance;
 	
+	UPROPERTY(EditDefaultsOnly, Category="Combat")
+	TObjectPtr<UNiagaraSystem> BloodEffect;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Combat")
+	TObjectPtr<USoundBase> DeathSound;
 private:
 	UPROPERTY(EditAnywhere, Category="Abilities")
 	TArray<TSubclassOf<UGameplayAbility>> StartupAbilities;

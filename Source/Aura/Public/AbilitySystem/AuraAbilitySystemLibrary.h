@@ -55,6 +55,9 @@ public:
 	/** Returns true if both actors have tag of either player or enemy, and they are opposite of each other */
 	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayMechanics")
 	static bool IsNotFriend(const AActor* FirstActor, const AActor* SecondActor);
-	
+
+	/** Returns true if both actors have the same tag of either player or enemy */
+	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayMechanics")
+	static bool AreFriends(const AActor* FirstActor, const AActor* SecondActor);
 };
 

@@ -3,11 +3,13 @@
 #include "Actor/AuraProjectile.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "AuraLogChannels.h"
 #include "Components/SphereComponent.h"
 #include "Components/AudioComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
+#include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Aura/Aura.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraProjectile)
@@ -44,7 +46,7 @@ void AAuraProjectile::BeginPlay()
 	
 	SetLifeSpan(LifeSpan);
 	
-	UE_LOG(LogTemp, Warning, TEXT("AuraProjectile::BeginPlay - %s"), HasAuthority() ? TEXT("Authority") : TEXT("Not Authority"));
+	UE_LOG(LogTemp, Warning, TEXT("AuraProjectile::BeginPlay(%s) - Transform: %s"), *GetClientServerContextString(this), *GetActorTransform().ToString());
 	
 	// Letting client bind to on overlap as well for impact sound and effect
 	Sphere->OnComponentBeginOverlap.AddDynamic(this, &AAuraProjectile::OnSphereOverlap);
@@ -65,12 +67,10 @@ void AAuraProjectile::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void AAuraProjectile::Destroyed()
 {
-	// If client did not play destroyed effects because server destroyed projectile before client received overlap event
+	// If client did not play destroyed effects because server destroyed projectile before the client received overlap event
 	//if (!HasAuthority() && !bPlayedDestroyedEffects)
-	if (!bPlayedDestroyedEffects)
-	{
-		PlayDestroyEffects();
-	}
+
+	PlayDestroyEffects();
 	
 	Super::Destroyed();
 }
@@ -78,27 +78,30 @@ void AAuraProjectile::Destroyed()
 void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	// TODO: Why does client get on sphere overlap multiple times and server only once?
-	//UE_LOG(LogTemp, Warning, TEXT("AuraProjectile::OnSphereOverlap - %s, %s overlap with component %s, and actor: %s"), HasAuthority() ? TEXT("Authority") : TEXT("Not Authority"),
-																//OverlappedComponent ? *OverlappedComponent->GetName() : TEXT("NONE"),
-																//OtherComp ? *OtherComp->GetName() : TEXT("NONE"),
-																//OtherActor ? *OtherActor->GetName() : TEXT("NONE"));
+	// UE_LOG(LogTemp, Warning, TEXT("AuraProjectile::OnSphereOverlap - %s, %s overlap with component %s, and actor: %s"), HasAuthority() ? TEXT("Authority") : TEXT("Not Authority"),
+	// 															OverlappedComponent ? *OverlappedComponent->GetName() : TEXT("NONE"),
+	// 															OtherComp ? *OtherComp->GetName() : TEXT("NONE"),
+	// 															OtherActor ? *OtherActor->GetName() : TEXT("NONE"));
 	
-	//if (DamageEffectSpecHandle.Data.IsValid() && DamageEffectSpecHandle.Data.Get()->GetContext().GetEffectCauser() == OtherActor)
+	//if (!DamageEffectSpecHandle.Data.IsValid() || DamageEffectSpecHandle.Data.Get()->GetContext().GetEffectCauser() == OtherActor)
 	if (OtherActor == GetInstigator())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Overlapped with instigator actor, doing nothing."));
+		//UE_LOG(LogTemp, Warning, TEXT("(%s): Overlapped with instigator actor: %s, doing nothing."), *GetClientServerContextString(this), *GetNameSafe(GetInstigator()));
 		return;
 	}
 	
-	if (!bPlayedDestroyedEffects)
+	if (UAuraAbilitySystemLibrary::AreFriends(GetInstigator(), OtherActor))
 	{
-		PlayDestroyEffects();
+		UE_LOG(LogTemp, Warning, TEXT("(%s): Overlapped with friend actor: %s, doing nothing."), *GetClientServerContextString(this), *GetNameSafe(OtherActor));
+		return;
 	}
+	
+	PlayDestroyEffects();
 	
 	// Only server should destroy
 	if (HasAuthority())
 	{
-		// Pass gameplay effect to other actor
+		// Pass gameplay effect to the other actor
 		if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor))
 		{
 			if (DamageEffectSpecHandle.Data.IsValid())
@@ -116,6 +119,11 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 
 void AAuraProjectile::PlayDestroyEffects()
 {
+	if (bPlayedDestroyedEffects)
+	{
+		return;
+	}
+	
 	// Stop looping sound
 	if (LoopingSoundComponent)
 	{

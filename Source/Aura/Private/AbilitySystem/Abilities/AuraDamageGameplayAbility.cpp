@@ -6,7 +6,7 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraDamageGameplayAbility)
 
-void UAuraDamageGameplayAbility::CauseDamage(AActor* TargetActor)
+FGameplayEffectSpecHandle UAuraDamageGameplayAbility::CauseDamage(AActor* TargetActor)
 {
 	if (!ensure(DamageEffectClass))
 	{
@@ -19,7 +19,7 @@ void UAuraDamageGameplayAbility::CauseDamage(AActor* TargetActor)
 	if (!SelfASC || !TargetASC)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Cannot cause damage due to missing ASC of self or target!"));
-		return;
+		return FGameplayEffectSpecHandle();
 	}
 	
 	// Make the spec handle
@@ -36,4 +36,7 @@ void UAuraDamageGameplayAbility::CauseDamage(AActor* TargetActor)
 
 	// Apply the damage to the target
 	SelfASC->ApplyGameplayEffectSpecToTarget(*DamageSpecHandle.Data.Get(), TargetASC);
+
+	// Returning this handle for now, not sure if necessary
+	return DamageSpecHandle;
 }

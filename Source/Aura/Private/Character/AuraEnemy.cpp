@@ -66,6 +66,7 @@ void AAuraEnemy::BeginPlay()
 	const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
 	FOnGameplayEffectTagCountChanged& OnGameplayEffectTagCountChanged =
 		AbilitySystemComponent->RegisterGameplayTagEvent(AuraGameplayTags.Effects_HitReact, EGameplayTagEventType::NewOrRemoved);
+	
 	OnGameplayEffectTagCountChanged.AddUObject(this, &AAuraEnemy::OnHitReactTagCountChanged);
 	
 	// Set the widget controller on the health bar component's widget
@@ -144,6 +145,17 @@ void AAuraEnemy::OnHitReactTagCountChanged(const FGameplayTag GameplayTag, int32
 
 void AAuraEnemy::Die()
 {
+	// Server is in here
+	
+	// Stop the behavior tree
+	if (AAuraAIController* AIController = GetAuraAIController())
+	{
+		if (UBrainComponent* BrainComponent = AIController->GetBrainComponent())
+		{
+			BrainComponent->StopLogic(TEXT("Died"));
+		}
+	}
+	
 	SetLifeSpan(LifeSpan);
 	Super::Die();
 }
@@ -157,7 +169,7 @@ FVector AAuraEnemy::GetCombatSocketLocation_Implementation(const FGameplayTag& M
 	}
 	
 	const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
-	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_LeftHand))
+	if (MontageTag.MatchesTagExact(GameplayTags.CombatSocket_LeftHand))
 	{
 		if (LeftHandSocketName.IsNone())
 		{
@@ -166,7 +178,7 @@ FVector AAuraEnemy::GetCombatSocketLocation_Implementation(const FGameplayTag& M
 		return GetMesh()->GetSocketLocation(LeftHandSocketName);
 	}
 	
-	if (MontageTag.MatchesTagExact(GameplayTags.Montage_Attack_RightHand))
+	if (MontageTag.MatchesTagExact(GameplayTags.CombatSocket_RightHand))
 	{
 		if (RightHandSocketName.IsNone())
 		{
@@ -185,6 +197,19 @@ void AAuraEnemy::SetCombatTarget_Implementation(AActor* InCombatTarget)
 AActor* AAuraEnemy::GetCombatTarget_Implementation() const
 {
 	return CombatTarget;
+}
+
+void AAuraEnemy::MulticastHandleDeath()
+{
+	// Detach the HealthBarWidgetComponent from the root component (capsule).
+	// NOTE: This prevents the HealthBarWidgetComponent from falling off (only in clients). "Show Collision" command
+	// shows that the capsule component doesn't fall off, so the root of the issue is still unclear.
+	//if (!HasAuthority() && HealthBar)
+	//{
+	//	HealthBar->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
+	//}
+	
+	Super::MulticastHandleDeath();
 }
 
 UEnemyWidgetController* AAuraEnemy::GetEnemyWidgetController()

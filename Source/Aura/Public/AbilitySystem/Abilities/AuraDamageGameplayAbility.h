@@ -9,6 +9,7 @@ class UObject;
 class UGameplayEffect;
 struct FGameplayTag;
 struct FScalableFloat;
+struct FGameplayEffectSpecHandle;
 
 /**
  * 
@@ -20,7 +21,7 @@ class AURA_API UAuraDamageGameplayAbility : public UAuraGameplayAbility
 
 public:
 	UFUNCTION(BlueprintCallable)
-	void CauseDamage(AActor* TargetActor);
+	FGameplayEffectSpecHandle CauseDamage(AActor* TargetActor);
 	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)

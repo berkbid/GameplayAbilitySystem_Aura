@@ -6,6 +6,7 @@
 #include "AuraGameplayTags.h"
 #include "GameplayEffectExtension.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
+#include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/Controller.h"
 #include "Interaction/CombatInterface.h"
@@ -117,7 +118,7 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	// If we are getting a changed incoming damage (meta attribute)
 	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute())
 	{
-		// Use the meta attribute value, then consume the data and zero it out
+		// Use the meta-attribute value, then consume the data and zero it out
 		const float LocalIncomingDamage = GetIncomingDamage();
 		SetIncomingDamage(0.f);
 
@@ -125,26 +126,45 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 		{
 			const float NewHealth = GetHealth() - LocalIncomingDamage;
 			SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
-			SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
 
-			const bool bFatalDamage = NewHealth <= 0.f;
+			const bool bFatalDamage = GetHealth() <= 0.f;
 			
 			if (bFatalDamage)
 			{
 				// Call die function on combat interface of target actor if fatal damage
-				if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(EffectProperties.TargetAvatarActor))
-				{
-					CombatInterface->Die();
-				}
+				ICombatInterface* CombatInterface = CastChecked<ICombatInterface>(EffectProperties.TargetAvatarActor);
+				CombatInterface->Die();
 			}
 			else
 			{
+				// Activate the GA_HitReact on target losing health
 				if (EffectProperties.TargetASC)
 				{
 					// Create tag container with hit react tag
 					FGameplayTagContainer TagContainer;
 					const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
 					TagContainer.AddTag(AuraGameplayTags.Effects_HitReact);
+					
+					// (not in course) Ending the GA HitReact if it is currently active, to activate a new one below
+					for (const FGameplayAbilitySpec& ActivatableAbility : EffectProperties.TargetASC->GetActivatableAbilities())
+					{
+						if (ActivatableAbility.IsActive())
+						{
+							TArray<UGameplayAbility*> ActiveAbilities = ActivatableAbility.GetAbilityInstances();
+							for (UGameplayAbility* Ability : ActiveAbilities)
+							{
+								// Casting to Aura GA because EndAbility() is protected in regular GA class
+								if (UAuraGameplayAbility* AuraGA = Cast<UAuraGameplayAbility>(Ability))
+								{
+									if (AuraGA->AbilityTags.HasTagExact(AuraGameplayTags.Effects_HitReact))
+									{
+										AuraGA->EndAbility(AuraGA->GetCurrentAbilitySpecHandle(), AuraGA->GetCurrentActorInfo(), AuraGA->GetCurrentActivationInfo(),
+										true, true);
+									}
+								}
+							}
+						}
+					}
 					
 					// Activate hit react gameplay ability
 					EffectProperties.TargetASC->TryActivateAbilitiesByTag(TagContainer);

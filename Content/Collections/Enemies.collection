@@ -1,0 +1,9 @@
+FileVersion:2
+Type:Static
+Guid:5A9ED55D-4FEC-8ABE-9E95-E2B9676505AF
+ParentGuid:00000000-0000-0000-0000-000000000000
+
+/Game/Blueprints/Character/Ghoul/B_Ghoul.B_Ghoul
+/Game/Blueprints/Character/Goblin_Slingshot/B_GoblinSlingshot.B_GoblinSlingshot
+/Game/Blueprints/Character/Goblin_Spear/B_GoblinSpear.B_GoblinSpear
+/Game/Blueprints/Character/Shaman/B_Shaman.B_Shaman

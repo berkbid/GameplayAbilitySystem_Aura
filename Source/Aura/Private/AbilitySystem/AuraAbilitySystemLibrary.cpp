@@ -213,3 +213,24 @@ bool UAuraAbilitySystemLibrary::IsNotFriend(const AActor* FirstActor, const AAct
 	// If the first or second actor doesn't have either tag, or they have the same tag, return false meaning they are friends
 	return false;
 }
+
+bool UAuraAbilitySystemLibrary::AreFriends(const AActor* FirstActor, const AActor* SecondActor)
+{
+	if (!FirstActor || !SecondActor)
+	{
+		return false;
+	}
+	
+	if (FirstActor->ActorHasTag(FName("Player")))
+	{
+		return SecondActor->ActorHasTag(FName("Player"));
+	}
+	
+	if (FirstActor->ActorHasTag(FName("Enemy")))
+	{
+		return SecondActor->ActorHasTag(FName("Enemy"));
+	}
+
+	// If the first or second actor doesn't have either tag, or they have the same tag, return false meaning they are friends
+	return false;
+}
