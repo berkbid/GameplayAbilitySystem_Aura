@@ -13,6 +13,7 @@ class UObject;
 class UHealthBarWidgetComponent;
 class UBehaviorTree;
 class AAuraAIController;
+struct FGameplayTag;
 
 /**
  * 
@@ -38,7 +39,7 @@ public:
 	// ~ End APawn Interface
 	
 	// ~ Begin ICombatInterface
-	virtual int32 GetPlayerLevel() const override { return Level; }
+	virtual int32 GetPlayerLevel_Implementation() const override { return Level; }
 	virtual void Die() override;
 	// ~ End ICombatInterface
 
@@ -83,7 +84,7 @@ protected:
 	
 protected:
 	// Only server needs to know level of AI enemies, so not replicated
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class Defaults")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ExposeOnSpawn = "true"), Category="Character Class Defaults")
 	int32 Level = 1;
 	
 	/** Class for enemy widget controller */
@@ -97,6 +98,8 @@ protected:
 	FName LeftHandSocketName;
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	FName RightHandSocketName;
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	FName TailSocketName;
 	
 private:
 	void OnHitReactTagCountChanged(const FGameplayTag GameplayTag, int32 TagCount);

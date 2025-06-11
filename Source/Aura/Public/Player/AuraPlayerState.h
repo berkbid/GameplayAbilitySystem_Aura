@@ -35,7 +35,7 @@ public:
 	//void SetLevel(int32 NewLevel) {Level = NewLevel; }
 	
 	// ~ Begin ICombatInterface
-	virtual int32 GetPlayerLevel() const override { return Level; }
+	virtual int32 GetPlayerLevel_Implementation() const override { return Level; }
 	// ~ End ICombatInterface
 	
 protected:

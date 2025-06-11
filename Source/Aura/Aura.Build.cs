@@ -32,7 +32,8 @@ public class Aura : ModuleRules
 			"CommonUI",
 			"CommonUser",
 			"CommonGame",
-			"AIModule"
+			"AIModule",
+			"NetCore"
 		});
 
 	}

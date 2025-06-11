@@ -46,7 +46,7 @@ void AAuraProjectile::BeginPlay()
 	
 	SetLifeSpan(LifeSpan);
 	
-	UE_LOG(LogTemp, Warning, TEXT("AuraProjectile::BeginPlay(%s) - Transform: %s"), *GetClientServerContextString(this), *GetActorTransform().ToString());
+	//UE_LOG(LogTemp, Warning, TEXT("AuraProjectile::BeginPlay(%s) - Transform: %s"), *GetClientServerContextString(this), *GetActorTransform().ToString());
 	
 	// Letting client bind to on overlap as well for impact sound and effect
 	Sphere->OnComponentBeginOverlap.AddDynamic(this, &AAuraProjectile::OnSphereOverlap);

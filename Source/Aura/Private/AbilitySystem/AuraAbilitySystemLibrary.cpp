@@ -112,14 +112,18 @@ void UAuraAbilitySystemLibrary::GiveCommonStartupAbilities(const UObject* WorldC
 			ASC->GiveAbility(AbilitySpec);
 		}
 
+		// Get player level to give the ability of the correct level (if spawning character with higher level than 1)
+		int32 PlayerLevel = 1;
+		const AActor* AvatarActor = ASC->GetAvatarActor();
+		if (AvatarActor && AvatarActor->Implements<UCombatInterface>())
+		{
+			PlayerLevel = ICombatInterface::Execute_GetPlayerLevel(AvatarActor);
+		}
+		
 		// Grant startup abilities for specific character class
 		const FCharacterClassDefaultInfo& ClassDefaultInfo = ClassInfo->GetClassDefaultInfo(CharacterClass);
 		for (const TSubclassOf<UGameplayAbility>& AbilityClass : ClassDefaultInfo.StartupAbilities)
 		{
-			// Get player level to give the ability of the correct level (if spawning character with higher level than 1)
-			ICombatInterface* CombatInterface = Cast<ICombatInterface>(ASC->GetAvatarActor());
-			const int32 PlayerLevel = CombatInterface ? CombatInterface->GetPlayerLevel() : 1;
-	
 			// Create ability spec from class
 			const FGameplayAbilitySpec AbilitySpec(AbilityClass, PlayerLevel);
 			// Give the ability to the ASC
@@ -165,6 +169,35 @@ void UAuraAbilitySystemLibrary::SetIsCriticalHit(FGameplayEffectContextHandle& C
 	if (FAuraGameplayEffectContext* GameplayEffectContext = static_cast<FAuraGameplayEffectContext*>(ContextHandle.Get()))
 	{
 		GameplayEffectContext->SetIsCriticalHit(bInIsCritical);
+	}
+}
+
+TArray<FVector> UAuraAbilitySystemLibrary::GetEffectContextSpawnLocations(const FGameplayEffectContextHandle& ContextHandle)
+{
+	if (const FAuraGameplayEffectContext* AuraEffectContext = static_cast<const FAuraGameplayEffectContext*>(ContextHandle.Get()))
+	{
+		const TArray<FVector_NetQuantize>& Locations = AuraEffectContext->GetSpawnLocations();
+		
+		TArray<FVector> TempSpawnLocations;
+		for (const FVector_NetQuantize& SpawnLocation : Locations)
+		{
+			TempSpawnLocations.Add(SpawnLocation);
+		}
+		return TempSpawnLocations;
+	}
+	return TArray<FVector>();
+}
+
+void UAuraAbilitySystemLibrary::SetEffectContextSpawnLocations(FGameplayEffectContextHandle& ContextHandle, const TArray<FVector>& InSpawnLocations)
+{
+	if (FAuraGameplayEffectContext* AuraEffectContext = static_cast<FAuraGameplayEffectContext*>(ContextHandle.Get()))
+	{
+		TArray<FVector_NetQuantize> TempSpawnLocations;
+		for (const FVector& SpawnLocation : InSpawnLocations)
+		{
+			TempSpawnLocations.Add(SpawnLocation);
+		}
+		AuraEffectContext->SetSpawnLocations(TempSpawnLocations);
 	}
 }
 

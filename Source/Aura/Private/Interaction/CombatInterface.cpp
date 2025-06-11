@@ -4,9 +4,9 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(CombatInterface)
 
-int32 ICombatInterface::GetPlayerLevel() const
+int32 ICombatInterface::GetPlayerLevel_Implementation() const
 {
-	return 0;
+	return 1;
 }
 
 FVector ICombatInterface::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const

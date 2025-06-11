@@ -3,6 +3,9 @@ Type:Static
 Guid:5A9ED55D-4FEC-8ABE-9E95-E2B9676505AF
 ParentGuid:00000000-0000-0000-0000-000000000000
 
+/Game/Blueprints/Character/B_EnemyBase.B_EnemyBase
+/Game/Blueprints/Character/Demon/B_Demon_Ranger.B_Demon_Ranger
+/Game/Blueprints/Character/Demon/B_Demon_Warrior.B_Demon_Warrior
 /Game/Blueprints/Character/Ghoul/B_Ghoul.B_Ghoul
 /Game/Blueprints/Character/Goblin_Slingshot/B_GoblinSlingshot.B_GoblinSlingshot
 /Game/Blueprints/Character/Goblin_Spear/B_GoblinSpear.B_GoblinSpear

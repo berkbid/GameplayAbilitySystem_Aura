@@ -7,6 +7,7 @@
 
 class AAuraProjectile;
 class UObject;
+struct FGameplayTag;
 
 /**
  * 
@@ -25,7 +26,7 @@ protected:
 	
 	/** Call to spawn fire bolt actor at combat socket location, only server needs to do this */
 	UFUNCTION(BlueprintCallable, Category = "Projectile")
-	void CastProjectile(const FVector& ProjectileTargetLocation);
+	void CastProjectile(const FVector& ProjectileTargetLocation, const FGameplayTag& SpawnLocationSocketTag, bool bOverridePitch = false, float PitchOverride = 0.f);
 
 	/** Updates TargetLocation and the facing target on actor's motion warping component for anim montage to utilize */
 	UFUNCTION(BlueprintCallable, Category = "Projectile")

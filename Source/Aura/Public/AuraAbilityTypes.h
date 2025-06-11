@@ -7,6 +7,7 @@
 
 class UObject;
 class UPackageMap;
+struct FVector_NetQuantize;
 
 /**
  * 
@@ -22,6 +23,11 @@ public:
 
 	void SetIsBlockedHit(bool bInIsBlockedHit) { bIsBlockedHit = bInIsBlockedHit; }
 	void SetIsCriticalHit(bool bInIsCriticalHit) { bIsCriticalHit = bInIsCriticalHit; }
+
+	void SetSpawnLocations(const TArray<FVector_NetQuantize>& InSpawnLocations);
+	
+	TArray<FVector_NetQuantize> GetSpawnLocations() const { return SpawnLocations; }
+
 	
 	virtual UScriptStruct* GetScriptStruct() const override
 	{
@@ -49,6 +55,9 @@ protected:
 	
 	UPROPERTY()
 	bool bIsCriticalHit = false;
+
+	UPROPERTY()
+	TArray<FVector_NetQuantize> SpawnLocations = TArray<FVector_NetQuantize>();
 };
 
 template<>

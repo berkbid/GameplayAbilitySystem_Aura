@@ -38,14 +38,16 @@ float UMMC_MaxHealth::CalculateBaseMagnitude_Implementation(const FGameplayEffec
 	Vigor = FMath::Max<float>(Vigor, 0.f);
 	
 	int32 PlayerLevel = 1;
-	if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(Spec.GetContext().GetSourceObject()))
+	const UObject* SourceObject = Spec.GetContext().GetSourceObject();
+	if (SourceObject && SourceObject->Implements<UCombatInterface>())
 	{
-		PlayerLevel = CombatInterface->GetPlayerLevel();
+		PlayerLevel = ICombatInterface::Execute_GetPlayerLevel(SourceObject);
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("Gameplay effect spec missing source object to retrieve player level!"));
 	}
+	
 	UE_LOG(LogTemp, Warning, TEXT("Recalculating Max Health based on vigor and player level"));
 	return 80.f + Vigor * 2.5f + 10.f * PlayerLevel;
 }

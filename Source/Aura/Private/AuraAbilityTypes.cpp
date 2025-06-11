@@ -4,6 +4,12 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraAbilityTypes)
 
+void FAuraGameplayEffectContext::SetSpawnLocations(const TArray<FVector_NetQuantize>& InSpawnLocations)
+{
+	SpawnLocations.Reset();
+	SpawnLocations.Append(InSpawnLocations);
+}
+
 bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
 {
 	//!!!!!!!!!!!!!!!! Warning !!!!!!!!!!!!!!!
@@ -105,8 +111,10 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, UPackageMap* Map, bo
 	if (Ar.IsLoading())
 	{
 		AddInstigator(Instigator.Get(), EffectCauser.Get()); // Just to initialize InstigatorAbilitySystemComponent
-	}	
+	}
 	
-	bOutSuccess = true;
+	bOutSuccess &= SafeNetSerializeTArray_WithNetSerialize<31, FVector_NetQuantize>(Ar, SpawnLocations, Map);
+	//bOutSuccess = true;
+	
 	return true;
 }

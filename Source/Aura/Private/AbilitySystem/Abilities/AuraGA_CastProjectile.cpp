@@ -4,7 +4,6 @@
 #include "AbilitySystemComponent.h"
 #include "Actor/AuraProjectile.h"
 #include "Interaction/CombatInterface.h"
-#include "AuraGameplayTags.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraGA_CastProjectile)
 
@@ -49,7 +48,7 @@ void UAuraGA_CastProjectile::EndAbility(const FGameplayAbilitySpecHandle Handle,
 	}
 }
 
-void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocation)
+void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocation, const FGameplayTag& SpawnLocationSocketTag, bool bOverridePitch, float PitchOverride)
 {
 	// Spawn projectile on server
 	const bool bIsServer = HasAuthority(&CurrentActivationInfo);
@@ -72,7 +71,7 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 	}
 	
 	// See AbilityTask_SpawnActor for interesting code
-	const FVector SocketLocation = ICombatInterface::Execute_GetCombatSocketLocation(AvatarActor, FAuraGameplayTags::Get().CombatSocket_Weapon);
+	const FVector SocketLocation = ICombatInterface::Execute_GetCombatSocketLocation(AvatarActor, SpawnLocationSocketTag);
 	
 	//DrawDebugSphere(GetWorld(), SocketLocation, 20, 30, FColor::Yellow, false, 5.f);
 
@@ -80,15 +79,15 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 	//FRotator Rotation = (ProjectileTargetLocation - AvatarActor->GetActorLocation()).Rotation();
 	FRotator Rotation = (ProjectileTargetLocation - SocketLocation).Rotation();
 	
-	// Parallel to ground
-	Rotation.Pitch = 0.f;
+	// If not override, use parallel to ground pitch
+	Rotation.Pitch = bOverridePitch ? Rotation.Pitch : 0.f;
 	
 	FTransform SpawnTransform;
 	// Spawn at socket location of weapon of who is calling this
 	SpawnTransform.SetLocation(SocketLocation);
 	SpawnTransform.SetRotation(Rotation.Quaternion());
 
-	UE_LOG(LogTemp, Warning, TEXT("Cast projectile(Server): Transform: %s"), *SpawnTransform.ToString());
+	//UE_LOG(LogTemp, Warning, TEXT("Cast projectile(Server): Transform: %s"), *SpawnTransform.ToString());
 	
 	AAuraProjectile* Projectile = GetWorld()->SpawnActorDeferred<AAuraProjectile>(
 		AuraProjectileClass,
@@ -120,10 +119,6 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 			
 			// Create spec handle using the GE_Damage
 			const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), EffectContextHandle);
-
-			// Set the damage gameplay tag and damage magnitude KV pair on the spec handle since the GE damage uses "Set by caller" magnitude calculation type
-			//const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
-			//UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, GameplayTags.Damage, 50.f);
 
 			// Allows for multiple damage types
 			for (const TPair<FGameplayTag, FScalableFloat>& Pair : DamageTypes)

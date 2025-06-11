@@ -54,6 +54,10 @@ AAuraEnemy::AAuraEnemy(const FObjectInitializer& ObjectInitializer)
 
 	LeftHandSocketName = FName("LeftHandSocket");
 	RightHandSocketName = FName("RightHandSocket");
+	TailSocketName = FName("TailSocket");
+
+	// Have AI enemies auto possessed when placed in world or spawned
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
 void AAuraEnemy::BeginPlay()
@@ -169,22 +173,26 @@ FVector AAuraEnemy::GetCombatSocketLocation_Implementation(const FGameplayTag& M
 	}
 	
 	const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
+
+	// Left-hand socket
 	if (MontageTag.MatchesTagExact(GameplayTags.CombatSocket_LeftHand))
 	{
-		if (LeftHandSocketName.IsNone())
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s missing LeftHandSocketName property"), *GetName());
-		}
+		UE_CLOG(LeftHandSocketName.IsNone(), LogTemp, Error, TEXT("%s missing LeftHandSocketName property"), *GetName());
 		return GetMesh()->GetSocketLocation(LeftHandSocketName);
 	}
 	
+	// Right-hand socket
 	if (MontageTag.MatchesTagExact(GameplayTags.CombatSocket_RightHand))
 	{
-		if (RightHandSocketName.IsNone())
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s missing RightHandSocketName property"), *GetName());
-		}
+		UE_CLOG(RightHandSocketName.IsNone(), LogTemp, Error, TEXT("%s missing RightHandSocketName property"), *GetName());
 		return GetMesh()->GetSocketLocation(RightHandSocketName);
+	}
+	
+	// Tail socket
+	if (MontageTag.MatchesTagExact(GameplayTags.CombatSocket_Tail))
+	{
+		UE_CLOG(TailSocketName.IsNone(), LogTemp, Error, TEXT("%s missing TailSocketName property"), *GetName());
+		return GetMesh()->GetSocketLocation(TailSocketName);
 	}
 	return FVector();
 }

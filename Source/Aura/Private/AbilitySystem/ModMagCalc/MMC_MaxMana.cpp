@@ -33,12 +33,11 @@ float UMMC_MaxMana::CalculateBaseMagnitude_Implementation(const FGameplayEffectS
 	
 	// Don't let vigor be below 0
 	Intelligence = FMath::Max<float>(Intelligence, 0.f);
-	
-	int32 PlayerLevel = 1;
-	if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(Spec.GetContext().GetSourceObject()))
-	{
-		PlayerLevel = CombatInterface->GetPlayerLevel();
-	}
+
+	// Get player level
+	const UObject* SourceObject = Spec.GetContext().GetSourceObject();
+	const int32 PlayerLevel = SourceObject && SourceObject->Implements<UCombatInterface>() ? ICombatInterface::Execute_GetPlayerLevel(SourceObject) : 1;
+
 	UE_LOG(LogTemp, Warning, TEXT("Recalculating Max Health based on vigor and player level"));
 	return 50.f + Intelligence * 2.5f + 15.f * PlayerLevel;
 }

@@ -21,7 +21,7 @@ AAuraCharacterBase::AAuraCharacterBase(const FObjectInitializer& ObjectInitializ
 	
 	// Set capsule to ignore collision with camera channel
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-	// Mesh handles overlaps, disable capsule overlap so there is no double overlap events
+	// Mesh handles overlaps, disable capsule overlap so there aren't double overlap events
 	GetCapsuleComponent()->SetGenerateOverlapEvents(false);
 	
 	// Set mesh to ignore collision with camera channel
@@ -46,10 +46,8 @@ FVector AAuraCharacterBase::GetCombatSocketLocation_Implementation(const FGamepl
 	if (MontageTag.MatchesTagExact(GameplayTags.CombatSocket_Weapon))
 	{
 		check(IsValid(Weapon));
-		if (WeaponTipSocketName.IsNone())
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s missing WeaponTipSocketName property"), *GetName());
-		}
+		UE_CLOG(WeaponTipSocketName.IsNone(), LogTemp, Error, TEXT("%s missing WeaponTipSocketName property"), *GetName());
+		
 		return Weapon->GetSocketLocation(WeaponTipSocketName);
 	}
 	

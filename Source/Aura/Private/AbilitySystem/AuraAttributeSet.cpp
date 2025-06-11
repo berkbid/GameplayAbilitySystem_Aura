@@ -140,31 +140,14 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 				// Activate the GA_HitReact on target losing health
 				if (EffectProperties.TargetASC)
 				{
+					const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
+					
 					// Create tag container with hit react tag
 					FGameplayTagContainer TagContainer;
-					const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
 					TagContainer.AddTag(AuraGameplayTags.Effects_HitReact);
 					
-					// (not in course) Ending the GA HitReact if it is currently active, to activate a new one below
-					for (const FGameplayAbilitySpec& ActivatableAbility : EffectProperties.TargetASC->GetActivatableAbilities())
-					{
-						if (ActivatableAbility.IsActive())
-						{
-							TArray<UGameplayAbility*> ActiveAbilities = ActivatableAbility.GetAbilityInstances();
-							for (UGameplayAbility* Ability : ActiveAbilities)
-							{
-								// Casting to Aura GA because EndAbility() is protected in regular GA class
-								if (UAuraGameplayAbility* AuraGA = Cast<UAuraGameplayAbility>(Ability))
-								{
-									if (AuraGA->AbilityTags.HasTagExact(AuraGameplayTags.Effects_HitReact))
-									{
-										AuraGA->EndAbility(AuraGA->GetCurrentAbilitySpecHandle(), AuraGA->GetCurrentActorInfo(), AuraGA->GetCurrentActivationInfo(),
-										true, true);
-									}
-								}
-							}
-						}
-					}
+					// Cancel any active hit react ability
+					EffectProperties.TargetASC->CancelAbilities(&TagContainer, nullptr, nullptr);
 					
 					// Activate hit react gameplay ability
 					EffectProperties.TargetASC->TryActivateAbilitiesByTag(TagContainer);

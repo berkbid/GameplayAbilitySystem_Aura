@@ -44,7 +44,9 @@ class AURA_API ICombatInterface
 	GENERATED_BODY()
 
 public:
-	virtual int32 GetPlayerLevel() const;
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	int32 GetPlayerLevel() const;
+	virtual int32 GetPlayerLevel_Implementation() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	FVector GetCombatSocketLocation(const FGameplayTag& MontageTag) const;
@@ -72,4 +74,10 @@ public:
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	FTaggedMontage GetTaggedMontageByTag(const FGameplayTag& MontageTag) const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	int32 GetMinionCount() const;
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void IncrementMinionCount(int32 Amount = 1);
 };

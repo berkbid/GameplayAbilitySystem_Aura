@@ -144,8 +144,9 @@ bool UExecCalc_Damage::UpdateDamageWithCritical(float& OutDamage, const FGamepla
 	const UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
 	const AActor* SourceAvatar = SourceASC ? SourceASC->GetAvatarActor() : nullptr;
 	const AActor* TargetAvatar = TargetASC ? TargetASC->GetAvatarActor() : nullptr;
-	const ICombatInterface* SourceCombatInterface = Cast<ICombatInterface>(SourceAvatar);
-	const ICombatInterface* TargetCombatInterface = Cast<ICombatInterface>(TargetAvatar);
+	//const ICombatInterface* SourceCombatInterface = Cast<ICombatInterface>(SourceAvatar);
+	//const ICombatInterface* TargetCombatInterface = Cast<ICombatInterface>(TargetAvatar);
+	const int32 TargetPlayerLevel = TargetAvatar && TargetAvatar->Implements<UCombatInterface>() ? ICombatInterface::Execute_GetPlayerLevel(TargetAvatar) : 1;
 	
 	// Critical Hit Chance
 	float SourceCriticalHitChance = 0.f;
@@ -159,7 +160,7 @@ bool UExecCalc_Damage::UpdateDamageWithCritical(float& OutDamage, const FGamepla
 
 	// Critical Hit Resistance Coefficient
 	float CriticalHitResistanceCoefficient = 0.f;
-	GetCalculationCoefficient(CriticalHitResistanceCoefficient, SourceAvatar, FName("CriticalHitResistance"), TargetCombatInterface ? TargetCombatInterface->GetPlayerLevel() : 1);
+	GetCalculationCoefficient(CriticalHitResistanceCoefficient, SourceAvatar, FName("CriticalHitResistance"), TargetPlayerLevel);
 	
 	// Determine if critical hit
 	const float CriticalHitRandomFloat = FMath::RandRange(1.f, 100.f);
@@ -200,9 +201,10 @@ void UExecCalc_Damage::UpdateDamageWithArmor(float& OutDamage, const FGameplayEf
 	const UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
 	const AActor* SourceAvatar = SourceASC ? SourceASC->GetAvatarActor() : nullptr;
 	const AActor* TargetAvatar = TargetASC ? TargetASC->GetAvatarActor() : nullptr;
-	const ICombatInterface* SourceCombatInterface = Cast<ICombatInterface>(SourceAvatar);
-	const ICombatInterface* TargetCombatInterface = Cast<ICombatInterface>(TargetAvatar);
-	
+	//const ICombatInterface* SourceCombatInterface = Cast<ICombatInterface>(SourceAvatar);
+	//const ICombatInterface* TargetCombatInterface = Cast<ICombatInterface>(TargetAvatar);
+	const int32 SourcePlayerLevel = SourceAvatar && SourceAvatar->Implements<UCombatInterface>() ? ICombatInterface::Execute_GetPlayerLevel(SourceAvatar) : 1;
+
 	// Target armor (armor penetration will ignore a percentage of the target's armor)
 	float TargetArmor = 0.f;
 	const bool bFoundTargetArmor = ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().ArmorDef, EvaluationParameters, TargetArmor);
@@ -215,11 +217,11 @@ void UExecCalc_Damage::UpdateDamageWithArmor(float& OutDamage, const FGameplayEf
 
 	// Armor Penetration Coefficient
 	float ArmorPenetrationCoefficient = 0.f;
-	GetCalculationCoefficient(ArmorPenetrationCoefficient, SourceAvatar, FName("ArmorPenetration"), SourceCombatInterface ? SourceCombatInterface->GetPlayerLevel() : 1);
+	GetCalculationCoefficient(ArmorPenetrationCoefficient, SourceAvatar, FName("ArmorPenetration"), SourcePlayerLevel);
 
 	// Effective Armor Coefficient
 	float EffectiveArmorCoefficient = 0.f;
-	GetCalculationCoefficient(EffectiveArmorCoefficient, SourceAvatar, FName("EffectiveArmor"), SourceCombatInterface ? SourceCombatInterface->GetPlayerLevel() : 1);
+	GetCalculationCoefficient(EffectiveArmorCoefficient, SourceAvatar, FName("EffectiveArmor"), SourcePlayerLevel);
 	
 	// Armor ignores a percentage of incoming damage
 	const float EffectiveArmor = TargetArmor * (100 - SourceArmorPenetration * ArmorPenetrationCoefficient) / 100.f;

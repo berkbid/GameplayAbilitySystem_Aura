@@ -28,7 +28,7 @@ public:
 	// ~ End APawn Interface
 	
 	// ~ Begin ICombatInterface
-	virtual int32 GetPlayerLevel() const override;
+	virtual int32 GetPlayerLevel_Implementation() const override;
 	// UFUNCTION(BlueprintImplementableEvent)
 	// void SetFacingTarget(const FVector& FacingTarget) override;
 	// ~ End ICombatInterface

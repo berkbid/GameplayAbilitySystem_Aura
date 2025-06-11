@@ -8,3 +8,4 @@ ParentGuid:00000000-0000-0000-0000-000000000000
 /Game/Blueprints/AbilitySystem/Enemy/Abilities/GA_HitReact.GA_HitReact
 /Game/Blueprints/AbilitySystem/Enemy/Abilities/GA_Melee.GA_Melee
 /Game/Blueprints/AbilitySystem/Enemy/Abilities/GA_RangedAttack.GA_RangedAttack
+/Game/Blueprints/AbilitySystem/Enemy/Abilities/GA_Summon.GA_Summon

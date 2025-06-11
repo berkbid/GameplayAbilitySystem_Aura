@@ -69,6 +69,7 @@ public:
 	FGameplayTag Damage_Physical;
 
 	FGameplayTag Abilities_Attack;
+	FGameplayTag Abilities_Summon;
 	
 	/** Mapping of damage type gameplay tags to resistance type gameplay tags */
 	TMap<FGameplayTag, FGameplayTag> DamageTypesToResistances;
@@ -79,6 +80,7 @@ public:
 	FGameplayTag CombatSocket_Weapon;
 	FGameplayTag CombatSocket_RightHand;
 	FGameplayTag CombatSocket_LeftHand;
+	FGameplayTag CombatSocket_Tail;
 
 	FGameplayTag Montage_Attack_1;
 	FGameplayTag Montage_Attack_2;

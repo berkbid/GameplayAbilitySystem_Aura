@@ -99,12 +99,13 @@ void AAuraCharacter::InitializeDefaultAttributes() const
 	ApplyGameplayEffectToSelf(DefaultVitalAttributesClass, 1.f);
 }
 
-int32 AAuraCharacter::GetPlayerLevel() const
+int32 AAuraCharacter::GetPlayerLevel_Implementation() const
 {
-	if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(GetPlayerState()))
+	const APlayerState* PS = GetPlayerState();
+	if (PS && PS->Implements<UCombatInterface>())
 	{
-		return CombatInterface->GetPlayerLevel();
+		return ICombatInterface::Execute_GetPlayerLevel(PS);
 	}
-	
+
 	return 1;
 }
