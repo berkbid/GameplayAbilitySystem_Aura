@@ -9,7 +9,19 @@ class AActor;
 class AController;
 class UCameraComponent;
 class USpringArmComponent;
+class UStaticMeshComponent;
+class UMaterialInterface;
 class UObject;
+
+USTRUCT(BlueprintType)
+struct FCameraOccludedMeshActor
+{
+	GENERATED_BODY()
+
+	// Assuming just 1 static mesh component coming from a static mesh actor
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TArray<UMaterialInterface*> Materials;
+};
 
 /**
  * 
@@ -44,7 +56,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Components")
 	TObjectPtr<UCameraComponent> Camera;
-
+	
 	// Could potentially move these 3 gameplay effects to the base class if we wanted enemies to utilize them
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attributes")
 	TSubclassOf<UGameplayEffect> DefaultPrimaryAttributesClass;
@@ -54,4 +66,7 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attributes")
 	TSubclassOf<UGameplayEffect> DefaultVitalAttributesClass;
+
+	UPROPERTY(Transient,VisibleAnywhere, BlueprintReadOnly, Category="OccludedMeshes")
+	TMap<AActor*, FCameraOccludedMeshActor> OccludedMeshActors;
 };

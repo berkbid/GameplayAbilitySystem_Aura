@@ -26,7 +26,7 @@ AAuraCharacter::AAuraCharacter(const FObjectInitializer& ObjectInitializer)
 	Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
 	Camera->bUsePawnControlRotation = false; // Fixed cam
 	Camera->SetupAttachment(SpringArm);
-
+	
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 400.f, 0.f);
 	// Top down params

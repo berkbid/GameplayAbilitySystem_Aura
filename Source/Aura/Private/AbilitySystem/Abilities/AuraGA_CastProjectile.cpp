@@ -2,6 +2,7 @@
 
 #include "AbilitySystem/Abilities/AuraGA_CastProjectile.h"
 #include "AbilitySystemComponent.h"
+#include "AuraLogChannels.h"
 #include "Actor/AuraProjectile.h"
 #include "Interaction/CombatInterface.h"
 
@@ -32,6 +33,8 @@ void UAuraGA_CastProjectile::EndAbility(const FGameplayAbilitySpecHandle Handle,
                                         const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
                                         bool bReplicateEndAbility, bool bWasCancelled)
 {
+	UE_LOG(LogAuraAbilitySystem, Warning, TEXT("UAuraGA_CastProjectile::EndAbility(%s)"), *GetClientServerContextString(this));
+	
 	// Referenced from LyraGameplayAbility_RangedWeapon
 	if (IsEndAbilityValid(Handle, ActorInfo))
 	{
@@ -45,6 +48,10 @@ void UAuraGA_CastProjectile::EndAbility(const FGameplayAbilitySpecHandle Handle,
 
 		
 		Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+	}
+	else
+	{
+		UE_LOG(LogAuraAbilitySystem, Warning, TEXT("UAuraGA_CastProjectile::EndAbility(%s): End ability INVALID"), *GetClientServerContextString(this));
 	}
 }
 

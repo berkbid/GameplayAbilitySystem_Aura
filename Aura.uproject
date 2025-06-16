@@ -17,7 +17,8 @@
 				"CommonGame",
 				"ModularGameplayActors",
 				"CommonUI",
-				"AIModule"
+				"AIModule",
+				"ModularGameplay"
 			]
 		}
 	],
