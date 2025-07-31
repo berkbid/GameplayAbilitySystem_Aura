@@ -4,6 +4,7 @@
 #include "AbilitySystemComponent.h"
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "Aura/Aura.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -37,6 +38,9 @@ AAuraCharacterBase::AAuraCharacterBase(const FObjectInitializer& ObjectInitializ
 
 	// Default name for weapon skeletal mesh tip socket
 	WeaponTipSocketName = FName("TipSocket");
+	
+	// Set a default character class
+	CharacterClass = ECharacterClass::Elementalist;
 }
 
 FVector AAuraCharacterBase::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const
@@ -162,9 +166,10 @@ void AAuraCharacterBase::AddCharacterAbilities() const
 		return;
 	}
 
-	// Have ability system component add abilities
+	// Have ability system component add abilities and passive abilities
 	UAuraAbilitySystemComponent* ASC = CastChecked<UAuraAbilitySystemComponent>(AbilitySystemComponent);
 	ASC->AddCharacterAbilities(StartupAbilities);
+	ASC->AddCharacterPassiveAbilities(StartupPassiveAbilities);
 }
 
 void AAuraCharacterBase::Dissolve()

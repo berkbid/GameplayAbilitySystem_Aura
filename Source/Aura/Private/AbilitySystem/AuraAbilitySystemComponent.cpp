@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerState.h"
 //#include "Engine/EngineBaseTypes.h"
 
+#include "AuraLogChannels.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraAbilitySystemComponent)
 
 enum ENetRole : int;
@@ -50,7 +52,7 @@ void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf
 	// Server functionality to add abilities
 	for (const TSubclassOf<UGameplayAbility>& AbilityClass : StartupAbilities)
 	{
-		// Create ability spec from class
+		// Create ability spec from class, give at level 1
 		FGameplayAbilitySpec AbilitySpec(AbilityClass, 1);
 
 		// Add startup input tag to the abilities dynamic ability tags
@@ -64,6 +66,28 @@ void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf
 		GiveAbility(AbilitySpec);
 		// Optional, will give and activate
 		//GiveAbilityAndActivateOnce(AbilitySpec);
+	}
+	
+	bStartupAbilitiesGiven = true;
+	OnAbilitiesGiven.Broadcast(this);
+}
+
+void UAuraAbilitySystemComponent::AddCharacterPassiveAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupPassiveAbilities)
+{
+	const AActor* ActorOwner = GetOwner();
+	if (!ActorOwner || ActorOwner->GetLocalRole() < ROLE_Authority)
+	{
+		return;
+	}
+
+	// Server functionality to add abilities
+	for (const TSubclassOf<UGameplayAbility>& AbilityClass : StartupPassiveAbilities)
+	{
+		// Create ability spec from class, give at level 1
+		FGameplayAbilitySpec AbilitySpec(AbilityClass, 1);
+		
+		// Give the ability and activate
+		GiveAbilityAndActivateOnce(AbilitySpec);
 	}
 }
 
@@ -95,6 +119,57 @@ void UAuraAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& In
 	if (FGameplayAbilitySpec* AbilitySpec = FindAbilityForTag(InputTag))
 	{
 		AbilitySpecInputReleased(*AbilitySpec);
+	}
+}
+
+void UAuraAbilitySystemComponent::ForEachAbility(const FForEachAbility& Delegate)
+{
+	ABILITYLIST_SCOPE_LOCK();
+	for (const FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
+	{
+		if (!Delegate.ExecuteIfBound(AbilitySpec))
+		{
+			UE_LOG(LogAuraAbilitySystem, Error, TEXT("Failed to execute delegate in %hs"), __FUNCTION__);
+		}
+	}
+}
+
+FGameplayTag UAuraAbilitySystemComponent::GetAbilityTagFromSpec(const FGameplayAbilitySpec& AbilitySpec)
+{
+	if (AbilitySpec.Ability)
+	{
+		for (const FGameplayTag& Tag : AbilitySpec.Ability->GetAssetTags())
+		{
+			if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag(FName("Abilities"))))
+			{
+				return Tag;
+			}
+		}
+	}
+	return FGameplayTag();
+}
+
+FGameplayTag UAuraAbilitySystemComponent::GetInputTagFromSpec(const FGameplayAbilitySpec& AbilitySpec)
+{
+	for (const FGameplayTag& Tag : AbilitySpec.GetDynamicSpecSourceTags())
+	{
+		if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag(FName("InputTag"))))
+		{
+			return Tag;
+		}
+	}
+	
+	return FGameplayTag();
+}
+
+void UAuraAbilitySystemComponent::OnRep_ActivateAbilities()
+{
+	Super::OnRep_ActivateAbilities();
+
+	if (!bStartupAbilitiesGiven)
+	{
+		bStartupAbilitiesGiven = true;
+		OnAbilitiesGiven.Broadcast(this);
 	}
 }
 

@@ -4,12 +4,14 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AuraGameplayTags.h"
+#include "AuraLogChannels.h"
 #include "GameplayEffectExtension.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/Controller.h"
 #include "Interaction/CombatInterface.h"
+#include "Interaction/PlayerInterface.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/AuraPlayerController.h"
 
@@ -93,26 +95,14 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	Super::PostGameplayEffectExecute(Data);
 
 	// Access to lots of data post gameplay effect execute
-	FEffectProperties EffectProperties(Data);
-
-	// TODO: Remove this, GE should not be changing health attribute but the damage meta attribute instead
-	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
+	FEffectProperties Props(Data);
+	
+	if (Data.EvaluatedData.Attribute == GetManaAttribute())
 	{
-		// GetHealth() returns clamped value in PreAttributeChange but not actual value, so we cannot test if it is in range, need to call SetHealth always
-		const float ClampedHealth = FMath::Clamp(GetHealth(), 0.f, GetMaxHealth());
-		//UE_LOG(LogTemp, Warning, TEXT("Post GE health value: %f, setting health clamped: %f"), GetHealth(), ClampedHealth);
-		SetHealth(ClampedHealth);
-		
-		if (EffectProperties.TargetAvatarActor)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Changed health on %s, Health: %f"), *EffectProperties.TargetAvatarActor->GetName(), GetHealth());
-		}
-	}
-	else if (Data.EvaluatedData.Attribute == GetManaAttribute())
-	{
-		const float ClampedMana = FMath::Clamp(GetMana(), 0.f, GetMaxMana());
+		// TODO: Should we do this here? Seems to result in server receiving an extra mana changed event, not client
+		//const float ClampedMana = FMath::Clamp(GetMana(), 0.f, GetMaxMana());
 		//UE_LOG(LogTemp, Warning, TEXT("Post GE Mana value: %f, setting Mana clamped: %f"), GetMana(), ClampedMana);
-		SetMana(ClampedMana);
+		//SetMana(ClampedMana);
 	}
 	
 	// If we are getting a changed incoming damage (meta attribute)
@@ -132,13 +122,14 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 			if (bFatalDamage)
 			{
 				// Call die function on combat interface of target actor if fatal damage
-				ICombatInterface* CombatInterface = CastChecked<ICombatInterface>(EffectProperties.TargetAvatarActor);
+				ICombatInterface* CombatInterface = CastChecked<ICombatInterface>(Props.TargetAvatarActor);
 				CombatInterface->Die();
+				SendXpEvent(Props);
 			}
 			else
 			{
 				// Activate the GA_HitReact on target losing health
-				if (EffectProperties.TargetASC)
+				if (Props.TargetASC)
 				{
 					const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
 					
@@ -147,21 +138,39 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 					TagContainer.AddTag(AuraGameplayTags.Effects_HitReact);
 					
 					// Cancel any active hit react ability
-					EffectProperties.TargetASC->CancelAbilities(&TagContainer, nullptr, nullptr);
+					Props.TargetASC->CancelAbilities(&TagContainer, nullptr, nullptr);
 					
 					// Activate hit react gameplay ability
-					EffectProperties.TargetASC->TryActivateAbilitiesByTag(TagContainer);
+					Props.TargetASC->TryActivateAbilitiesByTag(TagContainer);
 				}
 			}
 			
-			const bool bBlock = UAuraAbilitySystemLibrary::IsBlockedHit(EffectProperties.EffectContextHandle);
-			const bool bCrit = UAuraAbilitySystemLibrary::IsCriticalHit(EffectProperties.EffectContextHandle);
-			ShowFloatingText(EffectProperties, LocalIncomingDamage, bBlock, bCrit);
+			const bool bBlock = UAuraAbilitySystemLibrary::IsBlockedHit(Props.EffectContextHandle);
+			const bool bCrit = UAuraAbilitySystemLibrary::IsCriticalHit(Props.EffectContextHandle);
+			ShowFloatingText(Props, LocalIncomingDamage, bBlock, bCrit);
+		}
+	}
+	
+	// If we are getting a changed incoming xp (meta attribute)
+	if (Data.EvaluatedData.Attribute == GetIncomingXpAttribute())
+	{
+		const float LocalIncomingXp = GetIncomingXp();
+		SetIncomingXp(0.f);
+		UE_LOG(LogAuraAbilitySystem, Warning, TEXT("Post GE Incoming Xp value: %f"), LocalIncomingXp);
+		
+		if (LocalIncomingXp > 0.f)
+		{
+			// Source character is the owner, since GA_ListenForEvents applies GE_EventBasedEffect to self, adding to IncomingXp
+			if (Props.SourceCharacter && Props.SourceCharacter->Implements<UPlayerInterface>())
+			{
+				// This will add to the xp on the player state which will handle everything else
+				IPlayerInterface::Execute_AddToXp(Props.SourceCharacter, LocalIncomingXp);
+			}
 		}
 	}
 }
 
-void UAuraAttributeSet::ShowFloatingText(const FEffectProperties& EffectProperties, float Damage, bool bBlockedHit, bool bCriticalHit) const
+void UAuraAttributeSet::ShowFloatingText(const FEffectProperties& EffectProperties, float Damage, bool bBlockedHit, bool bCriticalHit)
 {
 	if (EffectProperties.SourceCharacter != EffectProperties.TargetCharacter)
 	{
@@ -191,6 +200,31 @@ void UAuraAttributeSet::ShowFloatingText(const FEffectProperties& EffectProperti
 		// 		AuraPC->ShowDamageNumber(Damage, EffectProperties.TargetCharacter, bBlockedHit, bCriticalHit);
 		// 	}
 		// }
+	}
+}
+
+void UAuraAttributeSet::SendXpEvent(const FEffectProperties& Props)
+{
+	if (Props.TargetAvatarActor && Props.TargetAvatarActor->Implements<UCombatInterface>())
+	{
+		// Get the target avatar level and class
+		const int32 TargetLevel = ICombatInterface::Execute_GetPlayerLevel(Props.TargetAvatarActor);
+		const ECharacterClass TargetClass = ICombatInterface::Execute_GetCharacterClass(Props.TargetAvatarActor);
+
+		// Get the xp reward amount from target avatar
+		const int32 XpReward = UAuraAbilitySystemLibrary::GetXpRewardFromEnemy(Props.TargetAvatarActor, TargetClass, TargetLevel);
+	
+		const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
+	
+		FGameplayEventData Payload;
+		Payload.EventTag = GameplayTags.Attributes_Meta_IncomingXp;
+		Payload.EventMagnitude = XpReward;
+
+		// Send gameplay event using given gameplay tag of Attributes_Meta_IncomingXp and magnitude of the xp
+		// GA_ListenForEvents will receive this gameplay event and use GE_EventBasedEffect to make OutgoingSpec and set by caller the magnitude to equal
+		// this event's magnitude (xp reward). Then it will apply the GE to self (source character), which adds to the meta attribute IncomingXp
+		// which will be received in PostGameplayEffectExecute() where this IncomingXp value can be utilized.
+		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Props.SourceCharacter, GameplayTags.Attributes_Meta_IncomingXp, Payload);
 	}
 }
 
@@ -275,7 +309,7 @@ void UAuraAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHeal
 void UAuraAttributeSet::OnRep_Mana(const FGameplayAttributeData& OldMana) const
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Mana, OldMana);
-	//UE_LOG(LogTemp, Warning, TEXT("OnRep_Mana - Old: %f, New: %f"), OldMana.GetCurrentValue(), Mana.GetCurrentValue());
+	UE_LOG(LogTemp, Warning, TEXT("OnRep_Mana - Old: %f, New: %f"), OldMana.GetCurrentValue(), Mana.GetCurrentValue());
 }
 
 void UAuraAttributeSet::OnRep_MaxMana(const FGameplayAttributeData& OldMaxMana) const
@@ -350,8 +384,10 @@ FEffectProperties::FEffectProperties(const FGameplayEffectModCallbackData& Data)
 	if (Data.Target.AbilityActorInfo.IsValid() && Data.Target.AbilityActorInfo->AvatarActor.IsValid())
 	{
 		TargetAvatarActor = Data.Target.AbilityActorInfo->AvatarActor.Get();
-		TargetController = Data.Target.AbilityActorInfo->PlayerController.IsValid() ? Data.Target.AbilityActorInfo->PlayerController.Get(): nullptr;
 		TargetCharacter = Cast<ACharacter>(TargetAvatarActor);
+		
+		TargetController = Data.Target.AbilityActorInfo->PlayerController.IsValid() ? Data.Target.AbilityActorInfo->PlayerController.Get(): nullptr;
+		
 		//TargetASC = &Data.Target;
 		//TargetASC = GetOwningAbilitySystemComponent();
 		TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetAvatarActor);

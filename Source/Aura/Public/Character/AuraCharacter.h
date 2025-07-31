@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Character/AuraCharacterBase.h"
+#include "Interaction/PlayerInterface.h"
 #include "AuraCharacter.generated.h"
 
 class AActor;
@@ -11,6 +12,7 @@ class UCameraComponent;
 class USpringArmComponent;
 class UStaticMeshComponent;
 class UMaterialInterface;
+class UNiagaraComponent;
 class UObject;
 
 USTRUCT(BlueprintType)
@@ -26,36 +28,41 @@ struct FCameraOccludedMeshActor
 /**
  * 
  */
-UCLASS()
-class AURA_API AAuraCharacter : public AAuraCharacterBase
+UCLASS(MinimalAPI)
+class AAuraCharacter : public AAuraCharacterBase, public IPlayerInterface
 {
 	GENERATED_BODY()
 
 public:
-	AAuraCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	AURA_API AAuraCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 	
 	// ~ Begin APawn Interface.
-	virtual void PossessedBy(AController* NewController) override;
-	virtual void OnRep_PlayerState() override;
+	AURA_API virtual void PossessedBy(AController* NewController) override;
+	AURA_API virtual void OnRep_PlayerState() override;
 	// ~ End APawn Interface
 	
 	// ~ Begin ICombatInterface
-	virtual int32 GetPlayerLevel_Implementation() const override;
+	AURA_API virtual int32 GetPlayerLevel_Implementation() const override;
 	// UFUNCTION(BlueprintImplementableEvent)
-	// void SetFacingTarget(const FVector& FacingTarget) override;
+	// AURA_API void SetFacingTarget(const FVector& FacingTarget) override;
 	// ~ End ICombatInterface
+
+	// Player Interface
+	AURA_API virtual void AddToXp_Implementation(int32 InXp) override;
+	// ~End Player Interface
 	
 protected:
-	/** Initializes the ability system component with owner actor/avatar */
-	virtual void InitAbilityActorInfo() override;
-	
-	virtual void InitializeDefaultAttributes() const override;
-	
-	UPROPERTY(EditAnywhere, Category = "Components")
+	AURA_API virtual void InitializeDefaultAttributes() const override;
+
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<USpringArmComponent> SpringArm;
 
-	UPROPERTY(EditAnywhere, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UCameraComponent> Camera;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UNiagaraComponent> LevelUpNiagaraComponent;
 	
 	// Could potentially move these 3 gameplay effects to the base class if we wanted enemies to utilize them
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attributes")
@@ -69,4 +76,11 @@ protected:
 
 	UPROPERTY(Transient,VisibleAnywhere, BlueprintReadOnly, Category="OccludedMeshes")
 	TMap<AActor*, FCameraOccludedMeshActor> OccludedMeshActors;
+	
+private:
+	virtual void InitAbilityActorInfo() override;
+
+	/** Called when a player levels up */
+	void LevelUpParticles() const;
+	
 };

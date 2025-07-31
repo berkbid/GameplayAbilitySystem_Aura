@@ -51,7 +51,8 @@ public:
 	/** Set the controller params and then this binds to callbacks */
 	UFUNCTION(BlueprintCallable, Category="WidgetController")
 	void SetWidgetControllerParams(const FWidgetControllerParams& InWidgetControllerParams);
-	
+
+	UFUNCTION(BlueprintCallable)
 	virtual void BroadcastInitialValues() {};
 	virtual void BindCallBacksToDependencies() {};
 	

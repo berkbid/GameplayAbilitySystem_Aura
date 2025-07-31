@@ -50,6 +50,9 @@ public:
 	FGameplayTag Attributes_Resistance_Lightning;
 	FGameplayTag Attributes_Resistance_Arcane;
 	FGameplayTag Attributes_Resistance_Physical;
+
+	// Meta attributes
+	FGameplayTag Attributes_Meta_IncomingXp;
 	
 	/*
 	 * INPUT TAGS
@@ -68,8 +71,13 @@ public:
 	FGameplayTag Damage_Arcane;
 	FGameplayTag Damage_Physical;
 
+	// Abilities
 	FGameplayTag Abilities_Attack;
 	FGameplayTag Abilities_Summon;
+	FGameplayTag Abilities_Fire_FireBolt;
+
+	// Cooldowns
+	FGameplayTag Cooldown_Fire_FireBolt;
 	
 	/** Mapping of damage type gameplay tags to resistance type gameplay tags */
 	TMap<FGameplayTag, FGameplayTag> DamageTypesToResistances;

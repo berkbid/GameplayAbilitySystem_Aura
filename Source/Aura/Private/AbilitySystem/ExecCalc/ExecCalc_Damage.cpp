@@ -144,8 +144,6 @@ bool UExecCalc_Damage::UpdateDamageWithCritical(float& OutDamage, const FGamepla
 	const UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
 	const AActor* SourceAvatar = SourceASC ? SourceASC->GetAvatarActor() : nullptr;
 	const AActor* TargetAvatar = TargetASC ? TargetASC->GetAvatarActor() : nullptr;
-	//const ICombatInterface* SourceCombatInterface = Cast<ICombatInterface>(SourceAvatar);
-	//const ICombatInterface* TargetCombatInterface = Cast<ICombatInterface>(TargetAvatar);
 	const int32 TargetPlayerLevel = TargetAvatar && TargetAvatar->Implements<UCombatInterface>() ? ICombatInterface::Execute_GetPlayerLevel(TargetAvatar) : 1;
 	
 	// Critical Hit Chance
@@ -201,8 +199,6 @@ void UExecCalc_Damage::UpdateDamageWithArmor(float& OutDamage, const FGameplayEf
 	const UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
 	const AActor* SourceAvatar = SourceASC ? SourceASC->GetAvatarActor() : nullptr;
 	const AActor* TargetAvatar = TargetASC ? TargetASC->GetAvatarActor() : nullptr;
-	//const ICombatInterface* SourceCombatInterface = Cast<ICombatInterface>(SourceAvatar);
-	//const ICombatInterface* TargetCombatInterface = Cast<ICombatInterface>(TargetAvatar);
 	const int32 SourcePlayerLevel = SourceAvatar && SourceAvatar->Implements<UCombatInterface>() ? ICombatInterface::Execute_GetPlayerLevel(SourceAvatar) : 1;
 
 	// Target armor (armor penetration will ignore a percentage of the target's armor)

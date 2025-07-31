@@ -18,44 +18,45 @@ struct FGameplayTag;
 /**
  * 
  */
-UCLASS()
-class AURA_API AAuraEnemy : public AAuraCharacterBase, public IEnemyInterface
+UCLASS(MinimalAPI)
+class AAuraEnemy : public AAuraCharacterBase, public IEnemyInterface
 {
 	GENERATED_BODY()
 
 public:
-	AAuraEnemy(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	AURA_API AAuraEnemy(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 	
 	UFUNCTION(BlueprintCallable, Category = "Aura|AI")
-	AAuraAIController* GetAuraAIController() const;
+	AURA_API AAuraAIController* GetAuraAIController() const;
 	
 	// ~ Begin AActor Interface.
-	virtual void NotifyActorBeginCursorOver() override;
-	virtual void NotifyActorEndCursorOver() override;
+	AURA_API virtual void NotifyActorBeginCursorOver() override;
+	AURA_API virtual void NotifyActorEndCursorOver() override;
 	// ~ End AActor Interface
 
 	// ~ Begin APawn Interface.
-	virtual void PossessedBy(AController* NewController) override;
+	AURA_API virtual void PossessedBy(AController* NewController) override;
 	// ~ End APawn Interface
 	
 	// ~ Begin ICombatInterface
 	virtual int32 GetPlayerLevel_Implementation() const override { return Level; }
-	virtual void Die() override;
+	AURA_API virtual void Die() override;
 	// ~ End ICombatInterface
 
 	// ~ Begin IEnemyInterface
-	virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const override;
-	virtual void SetCombatTarget_Implementation(AActor* InCombatTarget) override;
-	virtual AActor* GetCombatTarget_Implementation() const override;
+	AURA_API virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const override;
+	AURA_API virtual void SetCombatTarget_Implementation(AActor* InCombatTarget) override;
+	AURA_API virtual AActor* GetCombatTarget_Implementation() const override;
 	// ~ End IEnemyInterface
 	
 	// AAuraCharacterBase
-	virtual void MulticastHandleDeath() override;
+	AURA_API virtual void MulticastHandleDeath() override;
 	// ~AAuraCharacterBase
 	
 	UFUNCTION(BlueprintPure, Category ="UI")
-	UEnemyWidgetController* GetEnemyWidgetController();
+	AURA_API UEnemyWidgetController* GetEnemyWidgetController();
 
+public:
 	UPROPERTY(BlueprintReadOnly, Category="Combat")
 	bool bHitReacting = false;
 	
@@ -72,14 +73,14 @@ public:
 	
 protected:
 	// ~ Begin AActor Interface.
-	virtual void BeginPlay() override;
+	AURA_API virtual void BeginPlay() override;
 	// ~ End AActor Interface
 	
 	// ~ Begin UAuraCharacterBase
-	virtual void InitAbilityActorInfo() override;
-	virtual void AddCharacterAbilities() const override;
+	AURA_API virtual void InitAbilityActorInfo() override;
+	AURA_API virtual void AddCharacterAbilities() const override;
 	// Override to initialize default attributes using aura ability system library
-	virtual void InitializeDefaultAttributes() const override;
+	AURA_API virtual void InitializeDefaultAttributes() const override;
 	// ~ End UAuraCharacterBase
 	
 protected:
@@ -93,7 +94,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="AI")
 	TObjectPtr<UBehaviorTree> BehaviorTree;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	FName LeftHandSocketName;
 	UPROPERTY(EditAnywhere, Category = "Combat")
@@ -111,5 +112,4 @@ private:
 	/** Widget controller for enemies, each client and server has one for each enemy */
 	UPROPERTY(Transient, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UEnemyWidgetController> EnemyWidgetController;
-	
 };

@@ -74,32 +74,31 @@ struct FEffectProperties
 /**
  * 
  */
-UCLASS()
-class AURA_API UAuraAttributeSet : public UAttributeSet
+UCLASS(MinimalAPI)
+class UAuraAttributeSet : public UAttributeSet
 {
 	GENERATED_BODY()
 
 public:
-	UAuraAttributeSet();
+	AURA_API UAuraAttributeSet();
 
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	AURA_API virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	// ~ Begin UAttributeSet interface
 	// Called when any attribute changes, use for clamping only
-	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
-	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
+	AURA_API virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
+	AURA_API virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 	// ~ End UAttributeSet interface
 	
-	UAuraAbilitySystemComponent* GetAuraAbilitySystemComponent() const;
-	
+	AURA_API UAuraAbilitySystemComponent* GetAuraAbilitySystemComponent() const;
+
+public:
 	/** Map of gameplay tag to the gameplay attribute */
 	TMap<FGameplayTag, FGameplayAttribute> TagsToAttributes;
-
 	
 	/*
 	 * Primary Attributes
 	 */
-	
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_Strength, Category = "Primary Attributes")
 	FGameplayAttributeData Strength;
 	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, Strength);
@@ -116,7 +115,6 @@ public:
 	/*
 	 * Secondary Attributes
 	 */
-	
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_Armor, Category = "Secondary Attributes")
 	FGameplayAttributeData Armor;
 	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, Armor);
@@ -167,8 +165,7 @@ public:
 	/*
 	 * Vital Attributes
 	 */
-	
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_Health, Category = "Vital Attributes")
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_Health, Category = "Vital Attributes", meta = (HideFromModifiers))
 	FGameplayAttributeData Health;
 	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, Health);
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_Mana, Category = "Vital Attributes")
@@ -182,72 +179,73 @@ public:
 	FGameplayAttributeData IncomingDamage;
 	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, IncomingDamage);
 	
+	UPROPERTY(BlueprintReadOnly, Category = "Meta Attributes")
+	FGameplayAttributeData IncomingXp;
+	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, IncomingXp);
+	
 protected:
 	/*
 	 * Primary Attributes
 	 */
-	
 	UFUNCTION()
-	void OnRep_Strength(const FGameplayAttributeData& OldStrength) const;
+	AURA_API void OnRep_Strength(const FGameplayAttributeData& OldStrength) const;
 	UFUNCTION()
-	void OnRep_Intelligence(const FGameplayAttributeData& OldIntelligence) const;
+	AURA_API void OnRep_Intelligence(const FGameplayAttributeData& OldIntelligence) const;
 	UFUNCTION()
-	void OnRep_Resilience(const FGameplayAttributeData& OldResilience) const;
+	AURA_API void OnRep_Resilience(const FGameplayAttributeData& OldResilience) const;
 	UFUNCTION()
-	void OnRep_Vigor(const FGameplayAttributeData& OldVigor) const;
+	AURA_API void OnRep_Vigor(const FGameplayAttributeData& OldVigor) const;
 
 	/*
 	 * Secondary Attributes
 	 */
-	 
 	UFUNCTION()
-	void OnRep_Armor(const FGameplayAttributeData& OldArmor) const;
+	AURA_API void OnRep_Armor(const FGameplayAttributeData& OldArmor) const;
 	UFUNCTION()
-	void OnRep_ArmorPenetration(const FGameplayAttributeData& OldArmorPenetration) const;
+	AURA_API void OnRep_ArmorPenetration(const FGameplayAttributeData& OldArmorPenetration) const;
 	UFUNCTION()
-    void OnRep_BlockChance(const FGameplayAttributeData& OldBlockChance) const;
+    AURA_API void OnRep_BlockChance(const FGameplayAttributeData& OldBlockChance) const;
 	UFUNCTION()
-	void OnRep_CriticalHitChance(const FGameplayAttributeData& OldCriticalHitChance) const;
+	AURA_API void OnRep_CriticalHitChance(const FGameplayAttributeData& OldCriticalHitChance) const;
 	UFUNCTION()
-	void OnRep_CriticalHitDamage(const FGameplayAttributeData& OldCriticalHitDamage) const;
+	AURA_API void OnRep_CriticalHitDamage(const FGameplayAttributeData& OldCriticalHitDamage) const;
 	UFUNCTION()
-	void OnRep_CriticalHitResistance(const FGameplayAttributeData& OldCriticalHitResistance) const;
+	AURA_API void OnRep_CriticalHitResistance(const FGameplayAttributeData& OldCriticalHitResistance) const;
 	UFUNCTION()
-	void OnRep_HealthRegeneration(const FGameplayAttributeData& OldHealthRegeneration) const;
+	AURA_API void OnRep_HealthRegeneration(const FGameplayAttributeData& OldHealthRegeneration) const;
 	UFUNCTION()
-	void OnRep_ManaRegeneration(const FGameplayAttributeData& OldManaRegeneration) const;
+	AURA_API void OnRep_ManaRegeneration(const FGameplayAttributeData& OldManaRegeneration) const;
 	UFUNCTION()
-	void OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth) const;
+	AURA_API void OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth) const;
 	UFUNCTION()
-	void OnRep_MaxMana(const FGameplayAttributeData& OldMaxMana) const;
+	AURA_API void OnRep_MaxMana(const FGameplayAttributeData& OldMaxMana) const;
 
 	/*
 	 * Resistance Attributes
 	 */
 	UFUNCTION()
-	void OnRep_FireResistance(const FGameplayAttributeData& OldFireResistance) const;
+	AURA_API void OnRep_FireResistance(const FGameplayAttributeData& OldFireResistance) const;
 	UFUNCTION()
 	void OnRep_LightningResistance(const FGameplayAttributeData& OldLightningResistance) const;
 	UFUNCTION()
-	void OnRep_ArcaneResistance(const FGameplayAttributeData& OldArcaneResistance) const;
+	AURA_API void OnRep_ArcaneResistance(const FGameplayAttributeData& OldArcaneResistance) const;
 	UFUNCTION()
-	void OnRep_PhysicalResistance(const FGameplayAttributeData& OldPhysicalResistance) const;
+	AURA_API void OnRep_PhysicalResistance(const FGameplayAttributeData& OldPhysicalResistance) const;
 	
 	/*
 	 * Vital Attributes
 	 */
-	
 	UFUNCTION()
-	void OnRep_Health(const FGameplayAttributeData& OldHealth) const;
+	AURA_API void OnRep_Health(const FGameplayAttributeData& OldHealth) const;
 
 	UFUNCTION()
-	void OnRep_Mana(const FGameplayAttributeData& OldMana) const;
+	AURA_API void OnRep_Mana(const FGameplayAttributeData& OldMana) const;
 	
 protected:
 
 
 private:
 	void FillEffectProperties(const FGameplayEffectModCallbackData& Data, FEffectProperties& OutEffectProperties) const;
-
-	void ShowFloatingText(const FEffectProperties& EffectProperties, float Damage, bool bBlockedHit, bool bCriticalHit) const;
+	static void ShowFloatingText(const FEffectProperties& EffectProperties, float Damage, bool bBlockedHit, bool bCriticalHit);
+	static void SendXpEvent(const FEffectProperties& Props);
 };

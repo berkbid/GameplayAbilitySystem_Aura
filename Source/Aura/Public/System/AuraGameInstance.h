@@ -10,17 +10,17 @@ class UObject;
 /**
  * UAuraGameInstance
  */
-UCLASS(Config = Game)
-class AURA_API UAuraGameInstance : public UCommonGameInstance
+UCLASS(MinimalAPI, Config = Game)
+class UAuraGameInstance : public UCommonGameInstance
 {
 	GENERATED_BODY()
 	
 public:
-	UAuraGameInstance(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	AURA_API UAuraGameInstance(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 	
 protected:
-	virtual void Init() override;
-	virtual void Shutdown() override;
+	AURA_API virtual void Init() override;
+	AURA_API virtual void Shutdown() override;
 
-	void OnPreClientTravelToSession(FString& URL);
+	AURA_API void OnPreClientTravelToSession(FString& URL);
 };

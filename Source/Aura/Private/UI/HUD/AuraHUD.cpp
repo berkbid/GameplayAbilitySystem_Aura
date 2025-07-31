@@ -21,7 +21,13 @@ void AAuraHUD::InitHUD(const FWidgetControllerParams& InControllerParams)
 	if (!AuraHUD)
 	{
 		AuraHUD = CreateWidget<UAuraUserWidget>(GetWorld(), HudClass);
+		// Must propagate to set widget controller calls on sub widgets such that they can bind to callbacks before broadcast
+		// initial values happens afterwards
 		AuraHUD->SetWidgetController(GetHUDWidgetController(InControllerParams));
+		
+		// Broadcast initial values directly after widget controller is set on all sub-widgets
+		HUDWidgetController->BroadcastInitialValues();
+		
 		AuraHUD->AddToViewport();
 	}
 }

@@ -1,6 +1,9 @@
 // Copyright Berkeley Bidwell
 
 #include "Character/AuraCharacter.h"
+
+#include "AuraLogChannels.h"
+#include "NiagaraComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -13,7 +16,12 @@
 AAuraCharacter::AAuraCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	LevelUpNiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>("LevelUpNiagaraComponent");
+	LevelUpNiagaraComponent->bAutoActivate = false;
+	LevelUpNiagaraComponent->SetupAttachment(GetRootComponent());
+	
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>("SpringArm");
+	SpringArm->SetUsingAbsoluteRotation(true);
 	SpringArm->TargetArmLength = 750.f;
 	SpringArm->SetRelativeRotation(FRotator(-45.f, 0.f, 0.f));
 	SpringArm->bUsePawnControlRotation = false;
@@ -21,7 +29,7 @@ AAuraCharacter::AAuraCharacter(const FObjectInitializer& ObjectInitializer)
 	SpringArm->bInheritYaw = false;
 	SpringArm->bInheritRoll = false;
 	SpringArm->bEnableCameraLag = true;
-	SpringArm->SetupAttachment(RootComponent);
+	SpringArm->SetupAttachment(GetRootComponent());
 
 	Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
 	Camera->bUsePawnControlRotation = false; // Fixed cam
@@ -56,11 +64,7 @@ void AAuraCharacter::PossessedBy(AController* NewController)
 void AAuraCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
-
-	// Apparently client does need to do this here
-	// Client doesn't need to do this, client automatically does this UAbilitySystemComponent::OnRep_OwningActor()
-	//const ENetRole LocalRole = GetLocalRole();
-	//UE_LOG(LogTemp, Warning, TEXT("Character: %s, OnRep_PlayerState by local role: %s"), *GetName(), *UEnum::GetValueAsString(LocalRole));
+	
 	//Init for clients. All clients are in here, not server
 	InitAbilityActorInfo();
 }
@@ -89,6 +93,28 @@ void AAuraCharacter::InitAbilityActorInfo()
 		InitializeDefaultAttributes();
 		AddCharacterAbilities();
 	}
+
+	// Bind on both server and clients, both broadcast this event when Level is replicated
+	AuraPlayerState->OnLevelUpdate.AddLambda([this](const int32 NewLevel)
+	{
+		LevelUpParticles();
+	});
+}
+
+void AAuraCharacter::LevelUpParticles() const
+{
+	UE_LOG(LogTemp, Warning, TEXT("[%s]: Level up particles"), *GetClientServerContextString(GetController()));
+	
+	if (IsValid(LevelUpNiagaraComponent))
+	{
+		// Rotate niagara component towards camera
+		const FVector CameraLocation = Camera->GetComponentLocation();
+		const FVector NiagaraSystemLocation = LevelUpNiagaraComponent->GetComponentLocation();
+		const FRotator ToCameraRotation = (NiagaraSystemLocation - CameraLocation).Rotation();
+		LevelUpNiagaraComponent->SetWorldRotation(ToCameraRotation);
+		
+		LevelUpNiagaraComponent->ActivateSystem();
+	}
 }
 
 void AAuraCharacter::InitializeDefaultAttributes() const
@@ -108,4 +134,11 @@ int32 AAuraCharacter::GetPlayerLevel_Implementation() const
 	}
 
 	return 1;
+}
+
+void AAuraCharacter::AddToXp_Implementation(int32 InXp)
+{
+	AAuraPlayerState* PS = GetPlayerState<AAuraPlayerState>();
+	check(PS);
+	PS->AddXp(InXp);
 }

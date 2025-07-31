@@ -8,7 +8,7 @@ public class CommonUser : ModuleRules
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		bool bUseOnlineSubsystemV1 = false;
+		bool bUseOnlineSubsystemV1 = true;
 
 		PublicIncludePaths.AddRange(
 			new string[] {

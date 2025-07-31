@@ -7,36 +7,50 @@
 #include "Interaction/CombatInterface.h"
 #include "AuraPlayerState.generated.h"
 
+class ULevelUpInfo;
 class UAbilitySystemComponent;
 class UAttributeSet;
 class UObject;
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnPlayerStatsUpdate, int32 /*StatValue*/);
+
 /**
  * 
  */
-UCLASS()
-class AURA_API AAuraPlayerState : public APlayerState, public IAbilitySystemInterface, public ICombatInterface
+UCLASS(MinimalAPI)
+class AAuraPlayerState : public APlayerState, public IAbilitySystemInterface, public ICombatInterface
 {
 	GENERATED_BODY()
 
 public:
-	AAuraPlayerState(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	AURA_API AAuraPlayerState(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	AURA_API virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	// ~ Begin IAbilitySystemInterface
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
+	AURA_API virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	// ~ End IAbilitySystemInterface
 
 	UFUNCTION(BlueprintPure)
 	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
-
-	//UFUNCTION(BlueprintCallable)
-	//void SetLevel(int32 NewLevel) {Level = NewLevel; }
 	
 	// ~ Begin ICombatInterface
 	virtual int32 GetPlayerLevel_Implementation() const override { return Level; }
 	// ~ End ICombatInterface
+
+	/** Server call to add to Xp */
+	UFUNCTION(BlueprintCallable)
+	AURA_API void AddXp(int32 XpToAdd);
+	
+	UFUNCTION(BlueprintPure)
+	int32 GetXp() const { return Xp; }
+
+public:
+	FOnPlayerStatsUpdate OnXpUpdate;
+	FOnPlayerStatsUpdate OnLevelUpdate;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<ULevelUpInfo> LevelUpInfo;
 	
 protected:
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly)
@@ -46,9 +60,19 @@ protected:
 	TObjectPtr<UAttributeSet> AttributeSet;
 
 private:
+	/** Cannot call directly, must be called from AddXp */
+	UFUNCTION(BlueprintCallable)
+	void SetLevel(int32 InLevel);
+	
 	UFUNCTION()
 	void OnRep_Level(int32 OldLevel);
 	
+	UFUNCTION()
+	void OnRep_Xp(int32 OldXp);
+	
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Level)
 	int32 Level = 1;
+
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Xp)
+	int32 Xp = 0;
 };

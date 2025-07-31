@@ -2,6 +2,7 @@
 
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "AbilitySystem/AuraAttributeSet.h"
 #include "Character/AuraCharacter.h"
 #include "Player/AuraPlayerController.h"
 
@@ -59,6 +60,18 @@ AController* UAuraGameplayAbility::GetControllerFromActorInfo() const
 AAuraCharacter* UAuraGameplayAbility::GetAuraCharacterFromActorInfo() const
 {
 	return (CurrentActorInfo ? Cast<AAuraCharacter>(CurrentActorInfo->AvatarActor.Get()) : nullptr);
+}
+
+FGameplayTag UAuraGameplayAbility::GetAbilityTag() const
+{
+	for (const FGameplayTag& Tag : GetAssetTags())
+	{
+		if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag(FName("Abilities"))))
+		{
+			return Tag;
+		}
+	}
+	return FGameplayTag();
 }
 
 void UAuraGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)

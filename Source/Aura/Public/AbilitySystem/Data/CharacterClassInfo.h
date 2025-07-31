@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Engine/DataAsset.h"
+#include "ScalableFloat.h"
 #include "CharacterClassInfo.generated.h"
 
 class UObject;
@@ -30,13 +31,16 @@ struct FCharacterClassDefaultInfo
 	/** Common abilities specific to this class to grant by default */
 	UPROPERTY(EditDefaultsOnly, Category = "Class Defaults")
 	TArray<TSubclassOf<UGameplayAbility>> StartupAbilities;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Class Defaults")
+	FScalableFloat XpReward = FScalableFloat();
 };
 
 /**
  * 
  */
 UCLASS()
-class AURA_API UCharacterClassInfo : public UDataAsset
+class UCharacterClassInfo : public UDataAsset
 {
 	GENERATED_BODY()
 

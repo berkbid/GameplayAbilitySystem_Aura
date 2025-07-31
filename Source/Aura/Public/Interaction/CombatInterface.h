@@ -6,6 +6,7 @@
 #include "GameplayTagContainer.h"
 #include "CombatInterface.generated.h"
 
+enum class ECharacterClass : uint8;
 class UNiagaraSystem;
 class UObject;
 class UAnimMontage;
@@ -39,7 +40,7 @@ class UCombatInterface : public UInterface
 /**
  * 
  */
-class AURA_API ICombatInterface
+class ICombatInterface
 {
 	GENERATED_BODY()
 
@@ -80,4 +81,7 @@ public:
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void IncrementMinionCount(int32 Amount = 1);
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	ECharacterClass GetCharacterClass() const;
 };

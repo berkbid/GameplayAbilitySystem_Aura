@@ -5,9 +5,9 @@
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
 #include "Interaction/CombatInterface.h"
-#include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "AuraCharacterBase.generated.h"
 
+enum class ECharacterClass : uint8;
 class AActor;
 class USkeletalMeshComponent;
 class UGameplayAbility;
@@ -21,33 +21,34 @@ class UMaterialInstanceDynamic;
 class USoundBase;
 class UObject;
 
-UCLASS(Abstract)
-class AURA_API AAuraCharacterBase : public ACharacter, public IAbilitySystemInterface, public ICombatInterface
+UCLASS(MinimalAPI, Abstract)
+class AAuraCharacterBase : public ACharacter, public IAbilitySystemInterface, public ICombatInterface
 {
 	GENERATED_BODY()
 
 public:
-	AAuraCharacterBase(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	AURA_API AAuraCharacterBase(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 	
 	// IAbilitySystemInterface
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	// ~IAbilitySystemInterface
 
 	// ICombatInterface
-	virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const override;
-	virtual UAnimMontage* GetHitReactMontage_Implementation() const override;
-	virtual void Die() override;
-	virtual bool IsDead_Implementation() const override;
-	virtual AActor* GetAvatar_Implementation() override;
+	AURA_API virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const override;
+	AURA_API virtual UAnimMontage* GetHitReactMontage_Implementation() const override;
+	AURA_API virtual void Die() override;
+	AURA_API virtual bool IsDead_Implementation() const override;
+	AURA_API virtual AActor* GetAvatar_Implementation() override;
 	virtual TArray<FTaggedMontage> GetAttackMontages_Implementation() const override { return AttackMontages; }
 	virtual UNiagaraSystem* GetBloodEffect_Implementation() override { return BloodEffect; }
-	virtual FTaggedMontage GetTaggedMontageByTag_Implementation(const FGameplayTag& MontageTag) const override;
+	AURA_API virtual FTaggedMontage GetTaggedMontageByTag_Implementation(const FGameplayTag& MontageTag) const override;
 	virtual int32 GetMinionCount_Implementation() const override { return MinionCount; }
 	virtual void IncrementMinionCount_Implementation(int32 Amount) override { MinionCount += Amount; }
+	virtual ECharacterClass GetCharacterClass_Implementation() const override { return CharacterClass; }
 	// ~ICombatInterface
 
 	UFUNCTION(NetMulticast, reliable)
-	virtual void MulticastHandleDeath();
+	AURA_API virtual void MulticastHandleDeath();
 	
 	UFUNCTION(BlueprintPure)
 	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
@@ -57,24 +58,23 @@ public:
 	TArray<FTaggedMontage> AttackMontages;
 	
 protected:
-	virtual void BeginPlay() override;
-
-	virtual void InitAbilityActorInfo() {};
+	AURA_API virtual void BeginPlay() override;
 
 	/** Call to set initial primary and secondary attribute values */
 	virtual void InitializeDefaultAttributes() const {};
 	
-	void ApplyGameplayEffectToSelf(const TSubclassOf<UGameplayEffect>& InGameplayEffectClass, float Level) const;
+	AURA_API void ApplyGameplayEffectToSelf(const TSubclassOf<UGameplayEffect>& InGameplayEffectClass, float Level) const;
 
 	// Could potentially override in aura character class for this functionality
-	virtual void AddCharacterAbilities() const;
+	AURA_API virtual void AddCharacterAbilities() const;
 
 	/** Dissolves the materials when character dies */
-	void Dissolve();
+	AURA_API void Dissolve();
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void StartDissolveTimeline(const TArray<UMaterialInstanceDynamic*>& DynamicMaterialInstances);
-	
+	AURA_API void StartDissolveTimeline(const TArray<UMaterialInstanceDynamic*>& DynamicMaterialInstances);
+
+protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent> Weapon;
 
@@ -84,7 +84,7 @@ protected:
 	bool bDead = false;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Character Class Defaults")
-	ECharacterClass CharacterClass = ECharacterClass::Warrior;
+	ECharacterClass CharacterClass;
 	
 	UPROPERTY(Transient, BlueprintReadOnly)
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
@@ -107,11 +107,19 @@ protected:
 
 	// Server used variable only
 	int32 MinionCount = 0;
+
+private:
+	/** Initializes the ability system component with owner actor/avatar */
+	virtual void InitAbilityActorInfo() {};
 	
 private:
 	UPROPERTY(EditAnywhere, Category="Abilities")
 	TArray<TSubclassOf<UGameplayAbility>> StartupAbilities;
 
+	/** Passive abilities to give once at start of game */
+	UPROPERTY(EditAnywhere, Category="Abilities")
+	TArray<TSubclassOf<UGameplayAbility>> StartupPassiveAbilities;
+	
 	/** Montage to play when reacting to being hit */
 	UPROPERTY(EditAnywhere, Category="Combat")
 	TObjectPtr<UAnimMontage> HitReactMontage;

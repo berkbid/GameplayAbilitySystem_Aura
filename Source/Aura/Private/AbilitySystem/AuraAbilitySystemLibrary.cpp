@@ -267,3 +267,15 @@ bool UAuraAbilitySystemLibrary::AreFriends(const AActor* FirstActor, const AActo
 	// If the first or second actor doesn't have either tag, or they have the same tag, return false meaning they are friends
 	return false;
 }
+
+int32 UAuraAbilitySystemLibrary::GetXpRewardFromEnemy(const UObject* WorldContextObject, ECharacterClass CharacterClass, int32 CharacterLevel)
+{
+	if (UCharacterClassInfo* ClassInfo = GetCharacterClassInfo(WorldContextObject))
+	{
+		const FCharacterClassDefaultInfo& ClassDefaultInfo = ClassInfo->GetClassDefaultInfo(CharacterClass);
+		const float XpReward = ClassDefaultInfo.XpReward.GetValueAtLevel(CharacterLevel);
+		// Could also static cast to int32 instead of round to int
+		return FMath::RoundToInt(XpReward);
+	}
+	return 0;
+}
