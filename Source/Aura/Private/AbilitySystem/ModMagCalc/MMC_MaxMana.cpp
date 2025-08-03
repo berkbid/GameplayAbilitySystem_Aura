@@ -3,6 +3,7 @@
 #include "AbilitySystem/ModMagCalc/MMC_MaxMana.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Interaction/CombatInterface.h"
+#include "Interaction/ModifierDependencyInterface.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MMC_MaxMana)
 
@@ -40,4 +41,14 @@ float UMMC_MaxMana::CalculateBaseMagnitude_Implementation(const FGameplayEffectS
 
 	UE_LOG(LogTemp, Warning, TEXT("Recalculating Max Health based on vigor and player level"));
 	return 50.f + Intelligence * 2.5f + 15.f * PlayerLevel;
+}
+
+FOnExternalGameplayModifierDependencyChange* UMMC_MaxMana::GetExternalModifierDependencyMulticast(const FGameplayEffectSpec& Spec, UWorld* World) const
+{
+	if (IModifierDependencyInterface* ModifierDependencyInterface = Cast<IModifierDependencyInterface>(Spec.GetContext().GetInstigator()))
+	{
+		return ModifierDependencyInterface->GetOnModifierDependencyChanged();
+	}
+	
+	return Super::GetExternalModifierDependencyMulticast(Spec, World);
 }

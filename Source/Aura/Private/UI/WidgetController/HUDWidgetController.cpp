@@ -96,6 +96,7 @@ void UHUDWidgetController::BroadcastInitialValues()
 
 	const AAuraPlayerState* AuraPS = CastChecked<AAuraPlayerState>(WidgetControllerParams.PlayerState);
 	OnXpChanged(AuraPS->GetXp());
+
 	
 	// This is going to happen for every time a widget has widget controller set for this widget controller
 	UAuraAbilitySystemComponent* ASC = CastChecked<UAuraAbilitySystemComponent>(WidgetControllerParams.AbilitySystemComponent);

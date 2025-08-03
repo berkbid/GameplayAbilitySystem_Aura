@@ -35,7 +35,6 @@ struct FUIWidgetRow : public FTableRowBase
 	
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerStatChangedSignature, int32, NewValue);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMessageWidgetRowSignature, const FUIWidgetRow&, WidgetRow);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbilityInfoSignature, const FAuraAbilityInfo&, AbilityInfo);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAbilityCommitted, UGameplayAbility*, Ability);
@@ -43,15 +42,15 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAbilityCommitted, UGameplayAbilit
 /**
  * 
  */
-UCLASS()
-class AURA_API UHUDWidgetController : public UAuraWidgetController
+UCLASS(MinimalAPI)
+class UHUDWidgetController : public UAuraWidgetController
 {
 	GENERATED_BODY()
 	
 public:
 	// ~ Begin UAuraWidgetController interface
-	virtual void BroadcastInitialValues() override;
-	virtual void BindCallBacksToDependencies() override;
+	AURA_API virtual void BroadcastInitialValues() override;
+	AURA_API virtual void BindCallBacksToDependencies() override;
 	// ~ End UAuraWidgetController interface
 	
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
@@ -85,9 +84,9 @@ public:
 protected:
 	/** Called when startup abilities are added */
 	UFUNCTION()
-	void OnInitializeStartupAbilities(UAuraAbilitySystemComponent* ASC) const;
+	AURA_API void OnInitializeStartupAbilities(UAuraAbilitySystemComponent* ASC) const;
 	
-	void OnXpChanged(int32 NewXp) const;
+	AURA_API void OnXpChanged(int32 NewXp) const;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Widget Data", meta=(RequiredAssetDataTags="RowStructure=/Script/Aura.UIWidgetRow"))
@@ -97,7 +96,7 @@ protected:
 	TObjectPtr<UAbilityInfo> AbilityInfo;
 	
 	template<typename T>
-	static T* GetDataTableRowByTag(UDataTable* DataTable, const FGameplayTag& Tag);
+	static AURA_API T* GetDataTableRowByTag(UDataTable* DataTable, const FGameplayTag& Tag);
 };
 
 template <typename T>

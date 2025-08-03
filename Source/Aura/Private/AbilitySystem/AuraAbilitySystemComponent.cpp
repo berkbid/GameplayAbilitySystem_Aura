@@ -4,9 +4,10 @@
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "AuraGameplayTags.h"
 #include "GameFramework/PlayerState.h"
-//#include "Engine/EngineBaseTypes.h"
-
+#include "AbilitySystemBlueprintLibrary.h"
 #include "AuraLogChannels.h"
+#include "AbilitySystem/AuraAttributeSet.h"
+#include "Interaction/PlayerInterface.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraAbilitySystemComponent)
 
@@ -160,6 +161,48 @@ FGameplayTag UAuraAbilitySystemComponent::GetInputTagFromSpec(const FGameplayAbi
 	}
 	
 	return FGameplayTag();
+}
+
+void UAuraAbilitySystemComponent::AddOrRefundAttribute(const FGameplayTag& AttributeTag, int32 IncrementAmount)
+{
+	if (IncrementAmount == 0) { return; }
+
+	if (!GetOwnerActor()->HasAuthority())
+	{
+		// Check with the attribute set if we are able to apply the given attribute point amount
+		if (const UAuraAttributeSet* AuraAttributeSet = Cast<UAuraAttributeSet>(GetAttributeSet(UAuraAttributeSet::StaticClass())))
+		{
+			// Client does client-side check of valid application of attribute points
+			// And server will also do the check on server-side just in case
+			if (AuraAttributeSet->CanApplyAttributePoints(AttributeTag, IncrementAmount))
+			{
+				ServerAddOrRefundAttribute(AttributeTag, IncrementAmount);
+			}
+		}
+	}
+	else
+	{
+		// Server will check if valid application of attribute points
+		ServerAddOrRefundAttribute(AttributeTag, IncrementAmount);
+	}
+}
+
+void UAuraAbilitySystemComponent::ServerAddOrRefundAttribute_Implementation(const FGameplayTag& AttributeTag, int32 IncrementAmount)
+{
+	AActor* Avatar = GetAvatarActor();
+	if (Avatar && Avatar->Implements<UPlayerInterface>())
+	{
+		// Making sure that we successfully increment or decrement the attribute before sending gameplay event
+		if (IPlayerInterface::Execute_AddOrRefundAttributePoints(Avatar, AttributeTag, IncrementAmount))
+		{
+			FGameplayEventData Payload;
+			Payload.EventTag = AttributeTag;
+			Payload.EventMagnitude = IncrementAmount;
+			
+			// GA_ListenForEvents will listen for this and apply GE to self which will add IncrementAmount of strength attribute to the attribute set
+			UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(GetAvatarActor(), AttributeTag, Payload);
+		}
+	}
 }
 
 void UAuraAbilitySystemComponent::OnRep_ActivateAbilities()

@@ -88,6 +88,11 @@ void UAuraAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, 
 	// Not clamping here anymore, seems problematic apparently and has no use
 }
 
+void UAuraAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue)
+{
+	Super::PostAttributeChange(Attribute, OldValue, NewValue);
+}
+
 void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
 	// Only server is in here
@@ -168,6 +173,10 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 			}
 		}
 	}
+
+	//if (Data.EvaluatedData.Attribute == GetStrengthAttribute())
+	//{
+	//}
 }
 
 void UAuraAttributeSet::ShowFloatingText(const FEffectProperties& EffectProperties, float Damage, bool bBlockedHit, bool bCriticalHit)
@@ -231,6 +240,54 @@ void UAuraAttributeSet::SendXpEvent(const FEffectProperties& Props)
 UAuraAbilitySystemComponent* UAuraAttributeSet::GetAuraAbilitySystemComponent() const
 {
 	return Cast<UAuraAbilitySystemComponent>(GetOwningAbilitySystemComponent());
+}
+
+void UAuraAttributeSet::LevelUp()
+{
+	SetHealth(GetMaxHealth());
+	SetMana(GetMaxMana());
+}
+
+bool UAuraAttributeSet::CanApplyAttributePoints(const FGameplayTag& AttributeTag, int32 Points) const
+{
+	if (Points == 0) { return false; }
+
+	// If we are spending points on an attribute, need enough attribute points
+	if (Points > 0)
+	{
+		// Invalid attribute tag means we gained overall attribute points
+		if (!AttributeTag.IsValid())
+		{
+			// Can always gain overall attribute points
+			return true;
+		}
+
+		// This means we are adding points to a specific attribute, so AttributePoints must be greater or equal
+		// Because ultimately we will subtract from AttributePoints in order to add to the attribute (ex. strength)
+		if (AActor* Avatar = GetOwningAbilitySystemComponent()->GetAvatarActor())
+		{
+			if (Avatar->Implements<UPlayerInterface>())
+			{
+				const int32 AttributePoints = IPlayerInterface::Execute_GetAttributePoints(Avatar);
+				return AttributePoints >= Points;
+			}
+		}
+	}
+	else // If we are removing points from an attribute, cannot go below attribute base value
+	{
+		const FGameplayAttribute& Attribute = TagsToAttributes.FindChecked(AttributeTag);
+		const float CurrentAttributeValue = Attribute.GetNumericValue(this);
+		
+		// TODO: Check that new value is not less than base value for that attribute, not 0
+		if (static_cast<int32>(CurrentAttributeValue) + Points < 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Cannot have negative attribute points!"));
+			return false;
+		}
+		return true;
+	}
+	
+	return false;
 }
 
 void UAuraAttributeSet::OnRep_Strength(const FGameplayAttributeData& OldStrength) const

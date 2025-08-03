@@ -14,6 +14,7 @@ class UStaticMeshComponent;
 class UMaterialInterface;
 class UNiagaraComponent;
 class UObject;
+struct FGameplayTag;
 
 USTRUCT(BlueprintType)
 struct FCameraOccludedMeshActor
@@ -49,6 +50,10 @@ public:
 
 	// Player Interface
 	AURA_API virtual void AddToXp_Implementation(int32 InXp) override;
+	AURA_API virtual bool AddOrRefundAttributePoints_Implementation(const FGameplayTag& AttributeTag, int32 InAmount) override;
+	AURA_API virtual bool AddOrRefundSpellPoints_Implementation(int32 InAmount) override;
+	AURA_API virtual int32 GetAttributePoints_Implementation() const override;
+	AURA_API virtual int32 GetSpellPoints_Implementation() const override;
 	// ~End Player Interface
 	
 protected:

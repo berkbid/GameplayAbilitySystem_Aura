@@ -35,6 +35,7 @@ struct FWidgetControllerParams
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributeChangedSignature, float, NewValue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerStatChangedSignature, int32, NewValue);
 
 /**
  * UAuraWidgetController
@@ -42,15 +43,15 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributeChangedSignature, float,
  * Base class for all Widget Controllers.
  * Responsible for getting data and broadcasting for widgets to listen to.
  */
-UCLASS(Abstract, BlueprintType, Blueprintable)
-class AURA_API UAuraWidgetController : public UObject
+UCLASS(MinimalAPI, Abstract, BlueprintType, Blueprintable)
+class UAuraWidgetController : public UObject
 {
 	GENERATED_BODY()
 
 public:
 	/** Set the controller params and then this binds to callbacks */
 	UFUNCTION(BlueprintCallable, Category="WidgetController")
-	void SetWidgetControllerParams(const FWidgetControllerParams& InWidgetControllerParams);
+	AURA_API void SetWidgetControllerParams(const FWidgetControllerParams& InWidgetControllerParams);
 
 	UFUNCTION(BlueprintCallable)
 	virtual void BroadcastInitialValues() {};

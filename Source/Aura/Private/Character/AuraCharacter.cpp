@@ -142,3 +142,31 @@ void AAuraCharacter::AddToXp_Implementation(int32 InXp)
 	check(PS);
 	PS->AddXp(InXp);
 }
+
+bool AAuraCharacter::AddOrRefundAttributePoints_Implementation(const FGameplayTag& AttributeTag, int32 InAmount)
+{
+	AAuraPlayerState* PS = GetPlayerState<AAuraPlayerState>();
+	check(PS);
+	return PS->AddOrRefundAttributePoints(AttributeTag, InAmount);
+}
+
+bool AAuraCharacter::AddOrRefundSpellPoints_Implementation(int32 InAmount)
+{
+	AAuraPlayerState* PS = GetPlayerState<AAuraPlayerState>();
+	check(PS);
+	return PS->AddOrRefundSpellPoints(InAmount);
+}
+
+int32 AAuraCharacter::GetAttributePoints_Implementation() const
+{
+	AAuraPlayerState* PS = GetPlayerState<AAuraPlayerState>();
+	check(PS);
+	return PS->GetAttributePoints();
+}
+
+int32 AAuraCharacter::GetSpellPoints_Implementation() const
+{
+	AAuraPlayerState* PS = GetPlayerState<AAuraPlayerState>();
+	check(PS);
+	return PS->GetSpellPoints();
+}

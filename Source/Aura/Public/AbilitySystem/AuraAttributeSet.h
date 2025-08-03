@@ -87,14 +87,24 @@ public:
 	// ~ Begin UAttributeSet interface
 	// Called when any attribute changes, use for clamping only
 	AURA_API virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
+	AURA_API virtual void PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue) override;
 	AURA_API virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 	// ~ End UAttributeSet interface
 	
 	AURA_API UAuraAbilitySystemComponent* GetAuraAbilitySystemComponent() const;
 
+	/** Call after increasing level for player in player state. This will maximize health and mana. */
+	AURA_API void LevelUp();
+
 public:
 	/** Map of gameplay tag to the gameplay attribute */
 	TMap<FGameplayTag, FGameplayAttribute> TagsToAttributes;
+
+	/**
+	 * Given an attribute tag, return true if it is valid to increment by Points amount.
+	 * Mostly for negative points amount, checking that we don't go below base attribute value.
+	 */
+	AURA_API bool CanApplyAttributePoints(const FGameplayTag& AttributeTag, int32 Points) const;
 	
 	/*
 	 * Primary Attributes
@@ -248,4 +258,7 @@ private:
 	void FillEffectProperties(const FGameplayEffectModCallbackData& Data, FEffectProperties& OutEffectProperties) const;
 	static void ShowFloatingText(const FEffectProperties& EffectProperties, float Damage, bool bBlockedHit, bool bCriticalHit);
 	static void SendXpEvent(const FEffectProperties& Props);
+	
+private:
+
 };

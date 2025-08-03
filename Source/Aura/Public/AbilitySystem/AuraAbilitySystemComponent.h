@@ -22,38 +22,32 @@ DECLARE_DELEGATE_OneParam(FForEachAbility, const FGameplayAbilitySpec&);
 /**
  * 
  */
-UCLASS()
-class AURA_API UAuraAbilitySystemComponent : public UAbilitySystemComponent
+UCLASS(MinimalAPI)
+class UAuraAbilitySystemComponent : public UAbilitySystemComponent
 {
 	GENERATED_BODY()
 
 public:
-	UAuraAbilitySystemComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	AURA_API UAuraAbilitySystemComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 	
-	virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
+	AURA_API virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
 
 	/** Call from base character class to add startup abilities */
-	void AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupAbilities);
-	void AddCharacterPassiveAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupPassiveAbilities);
+	AURA_API void AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupAbilities);
+	AURA_API void AddCharacterPassiveAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupPassiveAbilities);
 	// Bool managed separate on server and client
 	bool bStartupAbilitiesGiven = false;
 	
-	void AbilityInputTagHeld(const FGameplayTag& InputTag);
-	void AbilityInputTagReleased(const FGameplayTag& InputTag);
+	AURA_API void AbilityInputTagHeld(const FGameplayTag& InputTag);
+	AURA_API void AbilityInputTagReleased(const FGameplayTag& InputTag);
 
-	void ForEachAbility(const FForEachAbility& Delegate);
+	AURA_API void ForEachAbility(const FForEachAbility& Delegate);
 	
-	static FGameplayTag GetAbilityTagFromSpec(const FGameplayAbilitySpec& AbilitySpec);
-	static FGameplayTag GetInputTagFromSpec(const FGameplayAbilitySpec& AbilitySpec);
-	
-protected:
-	virtual void OnRep_ActivateAbilities() override;
-	
-	void EffectApplied(UAbilitySystemComponent* AbilitySystemComponent, const FGameplayEffectSpec& EffectSpec, FActiveGameplayEffectHandle ActiveEffectHandle);
+	static AURA_API FGameplayTag GetAbilityTagFromSpec(const FGameplayAbilitySpec& AbilitySpec);
+	static AURA_API FGameplayTag GetInputTagFromSpec(const FGameplayAbilitySpec& AbilitySpec);
 
-	/** Currently only called if TagContainer contains MessageTag */
-	UFUNCTION(Reliable, Client)
-	void ClientEffectAppliedTags(const FGameplayTagContainer& TagContainer);
+	/** Can be called by server or client, will call server RPC for functionality */
+	AURA_API void AddOrRefundAttribute(const FGameplayTag& AttributeTag, int32 IncrementAmount);
 
 public:
 	/** Broadcast when effect is applied with a MessageTag Gameplay Tag */
@@ -61,11 +55,24 @@ public:
 	
 	/** Broadcast when an ability is given */
 	FAbilitiesGiven OnAbilitiesGiven;
+	
+protected:
+	AURA_API virtual void OnRep_ActivateAbilities() override;
+	
+	AURA_API void EffectApplied(UAbilitySystemComponent* AbilitySystemComponent, const FGameplayEffectSpec& EffectSpec, FActiveGameplayEffectHandle ActiveEffectHandle);
+
+	/** Currently only called if TagContainer contains MessageTag */
+	UFUNCTION(Reliable, Client)
+	AURA_API void ClientEffectAppliedTags(const FGameplayTagContainer& TagContainer);
 
 private:
-	FDelegateHandle EffectAppliedDelegate;
+	UFUNCTION(Reliable, Server)
+	void ServerAddOrRefundAttribute(const FGameplayTag& AttributeTag, int32 IncrementAmount);
 	
 	FGameplayAbilitySpec* FindAbilityForTag(const FGameplayTag& InTag);
 
 	void PrintNetModeInfo() const;
+
+private:
+	FDelegateHandle EffectAppliedDelegate;
 };

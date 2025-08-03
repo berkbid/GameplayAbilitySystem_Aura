@@ -5,6 +5,7 @@
 #include "GameFramework/PlayerState.h"
 #include "AbilitySystemInterface.h"
 #include "Interaction/CombatInterface.h"
+#include "Interaction/ModifierDependencyInterface.h"
 #include "AuraPlayerState.generated.h"
 
 class ULevelUpInfo;
@@ -18,7 +19,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnPlayerStatsUpdate, int32 /*StatValue*/);
  * 
  */
 UCLASS(MinimalAPI)
-class AAuraPlayerState : public APlayerState, public IAbilitySystemInterface, public ICombatInterface
+class AAuraPlayerState : public APlayerState, public IAbilitySystemInterface, public ICombatInterface, public IModifierDependencyInterface
 {
 	GENERATED_BODY()
 
@@ -27,27 +28,43 @@ public:
 
 	AURA_API virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
-	// ~ Begin IAbilitySystemInterface
+	// ~ IAbilitySystemInterface
 	AURA_API virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	// ~ End IAbilitySystemInterface
 
 	UFUNCTION(BlueprintPure)
 	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
 	
-	// ~ Begin ICombatInterface
+	// ~ ICombatInterface
 	virtual int32 GetPlayerLevel_Implementation() const override { return Level; }
 	// ~ End ICombatInterface
-
+	
 	/** Server call to add to Xp */
 	UFUNCTION(BlueprintCallable)
 	AURA_API void AddXp(int32 XpToAdd);
 	
 	UFUNCTION(BlueprintPure)
 	int32 GetXp() const { return Xp; }
-
+	
+	/** Server call to add to Xp */
+	UFUNCTION(BlueprintCallable)
+	AURA_API bool AddOrRefundAttributePoints(const FGameplayTag& AttributeTag, int32 AttributePointsToAdd);
+	
+	UFUNCTION(BlueprintPure)
+	int32 GetAttributePoints() const { return AttributePoints; }
+	
+	/** Server call to add to Xp */
+	UFUNCTION(BlueprintCallable)
+	AURA_API bool AddOrRefundSpellPoints(int32 SpellPointsToAdd);
+	
+	UFUNCTION(BlueprintPure)
+	int32 GetSpellPoints() const { return SpellPoints; }
+	
 public:
 	FOnPlayerStatsUpdate OnXpUpdate;
 	FOnPlayerStatsUpdate OnLevelUpdate;
+	FOnPlayerStatsUpdate OnAttributeUpdate;
+	FOnPlayerStatsUpdate OnSpellPointUpdate;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<ULevelUpInfo> LevelUpInfo;
@@ -70,9 +87,20 @@ private:
 	UFUNCTION()
 	void OnRep_Xp(int32 OldXp);
 	
+	UFUNCTION()
+	void OnRep_AttributePoints(int32 OldAttributePoints);
+	
+	UFUNCTION()
+	void OnRep_SpellPoints(int32 OldSpellPoints);
+	
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Level)
 	int32 Level = 1;
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Xp)
 	int32 Xp = 0;
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_AttributePoints)
+	int32 AttributePoints = 0;
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_SpellPoints)
+	int32 SpellPoints = 0;
+	
 };

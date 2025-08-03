@@ -16,21 +16,30 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAttributeInfoSignature, const FAura
 /**
  * 
  */
-UCLASS()
-class AURA_API UAttributeMenuWidgetController : public UAuraWidgetController
+UCLASS(MinimalAPI)
+class UAttributeMenuWidgetController : public UAuraWidgetController
 {
 	GENERATED_BODY()
 
 public:
 	// ~ Begin UAuraWidgetController interface
-	virtual void BroadcastInitialValues() override;
-	virtual void BindCallBacksToDependencies() override;
+	AURA_API virtual void BroadcastInitialValues() override;
+	AURA_API virtual void BindCallBacksToDependencies() override;
 	// ~ End UAuraWidgetController interface
 
+	UFUNCTION(BlueprintCallable)
+	AURA_API void IncrementAttribute(const FGameplayTag& AttributeTag, int32 IncrementAmount);
+	
 public:
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
 	FAttributeInfoSignature AttributeInfoDelegate;
+	
+	UPROPERTY(BlueprintAssignable, Category="GAS|Level")
+	FOnPlayerStatChangedSignature OnAttributePointsChanged;
 
+	UPROPERTY(BlueprintAssignable, Category="GAS|Level")
+	FOnPlayerStatChangedSignature OnSpellPointsChanged;
+	
 protected:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UAttributeInfo> AttributeInfo;
