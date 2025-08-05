@@ -275,10 +275,16 @@ bool UAuraAttributeSet::CanApplyAttributePoints(const FGameplayTag& AttributeTag
 	}
 	else // If we are removing points from an attribute, cannot go below attribute base value
 	{
+		// Cannot "refund" overall attribute points
+		if (!AttributeTag.IsValid())
+		{
+			return false;
+		}
+		
 		const FGameplayAttribute& Attribute = TagsToAttributes.FindChecked(AttributeTag);
 		const float CurrentAttributeValue = Attribute.GetNumericValue(this);
 		
-		// TODO: Check that new value is not less than base value for that attribute, not 0
+		// TODO: Check that new value is not less than base(initial) value for that attribute, not 0
 		if (static_cast<int32>(CurrentAttributeValue) + Points < 0)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Cannot have negative attribute points!"));
