@@ -17,25 +17,34 @@
 
 class UAttributeSet;
 
-UHUDWidgetController* UAuraAbilitySystemLibrary::GetHUDWidgetController(const UObject* WorldContextObject)
+bool UAuraAbilitySystemLibrary::MakeWidgetControllerParams(const UObject* WorldContextObject, FWidgetControllerParams& OutParams, AAuraHUD*& OutAuraHUD)
 {
 	const UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-
 	if (APlayerController* PlayerController = World ? World->GetFirstPlayerController() : nullptr)
 	{
-		if (AAuraHUD* AuraHUD = Cast<AAuraHUD>(PlayerController->GetHUD()))
+		if (AAuraPlayerState* PlayerState = PlayerController->GetPlayerState<AAuraPlayerState>())
 		{
-			if (AAuraPlayerState* PlayerState = PlayerController->GetPlayerState<AAuraPlayerState>())
+			UAbilitySystemComponent* ASC = PlayerState->GetAbilitySystemComponent();
+			UAttributeSet* AttributeSet = PlayerState->GetAttributeSet();
+			
+			if (ASC && AttributeSet)
 			{
-				UAbilitySystemComponent* ASC = PlayerState->GetAbilitySystemComponent();
-				UAttributeSet* AttributeSet = PlayerState->GetAttributeSet();
-				
-				if (ASC && AttributeSet)
-				{
-					return AuraHUD->GetHUDWidgetController(FWidgetControllerParams(PlayerController, PlayerState, ASC, AttributeSet));	
-				}
+				OutParams = FWidgetControllerParams(PlayerController, PlayerState, ASC, AttributeSet);
+				OutAuraHUD = Cast<AAuraHUD>(PlayerController->GetHUD());
+				return true;
 			}
 		}
+	}
+	return false;
+}
+
+UHUDWidgetController* UAuraAbilitySystemLibrary::GetHUDWidgetController(const UObject* WorldContextObject)
+{
+	AAuraHUD* AuraHUD = nullptr;
+	FWidgetControllerParams Params;
+	if (MakeWidgetControllerParams(WorldContextObject, Params, AuraHUD) && AuraHUD)
+	{
+		return AuraHUD->GetHUDWidgetController(Params);
 	}
 	
 	UE_LOG(LogTemp, Warning, TEXT("Failed to get hud widget controller"));
@@ -44,26 +53,27 @@ UHUDWidgetController* UAuraAbilitySystemLibrary::GetHUDWidgetController(const UO
 
 UAttributeMenuWidgetController* UAuraAbilitySystemLibrary::GetAttributeMenuWidgetController(const UObject* WorldContextObject)
 {
-	const UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-
-	if (APlayerController* PlayerController = World ? World->GetFirstPlayerController() : nullptr)
+	AAuraHUD* AuraHUD = nullptr;
+	FWidgetControllerParams Params;
+	if (MakeWidgetControllerParams(WorldContextObject, Params, AuraHUD) && AuraHUD)
 	{
-		if (AAuraHUD* AuraHUD = Cast<AAuraHUD>(PlayerController->GetHUD()))
-		{
-			if (AAuraPlayerState* PlayerState = PlayerController->GetPlayerState<AAuraPlayerState>())
-			{
-				UAbilitySystemComponent* ASC = PlayerState->GetAbilitySystemComponent();
-				UAttributeSet* AttributeSet = PlayerState->GetAttributeSet();
-				
-				if (ASC && AttributeSet)
-				{
-					return AuraHUD->GetAttributeMenuWidgetController(FWidgetControllerParams(PlayerController, PlayerState, ASC, AttributeSet));	
-				}
-			}
-		}
+		return AuraHUD->GetAttributeMenuWidgetController(Params);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Failed to get attribute menu widget controller"));
+	return nullptr;
+}
+
+USpellMenuWidgetController* UAuraAbilitySystemLibrary::GetSpellMenuWidgetController(const UObject* WorldContextObject)
+{
+	AAuraHUD* AuraHUD = nullptr;
+	FWidgetControllerParams Params;
+	if (MakeWidgetControllerParams(WorldContextObject, Params, AuraHUD) && AuraHUD)
+	{
+		return AuraHUD->GetSpellMenuWidgetController(Params);
 	}
 	
-	UE_LOG(LogTemp, Warning, TEXT("Failed to get attribute menu widget controller"));
+	UE_LOG(LogTemp, Warning, TEXT("Failed to get spell menu widget controller"));
 	return nullptr;
 }
 
@@ -134,8 +144,14 @@ void UAuraAbilitySystemLibrary::GiveCommonStartupAbilities(const UObject* WorldC
 
 UCharacterClassInfo* UAuraAbilitySystemLibrary::GetCharacterClassInfo(const UObject* WorldContextObject)
 {
-	AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
+	const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
 	return AuraGameMode ? AuraGameMode->CharacterClassInfo : nullptr;
+}
+
+UAbilityInfo* UAuraAbilitySystemLibrary::GetAbilityInfo(const UObject* WorldContextObject)
+{
+	const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
+	return AuraGameMode ? AuraGameMode->AbilityInfo : nullptr;
 }
 
 bool UAuraAbilitySystemLibrary::IsBlockedHit(const FGameplayEffectContextHandle& ContextHandle)

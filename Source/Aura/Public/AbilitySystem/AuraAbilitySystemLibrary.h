@@ -5,13 +5,17 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "AuraAbilitySystemLibrary.generated.h"
 
+class AAuraHUD;
 class UCharacterClassInfo;
+class UAbilityInfo;
 enum class ECharacterClass : uint8;
 class UAttributeMenuWidgetController;
+class USpellMenuWidgetController;
 class UHUDWidgetController;
 class UAbilitySystemComponent;
 class UObject;
 struct FGameplayEffectContextHandle;
+struct FWidgetControllerParams;
 
 /**
  * 
@@ -22,11 +26,18 @@ class UAuraAbilitySystemLibrary : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|WidgetController")
+	/** Returns true if valid widget controller params, must still check OutAuraHUD pointer validity */
+	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|WidgetController", meta = (DefaultToSelf = "WorldContextObject", AutoCreateRefTerm = "OutParams"))
+	static AURA_API bool MakeWidgetControllerParams(const UObject* WorldContextObject, FWidgetControllerParams& OutParams, AAuraHUD*& OutAuraHUD);
+	
+	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|WidgetController", meta = (DefaultToSelf = "WorldContextObject"))
 	static AURA_API UHUDWidgetController* GetHUDWidgetController(const UObject* WorldContextObject);
 	
-	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|WidgetController")
+	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|WidgetController", meta = (DefaultToSelf = "WorldContextObject"))
 	static AURA_API UAttributeMenuWidgetController* GetAttributeMenuWidgetController(const UObject* WorldContextObject);
+
+	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|WidgetController", meta = (DefaultToSelf = "WorldContextObject"))
+	static AURA_API USpellMenuWidgetController* GetSpellMenuWidgetController(const UObject* WorldContextObject);
 	
 	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|CharacterClassDefaults")
 	static AURA_API void InitializeDefaultAttributes(const UObject* WorldContextObject, ECharacterClass CharacterClass, float CharacterLevel, UAbilitySystemComponent* ASC);
@@ -34,9 +45,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|CharacterClassDefaults")
 	static AURA_API void GiveCommonStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC, ECharacterClass CharacterClass);
 
-	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|CharacterClassDefaults|Damage")
+	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|CharacterClassDefaults")
 	static AURA_API UCharacterClassInfo* GetCharacterClassInfo(const UObject* WorldContextObject);
-
+	
+	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|AbilityInfo")
+	static AURA_API UAbilityInfo* GetAbilityInfo(const UObject* WorldContextObject);
+	
 	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
 	static AURA_API bool IsBlockedHit(const FGameplayEffectContextHandle& ContextHandle);
 

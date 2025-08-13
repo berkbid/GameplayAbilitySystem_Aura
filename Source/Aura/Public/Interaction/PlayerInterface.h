@@ -33,7 +33,7 @@ public:
 
 	/** Only server can call, Returns true if succeeded to increment by the given spell point amount */
 	UFUNCTION(BlueprintNativeEvent)
-	bool AddOrRefundSpellPoints(int32 InAmount);
+	bool SpendOrRefundSpellPoints(const FGameplayTag& AbilityTag, int32 InAmount);
 	
 	UFUNCTION(BlueprintNativeEvent)
 	int32 GetAttributePoints() const;

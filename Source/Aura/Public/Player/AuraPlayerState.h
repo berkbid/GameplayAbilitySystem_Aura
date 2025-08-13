@@ -8,8 +8,10 @@
 #include "Interaction/ModifierDependencyInterface.h"
 #include "AuraPlayerState.generated.h"
 
+class AAuraPlayerController;
 class ULevelUpInfo;
 class UAbilitySystemComponent;
+class UAuraAbilitySystemComponent;
 class UAttributeSet;
 class UObject;
 
@@ -28,8 +30,14 @@ public:
 
 	AURA_API virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
+	UFUNCTION(BlueprintCallable, Category = "Aura|PlayerState")
+	AURA_API AAuraPlayerController* GetAuraPlayerController() const;
+	
+	UFUNCTION(BlueprintCallable, Category = "Aura|PlayerState")
+	UAuraAbilitySystemComponent* GetAuraAbilitySystemComponent() const { return AbilitySystemComponent; }
+	
 	// ~ IAbilitySystemInterface
-	AURA_API virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
+	AURA_API virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	// ~ End IAbilitySystemInterface
 
 	UFUNCTION(BlueprintPure)
@@ -55,7 +63,7 @@ public:
 	
 	/** Server call to add to Xp */
 	UFUNCTION(BlueprintCallable)
-	AURA_API bool AddOrRefundSpellPoints(int32 SpellPointsToAdd);
+	AURA_API bool SpendOrRefundSpellPoints(const FGameplayTag& AbilityTag, int32 SpellPointsToAdd);
 	
 	UFUNCTION(BlueprintPure)
 	int32 GetSpellPoints() const { return SpellPoints; }
@@ -71,7 +79,7 @@ public:
 	
 protected:
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent;
 
 	UPROPERTY(Transient, BlueprintReadOnly)
 	TObjectPtr<UAttributeSet> AttributeSet;

@@ -6,6 +6,7 @@ ParentGuid:00000000-0000-0000-0000-000000000000
 /Game/Blueprints/Character/Aura/B_AuraCharacter.B_AuraCharacter
 /Game/Blueprints/Game/B_AuraGameInstance.B_AuraGameInstance
 /Game/Blueprints/Game/B_AuraGameMode.B_AuraGameMode
+/Game/Blueprints/Game/B_AuraHUD.B_AuraHUD
 /Game/Blueprints/Player/B_AuraPlayerController.B_AuraPlayerController
 /Game/Blueprints/Player/B_AuraPlayerState.B_AuraPlayerState
 /Game/Blueprints/UI/HUD/W_AuraHUD.W_AuraHUD

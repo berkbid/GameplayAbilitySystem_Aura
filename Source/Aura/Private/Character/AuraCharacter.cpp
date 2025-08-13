@@ -150,11 +150,11 @@ bool AAuraCharacter::AddOrRefundAttributePoints_Implementation(const FGameplayTa
 	return PS->AddOrRefundAttributePoints(AttributeTag, InAmount);
 }
 
-bool AAuraCharacter::AddOrRefundSpellPoints_Implementation(int32 InAmount)
+bool AAuraCharacter::SpendOrRefundSpellPoints_Implementation(const FGameplayTag& AbilityTag, int32 InAmount)
 {
 	AAuraPlayerState* PS = GetPlayerState<AAuraPlayerState>();
 	check(PS);
-	return PS->AddOrRefundSpellPoints(InAmount);
+	return PS->SpendOrRefundSpellPoints(AbilityTag, InAmount);
 }
 
 int32 AAuraCharacter::GetAttributePoints_Implementation() const

@@ -3,7 +3,6 @@
 #include "UI/WidgetController/HUDWidgetController.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
-#include "AbilitySystem/Data/AbilityInfo.h"
 #include "AbilitySystem/Data/LevelUpInfo.h"
 #include "Player/AuraPlayerState.h"
 
@@ -78,7 +77,7 @@ void UHUDWidgetController::BindCallBacksToDependencies()
 	// Level changed
 	AuraPS->OnLevelUpdate.AddLambda([this](int32 NewLevel)
 	{
-		OnPlayerLevelChangedDelegate.Broadcast(NewLevel);
+		if (OnPlayerLevelChangedDelegate.IsBound()) { OnPlayerLevelChangedDelegate.Broadcast(NewLevel); }
 	});
 }
 
@@ -97,43 +96,17 @@ void UHUDWidgetController::BroadcastInitialValues()
 	const AAuraPlayerState* AuraPS = CastChecked<AAuraPlayerState>(WidgetControllerParams.PlayerState);
 	OnXpChanged(AuraPS->GetXp());
 
-	
-	// This is going to happen for every time a widget has widget controller set for this widget controller
 	UAuraAbilitySystemComponent* ASC = CastChecked<UAuraAbilitySystemComponent>(WidgetControllerParams.AbilitySystemComponent);
 	if (ASC->bStartupAbilitiesGiven)
 	{
-		OnInitializeStartupAbilities(ASC);
+		BroadcastAbilityInfo();
 	}
 	else
 	{
-		ASC->OnAbilitiesGiven.AddUObject(this, &UHUDWidgetController::OnInitializeStartupAbilities);	
+		ASC->OnAbilitiesGiven.AddUObject(this, &UAuraWidgetController::BroadcastAbilityInfo);	
 	}
 
 	// TODO: Broadcast initial OnAbilityCommitted values. Not sure if that is possible
-}
-
-
-void UHUDWidgetController::OnInitializeStartupAbilities(UAuraAbilitySystemComponent* ASC) const
-{
-	check(ASC && AbilityInfo);
-	
-	if (!ASC->bStartupAbilitiesGiven)
-	{
-		return;
-	}
-
-	// Create delegate and bind lambda to it
-	FForEachAbility BroadcastDelegate;
-	BroadcastDelegate.BindLambda([this](const FGameplayAbilitySpec& AbilitySpec)
-	{
-		FAuraAbilityInfo Info = AbilityInfo->FindAbilityInfo(UAuraAbilitySystemComponent::GetAbilityTagFromSpec(AbilitySpec));
-		Info.InputTag = UAuraAbilitySystemComponent::GetInputTagFromSpec(AbilitySpec);
-		
-		AbilityInfoDelegate.Broadcast(Info);
-	});
-
-	// For each activatable ability, will execute lambda above with their ability spec
-	ASC->ForEachAbility(BroadcastDelegate);
 }
 
 void UHUDWidgetController::OnXpChanged(int32 NewXp) const

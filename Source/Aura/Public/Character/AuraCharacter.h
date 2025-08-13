@@ -51,7 +51,7 @@ public:
 	// Player Interface
 	AURA_API virtual void AddToXp_Implementation(int32 InXp) override;
 	AURA_API virtual bool AddOrRefundAttributePoints_Implementation(const FGameplayTag& AttributeTag, int32 InAmount) override;
-	AURA_API virtual bool AddOrRefundSpellPoints_Implementation(int32 InAmount) override;
+	AURA_API virtual bool SpendOrRefundSpellPoints_Implementation(const FGameplayTag& AbilityTag, int32 InAmount) override;
 	AURA_API virtual int32 GetAttributePoints_Implementation() const override;
 	AURA_API virtual int32 GetSpellPoints_Implementation() const override;
 	// ~End Player Interface

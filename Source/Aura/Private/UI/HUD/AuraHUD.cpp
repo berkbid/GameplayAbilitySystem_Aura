@@ -4,6 +4,7 @@
 #include "UI/Widget/AuraUserWidget.h"
 #include "UI/WidgetController/AttributeMenuWidgetController.h"
 #include "UI/WidgetController/HUDWidgetController.h"
+#include "UI/WidgetController/SpellMenuWidgetController.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraHUD)
 
@@ -25,7 +26,7 @@ void AAuraHUD::InitHUD(const FWidgetControllerParams& InControllerParams)
 		// initial values happens afterwards
 		AuraHUD->SetWidgetController(GetHUDWidgetController(InControllerParams));
 		
-		// Broadcast initial values directly after widget controller is set on all sub-widgets
+		// Broadcast initial values directly after widget controller is set on all sub-widgets on HUD
 		HUDWidgetController->BroadcastInitialValues();
 		
 		AuraHUD->AddToViewport();
@@ -34,27 +35,29 @@ void AAuraHUD::InitHUD(const FWidgetControllerParams& InControllerParams)
 
 UHUDWidgetController* AAuraHUD::GetHUDWidgetController(const FWidgetControllerParams& InControllerParams)
 {
-	checkf(HUDWidgetControllerClass, TEXT("HUDWidgetControllerClass uninitialized, please fill out B_AuraHUD"));
-	
-	if (!HUDWidgetController)
-	{
-		HUDWidgetController = NewObject<UHUDWidgetController>(this, HUDWidgetControllerClass);
-		HUDWidgetController->SetWidgetControllerParams(InControllerParams);
-	}
-	
-	return HUDWidgetController;
+	return GetOrCreateWidgetController(HUDWidgetController, HUDWidgetControllerClass, InControllerParams);
 }
 
 UAttributeMenuWidgetController* AAuraHUD::GetAttributeMenuWidgetController(const FWidgetControllerParams& InControllerParams)
 {
-	checkf(AttributeMenuWidgetControllerClass, TEXT("AttributeMenuWidgetControllerClass uninitialized, please fill out B_AuraHUD"));
-	
-	if (!AttributeMenuWidgetController)
+	return GetOrCreateWidgetController(AttributeMenuWidgetController, AttributeMenuWidgetControllerClass, InControllerParams);
+}
+
+USpellMenuWidgetController* AAuraHUD::GetSpellMenuWidgetController(const FWidgetControllerParams& InControllerParams)
+{
+	return GetOrCreateWidgetController(SpellMenuWidgetController, SpellMenuWidgetControllerClass, InControllerParams);
+}
+
+template <typename ControllerT>
+ControllerT* AAuraHUD::GetOrCreateWidgetController(TObjectPtr<ControllerT>& WC, const TSubclassOf<UAuraWidgetController>& WCClass, const FWidgetControllerParams& InControllerParams)
+{
+	if (!WC)
 	{
-		AttributeMenuWidgetController = NewObject<UAttributeMenuWidgetController>(this, AttributeMenuWidgetControllerClass);
-		AttributeMenuWidgetController->SetWidgetControllerParams(InControllerParams);
+		checkf(WCClass, TEXT("%s uninitialized, please fill out B_AuraHUD"), *ControllerT::StaticClass()->GetName());
+		WC = NewObject<ControllerT>(this, WCClass);
+		WC->SetWidgetControllerParams(InControllerParams);
 	}
-	return AttributeMenuWidgetController;
+	return WC;
 }
 
 bool AAuraHUD::ToggleEscapeMenu()

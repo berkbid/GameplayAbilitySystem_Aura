@@ -10,15 +10,15 @@ class UObject;
 /**
  * 
  */
-UCLASS()
-class AURA_API UEnemyWidgetController : public UAuraWidgetController
+UCLASS(MinimalAPI)
+class UEnemyWidgetController : public UAuraWidgetController
 {
 	GENERATED_BODY()
 	
 public:
 	// ~ Begin UAuraWidgetController interface
-	virtual void BroadcastInitialValues() override;
-	virtual void BindCallBacksToDependencies() override;
+	AURA_API virtual void BroadcastInitialValues() override;
+	AURA_API virtual void BindCallBacksToDependencies() override;
 	// ~ End UAuraWidgetController interface
 	
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")

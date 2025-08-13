@@ -9,6 +9,7 @@
 class UObject;
 class UTexture2D;
 class UMaterialInterface;
+class UGameplayAbility;
 
 USTRUCT(BlueprintType)
 struct FAuraAbilityInfo
@@ -20,10 +21,20 @@ struct FAuraAbilityInfo
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FGameplayTag CooldownTag = FGameplayTag();
-
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	int32 LevelRequirement = 1;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TSubclassOf<UGameplayAbility> Ability = nullptr;
+	
 	// Not edit defaults only because this is set through code at runtime
 	UPROPERTY(BlueprintReadOnly)
 	FGameplayTag InputTag = FGameplayTag();
+	
+	// Not edit defaults only because this is set through code at runtime
+	UPROPERTY(BlueprintReadOnly)
+	FGameplayTag StatusTag = FGameplayTag();
 	
 	// TODO: Maybe make soft ptr
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)

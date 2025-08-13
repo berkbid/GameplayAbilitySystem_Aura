@@ -8,22 +8,25 @@
 class AActor;
 class UObject;
 class UCharacterClassInfo;
+class UAbilityInfo;
 
 /**
  * AAuraGameModeBase
  *
  *	The base game mode class used by this project.
  */
-UCLASS(Config = Game, Meta = (ShortTooltip = "The base game mode class used by this project."))
-class AURA_API AAuraGameModeBase : public AModularGameModeBase
+UCLASS(MinimalAPI, Config = Game, Meta = (ShortTooltip = "The base game mode class used by this project."))
+class AAuraGameModeBase : public AModularGameModeBase
 {
 	GENERATED_BODY()
 	
 public:
-	AAuraGameModeBase(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	AURA_API AAuraGameModeBase(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 public:
 	UPROPERTY(EditDefaultsOnly, Category = "Character Class Defaults")
 	TObjectPtr<UCharacterClassInfo> CharacterClassInfo;
-	
+
+	UPROPERTY(EditDefaultsOnly, Category = "Ability Info")
+	TObjectPtr<UAbilityInfo> AbilityInfo;
 };

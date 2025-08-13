@@ -140,7 +140,7 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 					
 					// Create tag container with hit react tag
 					FGameplayTagContainer TagContainer;
-					TagContainer.AddTag(AuraGameplayTags.Effects_HitReact);
+					TagContainer.AddTag(AuraGameplayTags.Abilities_HitReact);
 					
 					// Cancel any active hit react ability
 					Props.TargetASC->CancelAbilities(&TagContainer, nullptr, nullptr);

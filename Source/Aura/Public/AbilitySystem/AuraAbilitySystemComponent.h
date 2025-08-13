@@ -16,8 +16,9 @@ struct FActiveGameplayEffectHandle;
 struct FGameplayAbilitySpec;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FEffectAssetTags, const FGameplayTagContainer& /*AssetTags*/);
-DECLARE_MULTICAST_DELEGATE_OneParam(FAbilitiesGiven, UAuraAbilitySystemComponent*);
+DECLARE_MULTICAST_DELEGATE(FAbilitiesGiven);
 DECLARE_DELEGATE_OneParam(FForEachAbility, const FGameplayAbilitySpec&);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FAbilityStatusChanged, const FGameplayTag& /*AbilityTag*/, const FGameplayTag& /*StatusTag*/, int32 /*AbilityLevel*/);
 
 /**
  * 
@@ -45,16 +46,28 @@ public:
 	
 	static AURA_API FGameplayTag GetAbilityTagFromSpec(const FGameplayAbilitySpec& AbilitySpec);
 	static AURA_API FGameplayTag GetInputTagFromSpec(const FGameplayAbilitySpec& AbilitySpec);
+	static AURA_API FGameplayTag GetStatusTagFromSpec(const FGameplayAbilitySpec& AbilitySpec);
 
+	AURA_API FGameplayAbilitySpec* GetSpecFromAbilityTag(const FGameplayTag& AbilityTag);
+	
 	/** Can be called by server or client, will call server RPC for functionality */
 	AURA_API void AddOrRefundAttribute(const FGameplayTag& AttributeTag, int32 IncrementAmount);
 
+	/** Called from server to update the status of abilities dependent on player level */
+	AURA_API void UpdateAbilityStatuses(int32 Level);
+
+	UFUNCTION(Reliable, Server)
+	AURA_API void ServerSpendOrRefundSpellPoint(const FGameplayTag& AbilityTag, int32 Amount);
+	
 public:
 	/** Broadcast when effect is applied with a MessageTag Gameplay Tag */
 	FEffectAssetTags EffectAssetTags;
 	
 	/** Broadcast when an ability is given */
 	FAbilitiesGiven OnAbilitiesGiven;
+
+	/** Broadcast when the status of an ability changes */
+	FAbilityStatusChanged OnAbilityStatusChanged;
 	
 protected:
 	AURA_API virtual void OnRep_ActivateAbilities() override;
@@ -64,6 +77,9 @@ protected:
 	/** Currently only called if TagContainer contains MessageTag */
 	UFUNCTION(Reliable, Client)
 	AURA_API void ClientEffectAppliedTags(const FGameplayTagContainer& TagContainer);
+	
+	UFUNCTION(Reliable, Client)
+	AURA_API void ClientUpdateAbilityStatus(const FGameplayTag& AbilityTag, const FGameplayTag& StatusTag, int32 AbilityLevel);
 
 private:
 	UFUNCTION(Reliable, Server)

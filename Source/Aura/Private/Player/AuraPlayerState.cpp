@@ -2,10 +2,12 @@
 
 #include "Player/AuraPlayerState.h"
 
-#include "AuraLogChannels.h"
+#include "AuraGameplayTags.h"
+#include "Player/AuraPlayerController.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Data/LevelUpInfo.h"
+#include "AuraLogChannels.h"
 #include "Net/UnrealNetwork.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraPlayerState)
@@ -37,6 +39,16 @@ void AAuraPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME_CONDITION(AAuraPlayerState, Xp, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AAuraPlayerState, AttributePoints, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AAuraPlayerState, SpellPoints, COND_OwnerOnly);
+}
+
+AAuraPlayerController* AAuraPlayerState::GetAuraPlayerController() const
+{
+	return Cast<AAuraPlayerController>(GetOwner());
+}
+
+UAbilitySystemComponent* AAuraPlayerState::GetAbilitySystemComponent() const
+{
+	return GetAuraAbilitySystemComponent();
 }
 
 void AAuraPlayerState::AddXp(int32 XpToAdd)
@@ -87,7 +99,7 @@ void AAuraPlayerState::SetLevel(int32 InLevel)
 
 	// Update attributes and spell points
 	AddOrRefundAttributePoints(FGameplayTag(), TotalAttributeGain);
-	AddOrRefundSpellPoints(TotalSpellPointGain);
+	SpendOrRefundSpellPoints(FGameplayTag(), TotalSpellPointGain);
 
 	// Broadcast delegate for MMC_MaxHealth and MMC_MaxMana to update before maximizing health and mana below
 	OnLevelUpModifierDependencyChange.Broadcast();
@@ -95,6 +107,9 @@ void AAuraPlayerState::SetLevel(int32 InLevel)
 	// Tell the attribute set to perform level up logic (maximize health and mana). Done after MMC_MaxHealth and MMC_MaxMana recalculate above
 	UAuraAttributeSet* AuraAttributeSet = CastChecked<UAuraAttributeSet>(AttributeSet);
 	AuraAttributeSet->LevelUp();
+
+	// Tell ASC to update status of abilities now that we reached a new level
+	AbilitySystemComponent->UpdateAbilityStatuses(Level);
 }
 
 bool AAuraPlayerState::AddOrRefundAttributePoints(const FGameplayTag& AttributeTag, int32 AttributePointsToAdd)
@@ -121,17 +136,43 @@ bool AAuraPlayerState::AddOrRefundAttributePoints(const FGameplayTag& AttributeT
 	return true;
 }
 
-bool AAuraPlayerState::AddOrRefundSpellPoints(int32 SpellPointsToAdd)
+bool AAuraPlayerState::SpendOrRefundSpellPoints(const FGameplayTag& AbilityTag, int32 InSpellPoints)
 {
-	// Must be server and have non-zero spell points to add
-	if (!HasAuthority() || SpellPointsToAdd == 0)
+	// TODO: Could check if ability tag matches the parent tag of abilities for it to be technically valid
+	
+	// Must be server and have non-zero spell points to add, also if not valid ability tag, points must be positive
+	if (!HasAuthority() || InSpellPoints == 0 || (!AbilityTag.IsValid() && InSpellPoints < 0))
 	{
 		return false;
 	}
 
-	const int32 NewSpellPoints = SpellPoints + SpellPointsToAdd;
-
-	// New spell point value must not be same as old, and must be non-zero to process request
+	// If we are refunding a specific ability's spell points
+	if (AbilityTag.IsValid() && InSpellPoints < 0)
+	{
+		if (FGameplayAbilitySpec* AbilitySpec = AbilitySystemComponent->GetSpecFromAbilityTag(AbilityTag))
+		{
+			const FGameplayTag& AbilityStatus = AbilitySystemComponent->GetStatusTagFromSpec(*AbilitySpec);
+			
+			if (AbilityStatus.MatchesTagExact(FAuraGameplayTags::Get().Abilities_Status_Eligible) || AbilityStatus.MatchesTagExact(FAuraGameplayTags::Get().Abilities_Status_Locked))
+			{
+				// Cannot refund spell points for abilities that are not even unlocked
+				return false;
+			}
+			else // Unlocked or equipped
+			{
+				// Ability needs enough levels to refund InSpellPoints, can go to level 0
+				const int32 AbilityLevel = AbilitySpec->Level;
+				if (AbilityLevel + InSpellPoints < 0)
+				{
+					return false;
+				}
+			}
+		}
+	}
+	
+	// If valid ability tag, we are spending the incoming points, else we are adding more points
+	const int32 NewSpellPoints = AbilityTag.IsValid() ? SpellPoints - InSpellPoints : SpellPoints + InSpellPoints;
+	
 	if (NewSpellPoints == SpellPoints || NewSpellPoints < 0)
 	{
 		UE_LOG(LogTemp, Error, TEXT("AddSpellPoints: INVALID NEW SPELL POINTS - Current SpellPoints: %d, New SpellPoints: %d"), SpellPoints, NewSpellPoints);
@@ -139,7 +180,7 @@ bool AAuraPlayerState::AddOrRefundSpellPoints(int32 SpellPointsToAdd)
 	}
 	
 	const int32 OldSpellPoints = SpellPoints;
-	SpellPoints += SpellPointsToAdd;
+	SpellPoints = NewSpellPoints;
 	OnRep_SpellPoints(OldSpellPoints);
 
 	return true;
