@@ -66,14 +66,14 @@ public:
 	AURA_API void BroadcastAbilityInfo() const;
 
 protected:
+	AURA_API UAbilityInfo* GetAbilityInfo() const;
+	
+protected:
 	UPROPERTY(BlueprintReadOnly, Category="WidgetController")
 	FWidgetControllerParams WidgetControllerParams;
 	
 	/** Broadcast for each activatable ability with its info, when they are given to ASC */
 	UPROPERTY(BlueprintAssignable, Category="GAS|Messages")
 	FAbilityInfoSignature AbilityInfoDelegate;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Widget Data")
-	TObjectPtr<UAbilityInfo> AbilityInfo;
 	
 };

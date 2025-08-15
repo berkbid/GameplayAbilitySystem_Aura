@@ -220,7 +220,7 @@ void UAuraAbilitySystemComponent::AddOrRefundAttribute(const FGameplayTag& Attri
 	}
 }
 
-void UAuraAbilitySystemComponent::UpdateAbilityStatuses(int32 Level)
+void UAuraAbilitySystemComponent::UpdateAbilitiesEligibility(int32 Level)
 {
 	//TODO: Could check HasAuthority()
 	//GetOwner()->HasAuthority()
@@ -240,14 +240,35 @@ void UAuraAbilitySystemComponent::UpdateAbilityStatuses(int32 Level)
 		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(Info.Ability, 1);
 		AbilitySpec.GetDynamicSpecSourceTags().AddTag(Eligible);
 		GiveAbility(AbilitySpec);
-		
-		// Forces ability spec to replicate now
-		MarkAbilitySpecDirty(AbilitySpec);
 
-		// Broadcast new ability status change and tell client to do the same
-		// TODO: Does server run this code as well?
-		ClientUpdateAbilityStatus(Info.AbilityTag, Eligible, 1);
+		// TODO: Maybe giveability does this already
+		// Forces ability spec to replicate now
+		//MarkAbilitySpecDirty(AbilitySpec);
+
+		// The new ability status will be broadcast for local controller on OnGiveAbility() once it is officially in activatableabilities array
 	}
+}
+
+bool UAuraAbilitySystemComponent::GetDescriptionsByAbilityTag(const FGameplayTag& AbilityTag, const int32 Level, FString& OutDescription, FString& OutNextLevelDescription)
+{
+	if (const FGameplayAbilitySpec* AbilitySpec = GetSpecFromAbilityTag(AbilityTag))
+	{
+		if (UAuraGameplayAbility* AuraGameplayAbility = Cast<UAuraGameplayAbility>(AbilitySpec->Ability))
+		{
+			// Not using AbilitySpec->Level as it will not be valid on client yet
+			OutDescription = AuraGameplayAbility->GetDescription(Level);
+			OutNextLevelDescription = AuraGameplayAbility->GetNextLevelDescription(Level + 1);
+			return true;
+		}
+	}
+	
+	// Ability is locked because did not find it above
+	if (const UAbilityInfo* AbilityInfo = UAuraAbilitySystemLibrary::GetAbilityInfo(GetAvatarActor()))
+	{
+		OutDescription = UAuraGameplayAbility::GetLockedDescription(AbilityInfo->FindAbilityInfo(AbilityTag).LevelRequirement);
+	}
+	OutNextLevelDescription = FString();
+	return false;
 }
 
 void UAuraAbilitySystemComponent::ServerSpendOrRefundSpellPoint_Implementation(const FGameplayTag& AbilityTag, int32 Amount)
@@ -258,12 +279,13 @@ void UAuraAbilitySystemComponent::ServerSpendOrRefundSpellPoint_Implementation(c
 	if (Amount != 0 && AbilitySpec && Avatar && Avatar->Implements<UPlayerInterface>() && IPlayerInterface::Execute_SpendOrRefundSpellPoints(Avatar, AbilityTag, Amount))
 	{
 		const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
-
-		// We are spending spell points
+		
+		FGameplayTag AbilityStatus = GetStatusTagFromSpec(*AbilitySpec);
+		
+		// We are spending spell points, // we know it's not status locked, either eligible, equipped, or unlocked
 		if (Amount > 0)
 		{
-			// We know it's not status locked, either eligible, equipped, or unlocked
-			FGameplayTag AbilityStatus = GetStatusTagFromSpec(*AbilitySpec);
+			
 			if (AbilityStatus.MatchesTagExact(GameplayTags.Abilities_Status_Eligible))
 			{
 				// Change status, remove old tag, add new
@@ -278,18 +300,9 @@ void UAuraAbilitySystemComponent::ServerSpendOrRefundSpellPoint_Implementation(c
 				// This will not cancel it if it is already active (if we want that need to remove and re-add ability)
 				AbilitySpec->Level += Amount;
 			}
-
-			// Because we changed our ability spec, we can force it to replicate now instead of on the next update, do this before or after broadcast below?
-			MarkAbilitySpecDirty(*AbilitySpec);
-
-			// Broadcast the ability's new status and level
-			ClientUpdateAbilityStatus(AbilityTag, AbilityStatus, AbilitySpec->Level);
 		}
-		else // We are refunding spell points
+		else // We are refunding spell points, we know status is either unlocked or equipped
 		{
-			// We know status is either unlocked or equipped
-			FGameplayTag AbilityStatus = GetStatusTagFromSpec(*AbilitySpec);
-			
 			const int32 NewAbilityLevel = AbilitySpec->Level + Amount;
 			
 			if (NewAbilityLevel < 0)
@@ -310,19 +323,14 @@ void UAuraAbilitySystemComponent::ServerSpendOrRefundSpellPoint_Implementation(c
 				AbilityStatus = GameplayTags.Abilities_Status_Eligible;
 				// TODO: If ability was equipped, need to un-equip it
 			}
-
-			// Because we changed our ability spec, we can force it to replicate now instead of on the next update, do this before or after broadcast below?
-			MarkAbilitySpecDirty(*AbilitySpec);
-
-			// Broadcast the ability's new status and level
-			ClientUpdateAbilityStatus(AbilityTag, AbilityStatus, AbilitySpec->Level);
 		}
-	}
-}
+		
+		// Because we changed our ability spec, we can force it to replicate now instead of on the next update, do this before or after broadcast below?
+		MarkAbilitySpecDirty(*AbilitySpec);
 
-void UAuraAbilitySystemComponent::ClientUpdateAbilityStatus_Implementation(const FGameplayTag& AbilityTag, const FGameplayTag& StatusTag, int32 AbilityLevel)
-{
-	OnAbilityStatusChanged.Broadcast(AbilityTag, StatusTag, AbilityLevel);
+		// Broadcast the ability's new status and level
+		ClientUpdateAbilityStatusAndLevel(AbilityTag, AbilityStatus, AbilitySpec->Level);
+	}
 }
 
 void UAuraAbilitySystemComponent::ServerAddOrRefundAttribute_Implementation(const FGameplayTag& AttributeTag, int32 IncrementAmount)
@@ -351,6 +359,17 @@ void UAuraAbilitySystemComponent::OnRep_ActivateAbilities()
 	{
 		bStartupAbilitiesGiven = true;
 		OnAbilitiesGiven.Broadcast();
+	}
+}
+
+void UAuraAbilitySystemComponent::OnGiveAbility(FGameplayAbilitySpec& AbilitySpec)
+{
+	Super::OnGiveAbility(AbilitySpec);
+
+	// Broadcasting stuff for UI, only local controller needs it
+	if (AbilityActorInfo.IsValid() && AbilityActorInfo->IsLocallyControlledPlayer())
+	{
+		OnAbilityStatusChanged.Broadcast(GetAbilityTagFromSpec(AbilitySpec), GetStatusTagFromSpec(AbilitySpec), AbilitySpec.Level);
 	}
 }
 
@@ -386,6 +405,11 @@ void UAuraAbilitySystemComponent::EffectApplied(UAbilitySystemComponent* Ability
 	}
 }
 
+void UAuraAbilitySystemComponent::ClientUpdateAbilityStatusAndLevel_Implementation(const FGameplayTag& AbilityTag, const FGameplayTag& StatusTag, int32 AbilityLevel)
+{
+	OnAbilityStatusChanged.Broadcast(AbilityTag, StatusTag, AbilityLevel);
+}
+
 void UAuraAbilitySystemComponent::ClientEffectAppliedTags_Implementation(const FGameplayTagContainer& TagContainer)
 {
 	// Broadcast for HUD widget controller, server already checked that the tag container contains "MessageTag"
@@ -396,16 +420,4 @@ FGameplayAbilitySpec* UAuraAbilitySystemComponent::FindAbilityForTag(const FGame
 {
 	return GetActivatableAbilities().FindByPredicate([InTag](const FGameplayAbilitySpec& AbilitySpec)
 		{ return AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InTag); });
-}
-
-void UAuraAbilitySystemComponent::PrintNetModeInfo() const
-{
-	const AActor* ActorOwner = GetOwner();
-	const FString NetModeString = GetNetMode() < NM_Client ? TEXT("Server Net Mode") : TEXT("Client Net Mode");
-	const ENetRole LocalRole = ActorOwner->GetLocalRole();
-	const APlayerState* PSOwner = Cast<APlayerState>(ActorOwner);
-	const FString OwnerName = PSOwner ? PSOwner->GetPlayerName() : ActorOwner->GetName();
-	
-	UE_LOG(LogTemp, Warning, TEXT("Ability system component - Player: %s, Avatar: %s, Local Role: %s, Net Mode: %s"),
-		*OwnerName, *GetAvatarActor()->GetName(), *UEnum::GetValueAsString(LocalRole), *NetModeString);
 }

@@ -7,8 +7,6 @@
 
 class AActor;
 class UObject;
-class UCharacterClassInfo;
-class UAbilityInfo;
 
 /**
  * AAuraGameModeBase
@@ -22,11 +20,4 @@ class AAuraGameModeBase : public AModularGameModeBase
 	
 public:
 	AURA_API AAuraGameModeBase(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
-
-public:
-	UPROPERTY(EditDefaultsOnly, Category = "Character Class Defaults")
-	TObjectPtr<UCharacterClassInfo> CharacterClassInfo;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Ability Info")
-	TObjectPtr<UAbilityInfo> AbilityInfo;
 };

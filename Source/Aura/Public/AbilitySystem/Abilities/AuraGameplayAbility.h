@@ -15,6 +15,7 @@ struct FFrame;
 struct FGameplayAbilityActorInfo;
 struct FGameplayEffectSpec;
 struct FGameplayEventData;
+struct FGameplayAbilitySpec;
 
 /**
  * UAuraGameplayAbility
@@ -28,6 +29,10 @@ class UAuraGameplayAbility : public UGameplayAbility
 
 public:
 	AURA_API UAuraGameplayAbility(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+
+	// ~UGameplayAbility
+	AURA_API virtual void OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
+	// ~End UGameplayAbility
 	
 	UFUNCTION(BlueprintCallable, Category = "Aura|Ability")
 	AURA_API UAuraAbilitySystemComponent* GetAuraAbilitySystemComponentFromActorInfo() const;
@@ -47,6 +52,10 @@ public:
 	
 	AURA_API virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
+	AURA_API virtual FString GetDescription(int32 Level);
+	AURA_API virtual FString GetNextLevelDescription(int32 Level);
+	static AURA_API FString GetLockedDescription(int32 Level);
+	
 public:
 	/** Use when giving abilities to character */
 	UPROPERTY(EditDefaultsOnly, Category="Input")

@@ -8,8 +8,8 @@
 #include "Interaction/CombatInterface.h"
 #include "GameFramework/PlayerController.h"
 #include "Engine/World.h"
-#include "Game/AuraGameModeBase.h"
 #include "Kismet/GameplayStatics.h"
+#include "System/AuraGameInstance.h"
 #include "UI/HUD/AuraHUD.h"
 #include "UI/WidgetController/AuraWidgetController.h"
 
@@ -144,14 +144,14 @@ void UAuraAbilitySystemLibrary::GiveCommonStartupAbilities(const UObject* WorldC
 
 UCharacterClassInfo* UAuraAbilitySystemLibrary::GetCharacterClassInfo(const UObject* WorldContextObject)
 {
-	const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
-	return AuraGameMode ? AuraGameMode->CharacterClassInfo : nullptr;
+	const UAuraGameInstance* AuraGameInstance = Cast<UAuraGameInstance>(UGameplayStatics::GetGameInstance(WorldContextObject));
+	return AuraGameInstance ? AuraGameInstance->CharacterClassInfo : nullptr;
 }
 
 UAbilityInfo* UAuraAbilitySystemLibrary::GetAbilityInfo(const UObject* WorldContextObject)
 {
-	const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject));
-	return AuraGameMode ? AuraGameMode->AbilityInfo : nullptr;
+	const UAuraGameInstance* AuraGameInstance = Cast<UAuraGameInstance>(UGameplayStatics::GetGameInstance(WorldContextObject));
+	return AuraGameInstance ? AuraGameInstance->AbilityInfo : nullptr;
 }
 
 bool UAuraAbilitySystemLibrary::IsBlockedHit(const FGameplayEffectContextHandle& ContextHandle)

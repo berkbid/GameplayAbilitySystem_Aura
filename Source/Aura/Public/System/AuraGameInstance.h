@@ -6,6 +6,8 @@
 #include "AuraGameInstance.generated.h"
 
 class UObject;
+class UCharacterClassInfo;
+class UAbilityInfo;
 
 /**
  * UAuraGameInstance
@@ -23,4 +25,12 @@ protected:
 	AURA_API virtual void Shutdown() override;
 
 	AURA_API void OnPreClientTravelToSession(FString& URL);
+
+public:
+	// TODO: Can this be on game mode instead? Does client ever need this data?
+	UPROPERTY(EditDefaultsOnly, Category = "Character Class Defaults")
+	TObjectPtr<UCharacterClassInfo> CharacterClassInfo;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Ability Info")
+	TObjectPtr<UAbilityInfo> AbilityInfo;
 };

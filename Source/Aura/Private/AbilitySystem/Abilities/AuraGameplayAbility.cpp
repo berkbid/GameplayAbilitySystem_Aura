@@ -17,6 +17,11 @@ UAuraGameplayAbility::UAuraGameplayAbility(const FObjectInitializer& ObjectIniti
 	NetSecurityPolicy = EGameplayAbilityNetSecurityPolicy::ClientOrServer;
 }
 
+void UAuraGameplayAbility::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
+{
+	Super::OnGiveAbility(ActorInfo, Spec);
+}
+
 UAuraAbilitySystemComponent* UAuraGameplayAbility::GetAuraAbilitySystemComponentFromActorInfo() const
 {
 	return (CurrentActorInfo ? Cast<UAuraAbilitySystemComponent>(CurrentActorInfo->AbilitySystemComponent.Get()) : nullptr);
@@ -82,4 +87,19 @@ void UAuraGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 void UAuraGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+}
+
+FString UAuraGameplayAbility::GetDescription(int32 Level)
+{
+	return FString::Printf(TEXT("<Default>%s,  </><Level>%d</>"), L"Default Ability Name - LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum", Level);
+}
+
+FString UAuraGameplayAbility::GetNextLevelDescription(int32 Level)
+{
+	return FString::Printf(TEXT("<Default>Next Level:  </><Level>%d</> \n<Default>Causes much more damage </>"), Level);
+}
+
+FString UAuraGameplayAbility::GetLockedDescription(int32 Level)
+{
+	return FString::Printf(TEXT("<Default>Spell Locked Until Level: %d</>"), Level);
 }

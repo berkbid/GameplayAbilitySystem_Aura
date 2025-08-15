@@ -28,6 +28,9 @@ struct FAuraAbilityInfo
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<UGameplayAbility> Ability = nullptr;
 	
+	UPROPERTY(BlueprintReadOnly)
+	int32 Level = 1;
+	
 	// Not edit defaults only because this is set through code at runtime
 	UPROPERTY(BlueprintReadOnly)
 	FGameplayTag InputTag = FGameplayTag();

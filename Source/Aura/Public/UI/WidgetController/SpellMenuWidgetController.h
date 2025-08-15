@@ -24,7 +24,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure=false)
 	AURA_API void SpendOrRefundSpellPoint(const FGameplayTag& AbilityTag, int32 SpellPoints) const;
-
+	
+	UFUNCTION(BlueprintCallable)
+	AURA_API bool GetDescriptionsByAbilityTag(const FGameplayTag& AbilityTag, const int32 Level, FString& OutDescription, FString& OutNextLevelDescription);
+	
 protected:
 	UPROPERTY(BlueprintAssignable, Category="GAS|SpellPoints")
 	FOnPlayerStatChangedSignature OnSpellPointsChanged;

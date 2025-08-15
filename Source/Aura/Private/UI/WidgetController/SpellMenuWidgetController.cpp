@@ -13,11 +13,15 @@ void USpellMenuWidgetController::BindCallBacksToDependencies()
 	
 	ASC->OnAbilityStatusChanged.AddLambda([this](const FGameplayTag& AbilityTag, const FGameplayTag& StatusTag, int32 NewLevel)
 	{
-		if (AbilityInfo && AbilityInfoDelegate.IsBound())
+		if (AbilityInfoDelegate.IsBound())
 		{
-			FAuraAbilityInfo Info = AbilityInfo->FindAbilityInfo(AbilityTag);
-			Info.StatusTag = StatusTag;
-			AbilityInfoDelegate.Broadcast(Info);
+			if (const UAbilityInfo* AbilityInfo = GetAbilityInfo())
+			{
+				FAuraAbilityInfo Info = AbilityInfo->FindAbilityInfo(AbilityTag);
+				Info.StatusTag = StatusTag;
+				Info.Level = NewLevel;
+				AbilityInfoDelegate.Broadcast(Info);
+			}
 		}
 	});
 
@@ -35,6 +39,13 @@ void USpellMenuWidgetController::SpendOrRefundSpellPoint(const FGameplayTag& Abi
 	
 	// Spend a spell point
 	ASC->ServerSpendOrRefundSpellPoint(AbilityTag, SpellPoints);
+}
+
+bool USpellMenuWidgetController::GetDescriptionsByAbilityTag(const FGameplayTag& AbilityTag, const int32 Level, FString& OutDescription, FString& OutNextLevelDescription)
+{
+	UAuraAbilitySystemComponent* ASC = CastChecked<UAuraAbilitySystemComponent>(WidgetControllerParams.AbilitySystemComponent);
+	check(ASC);
+	return ASC->GetDescriptionsByAbilityTag(AbilityTag, Level, OutDescription, OutNextLevelDescription);
 }
 
 void USpellMenuWidgetController::BroadcastInitialValues()

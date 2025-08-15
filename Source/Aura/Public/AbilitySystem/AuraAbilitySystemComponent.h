@@ -53,11 +53,13 @@ public:
 	/** Can be called by server or client, will call server RPC for functionality */
 	AURA_API void AddOrRefundAttribute(const FGameplayTag& AttributeTag, int32 IncrementAmount);
 
-	/** Called from server to update the status of abilities dependent on player level */
-	AURA_API void UpdateAbilityStatuses(int32 Level);
+	/** Called from server to update the eligibility of an ability based on player level */
+	AURA_API void UpdateAbilitiesEligibility(int32 Level);
 
 	UFUNCTION(Reliable, Server)
 	AURA_API void ServerSpendOrRefundSpellPoint(const FGameplayTag& AbilityTag, int32 Amount);
+
+	AURA_API bool GetDescriptionsByAbilityTag(const FGameplayTag& AbilityTag, const int32 Level, FString& OutDescription, FString& OutNextLevelDescription);
 	
 public:
 	/** Broadcast when effect is applied with a MessageTag Gameplay Tag */
@@ -70,7 +72,10 @@ public:
 	FAbilityStatusChanged OnAbilityStatusChanged;
 	
 protected:
+	// ~UAbilitySystemComponent
 	AURA_API virtual void OnRep_ActivateAbilities() override;
+	AURA_API virtual void OnGiveAbility(FGameplayAbilitySpec& AbilitySpec) override;
+	// ~End UAbilitySystemComponent
 	
 	AURA_API void EffectApplied(UAbilitySystemComponent* AbilitySystemComponent, const FGameplayEffectSpec& EffectSpec, FActiveGameplayEffectHandle ActiveEffectHandle);
 
@@ -79,15 +84,13 @@ protected:
 	AURA_API void ClientEffectAppliedTags(const FGameplayTagContainer& TagContainer);
 	
 	UFUNCTION(Reliable, Client)
-	AURA_API void ClientUpdateAbilityStatus(const FGameplayTag& AbilityTag, const FGameplayTag& StatusTag, int32 AbilityLevel);
+	AURA_API void ClientUpdateAbilityStatusAndLevel(const FGameplayTag& AbilityTag, const FGameplayTag& StatusTag, int32 AbilityLevel);
 
 private:
 	UFUNCTION(Reliable, Server)
 	void ServerAddOrRefundAttribute(const FGameplayTag& AttributeTag, int32 IncrementAmount);
 	
 	FGameplayAbilitySpec* FindAbilityForTag(const FGameplayTag& InTag);
-
-	void PrintNetModeInfo() const;
 
 private:
 	FDelegateHandle EffectAppliedDelegate;

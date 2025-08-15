@@ -108,8 +108,8 @@ void AAuraPlayerState::SetLevel(int32 InLevel)
 	UAuraAttributeSet* AuraAttributeSet = CastChecked<UAuraAttributeSet>(AttributeSet);
 	AuraAttributeSet->LevelUp();
 
-	// Tell ASC to update status of abilities now that we reached a new level
-	AbilitySystemComponent->UpdateAbilityStatuses(Level);
+	// Tell ASC to update the eligibility of abilities now that we reached a new level
+	AbilitySystemComponent->UpdateAbilitiesEligibility(Level);
 }
 
 bool AAuraPlayerState::AddOrRefundAttributePoints(const FGameplayTag& AttributeTag, int32 AttributePointsToAdd)
