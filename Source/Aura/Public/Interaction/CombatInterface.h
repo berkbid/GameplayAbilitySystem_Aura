@@ -11,6 +11,7 @@ class UNiagaraSystem;
 class UObject;
 class UAnimMontage;
 class USoundBase;
+class UAbilitySystemComponent;
 class AActor;
 
 USTRUCT(BlueprintType)
@@ -30,6 +31,9 @@ struct FTaggedMontage
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USoundBase> ImpactSound = nullptr;
 };
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnASCRegistered, UAbilitySystemComponent*);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeath, AActor*, DeadActor);
 
 UINTERFACE(MinimalAPI, BlueprintType)
 class UCombatInterface : public UInterface
@@ -56,7 +60,7 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void SetFacingTarget(const FVector& FacingTarget);
 
-	virtual void Die();
+	virtual void Die(const FVector& DeathImpulse);
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	UAnimMontage* GetHitReactMontage() const;
@@ -84,4 +88,12 @@ public:
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	ECharacterClass GetCharacterClass() const;
+
+	virtual FOnASCRegistered& GetOnASCRegisteredDelegate() { return OnASCRegistered; }
+
+	// Pure virtual method which requires it to be implemented
+	virtual FOnDeath& GetOnDeathDelegate() = 0;
+
+protected:
+	FOnASCRegistered OnASCRegistered;
 };

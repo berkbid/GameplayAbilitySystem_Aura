@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "GameplayTagContainer.h"
 #include "AuraAbilitySystemLibrary.generated.h"
 
 class AAuraHUD;
@@ -16,6 +17,7 @@ class UAbilitySystemComponent;
 class UObject;
 struct FGameplayEffectContextHandle;
 struct FWidgetControllerParams;
+struct FDamageEffectParams;
 
 /**
  * 
@@ -56,7 +58,28 @@ public:
 
 	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
 	static AURA_API bool IsCriticalHit(const FGameplayEffectContextHandle& ContextHandle);
+	
+	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
+	static AURA_API bool IsDebuffSuccessful(const FGameplayEffectContextHandle& ContextHandle);
+	
+	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
+	static AURA_API float GetDebuffDamage(const FGameplayEffectContextHandle& ContextHandle);
 
+	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
+	static AURA_API float GetDebuffFrequency(const FGameplayEffectContextHandle& ContextHandle);
+
+	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
+	static AURA_API float GetDebuffDuration(const FGameplayEffectContextHandle& ContextHandle);
+	
+	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
+	static AURA_API FGameplayTag GetDamageType(const FGameplayEffectContextHandle& ContextHandle);
+	
+	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
+	static AURA_API FVector GetDeathImpulse(const FGameplayEffectContextHandle& ContextHandle);
+	
+	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
+	static AURA_API FVector GetKnockback(const FGameplayEffectContextHandle& ContextHandle);
+	
 	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayEffects")
 	static AURA_API void SetIsBlockedHit(UPARAM(ref) FGameplayEffectContextHandle& ContextHandle, bool bInIsBlocked);
 
@@ -64,10 +87,34 @@ public:
 	static AURA_API void SetIsCriticalHit(UPARAM(ref) FGameplayEffectContextHandle& ContextHandle, bool bInIsCritical);
 
 	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayEffects")
+	static AURA_API void SetIsDebuffSuccessful(UPARAM(ref) FGameplayEffectContextHandle& ContextHandle, bool bInIsDebuffSuccessful);
+
+	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayEffects")
+	static AURA_API void SetDebuffDamage(UPARAM(ref) FGameplayEffectContextHandle& ContextHandle, float InDebuffDamage);
+
+	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayEffects")
+	static AURA_API void SetDebuffFrequency(UPARAM(ref) FGameplayEffectContextHandle& ContextHandle, float InDebuffFrequency);
+
+	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayEffects")
+	static AURA_API void SetDebuffDuration(UPARAM(ref) FGameplayEffectContextHandle& ContextHandle, float InDebuffDuration);
+	
+	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayEffects")
+	static AURA_API void SetDamageType(UPARAM(ref) FGameplayEffectContextHandle& ContextHandle, const FGameplayTag& InDamageType);
+	
+	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayEffects")
+	static AURA_API void SetDeathImpulse(UPARAM(ref) FGameplayEffectContextHandle& ContextHandle, const FVector& InDeathImpulse);
+	
+	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayEffects")
+	static AURA_API void SetKnockback(UPARAM(ref) FGameplayEffectContextHandle& ContextHandle, const FVector& InKnockback);
+	
+	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayEffects")
 	static AURA_API TArray<FVector> GetEffectContextSpawnLocations(const FGameplayEffectContextHandle& ContextHandle);
 
 	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayEffects")
 	static AURA_API void SetEffectContextSpawnLocations(UPARAM(ref) FGameplayEffectContextHandle& ContextHandle, const TArray<FVector>& InSpawnLocations);
+	
+	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|DamageEffects")
+	static AURA_API FGameplayEffectContextHandle ApplyDamageEffect(const FDamageEffectParams& DamageParams);
 	
 	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayMechanics")
 	static AURA_API void GetLivePlayersWithinRadius(const UObject* WorldContextObject, TArray<AActor*>& OutOverlappingActors, const TArray<AActor*>& ActorsToIgnore, float Radius, const FVector& Origin);

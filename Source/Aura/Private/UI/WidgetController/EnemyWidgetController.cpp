@@ -6,16 +6,6 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(EnemyWidgetController)
 
-void UEnemyWidgetController::BroadcastInitialValues()
-{
-	const UAuraAttributeSet* AttributeSet = CastChecked<UAuraAttributeSet>(WidgetControllerParams.AttributeSet);
-
-	UE_LOG(LogTemp, Warning, TEXT("Broadcasting initial enemy values"));
-	
-	OnHealthChanged.Broadcast(AttributeSet->GetHealth());
-	OnMaxHealthChanged.Broadcast(AttributeSet->GetMaxHealth());
-}
-
 void UEnemyWidgetController::BindCallBacksToDependencies()
 {
 	check(WidgetControllerParams.AbilitySystemComponent);
@@ -36,4 +26,14 @@ void UEnemyWidgetController::BindCallBacksToDependencies()
 			OnMaxHealthChanged.Broadcast(Data.NewValue);
 		});
 	}
+}
+
+void UEnemyWidgetController::BroadcastInitialValues()
+{
+	const UAuraAttributeSet* AttributeSet = CastChecked<UAuraAttributeSet>(WidgetControllerParams.AttributeSet);
+
+	UE_LOG(LogTemp, Warning, TEXT("Broadcasting initial enemy values"));
+	
+	OnHealthChanged.Broadcast(AttributeSet->GetHealth());
+	OnMaxHealthChanged.Broadcast(AttributeSet->GetMaxHealth());
 }

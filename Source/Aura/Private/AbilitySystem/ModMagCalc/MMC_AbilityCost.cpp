@@ -18,7 +18,6 @@ float UMMC_AbilityCost::CalculateBaseMagnitude_Implementation(const FGameplayEff
 	{
 		return 0.0f;
 	}
-	const float CostValue = Ability->Cost.GetValueAtLevel(Ability->GetAbilityLevel());
-	
-	return CostValue;
+
+	return Ability->Cost.GetValueAtLevel(Ability->GetAbilityLevel());
 }

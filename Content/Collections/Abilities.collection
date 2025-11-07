@@ -3,7 +3,7 @@ Type:Static
 Guid:E38DF234-44D5-B39D-3501-6194F832B0F7
 ParentGuid:00000000-0000-0000-0000-000000000000
 
-/Game/Blueprints/AbilitySystem/Aura/Abilities/Fire/FireBolt/GA_CastFireBolt.GA_CastFireBolt
+/Game/Blueprints/AbilitySystem/Aura/Abilities/Fire/FireBolt/GA_FireBolt.GA_FireBolt
 /Game/Blueprints/AbilitySystem/Aura/Abilities/Passive_Startup/GA_ListenForEvents.GA_ListenForEvents
 /Game/Blueprints/AbilitySystem/Enemy/Abilities/GA_EnemeyFirebolt.GA_EnemeyFirebolt
 /Game/Blueprints/AbilitySystem/Enemy/Abilities/GA_HitReact.GA_HitReact

@@ -14,6 +14,7 @@ class UGameplayAbility;
 class UGameplayEffect;
 class UAbilitySystemComponent;
 class UAttributeSet;
+class UDebuffNiagaraComponent;
 class UAnimMontage;
 class UNiagaraSystem;
 class UMaterialInstance;
@@ -36,7 +37,7 @@ public:
 	// ICombatInterface
 	AURA_API virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const override;
 	AURA_API virtual UAnimMontage* GetHitReactMontage_Implementation() const override;
-	AURA_API virtual void Die() override;
+	AURA_API virtual void Die(const FVector& DeathImpulse) override;
 	AURA_API virtual bool IsDead_Implementation() const override;
 	AURA_API virtual AActor* GetAvatar_Implementation() override;
 	virtual TArray<FTaggedMontage> GetAttackMontages_Implementation() const override { return AttackMontages; }
@@ -45,10 +46,11 @@ public:
 	virtual int32 GetMinionCount_Implementation() const override { return MinionCount; }
 	virtual void IncrementMinionCount_Implementation(int32 Amount) override { MinionCount += Amount; }
 	virtual ECharacterClass GetCharacterClass_Implementation() const override { return CharacterClass; }
+	virtual FOnDeath& GetOnDeathDelegate() override { return OnDeath; }
 	// ~ICombatInterface
 
 	UFUNCTION(NetMulticast, reliable)
-	AURA_API virtual void MulticastHandleDeath();
+	AURA_API virtual void MulticastHandleDeath(const FVector& DeathImpulse);
 	
 	UFUNCTION(BlueprintPure)
 	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
@@ -56,6 +58,9 @@ public:
 public:
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	TArray<FTaggedMontage> AttackMontages;
+
+	UPROPERTY(BlueprintAssignable, Category="Aura|Death")
+	FOnDeath OnDeath;
 	
 protected:
 	AURA_API virtual void BeginPlay() override;
@@ -91,6 +96,9 @@ protected:
 
 	UPROPERTY(Transient, BlueprintReadOnly)
 	TObjectPtr<UAttributeSet> AttributeSet;
+	
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UDebuffNiagaraComponent> BurnDebuffComponent;
 
 	/** Dissolve Effects */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -123,4 +131,5 @@ private:
 	/** Montage to play when reacting to being hit */
 	UPROPERTY(EditAnywhere, Category="Combat")
 	TObjectPtr<UAnimMontage> HitReactMontage;
+	
 };

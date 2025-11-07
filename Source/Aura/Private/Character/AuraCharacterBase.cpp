@@ -5,9 +5,11 @@
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/Data/CharacterClassInfo.h"
+#include "AbilitySystem/Debuff/DebuffNiagaraComponent.h"
 #include "Aura/Aura.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/PlayerState.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraCharacterBase)
 
@@ -34,13 +36,23 @@ AAuraCharacterBase::AAuraCharacterBase(const FObjectInitializer& ObjectInitializ
 	
 	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>("Weapon");
 	Weapon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Weapon->SetupAttachment(GetMesh(), FName("WeaponHandSocket"));
+	Weapon->SetupAttachment(GetMesh(), FName("WeaponHandSocket"));	
 
+	// Niagara component for burn debuff
+	BurnDebuffComponent = CreateDefaultSubobject<UDebuffNiagaraComponent>("BurnDebuffComponent");
+	BurnDebuffComponent->DebuffTag = FAuraGameplayTags::Get().Debuff_Burn;
+	BurnDebuffComponent->SetupAttachment(GetRootComponent());
+	
 	// Default name for weapon skeletal mesh tip socket
 	WeaponTipSocketName = FName("TipSocket");
 	
 	// Set a default character class
 	CharacterClass = ECharacterClass::Elementalist;
+}
+
+void AAuraCharacterBase::BeginPlay()
+{
+	Super::BeginPlay();
 }
 
 FVector AAuraCharacterBase::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const
@@ -63,7 +75,7 @@ UAnimMontage* AAuraCharacterBase::GetHitReactMontage_Implementation() const
 	return HitReactMontage;
 }
 
-void AAuraCharacterBase::Die()
+void AAuraCharacterBase::Die(const FVector& DeathImpulse)
 {
 	// Called on server
 
@@ -73,7 +85,7 @@ void AAuraCharacterBase::Die()
 	Weapon->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
 
 	// Allow clients as well to handle death
-	MulticastHandleDeath();
+	MulticastHandleDeath(DeathImpulse);
 }
 
 bool AAuraCharacterBase::IsDead_Implementation() const
@@ -98,28 +110,41 @@ FTaggedMontage AAuraCharacterBase::GetTaggedMontageByTag_Implementation(const FG
 	return FTaggedMontage();
 }
 
-void AAuraCharacterBase::MulticastHandleDeath_Implementation()
+void AAuraCharacterBase::MulticastHandleDeath_Implementation(const FVector& DeathImpulse)
 {
 	// Handle client and server actions for death
 	
 	// Set variable state for server and client instead of replicating it
 	bDead = true;
+	
+	// Broadcast on death event
+	OnDeath.Broadcast(this);
 
+	// Broadcast the death event for the player state as well, which also implements the combat interface
+	if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(GetPlayerState()))
+	{
+		CombatInterface->GetOnDeathDelegate().Broadcast(this);
+	}
+	
 	if (ensure(DeathSound))
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation(), GetActorRotation());
 	}
 	
+	const FVector ScaledDeathImpulse = DeathImpulse * GetMesh()->GetMass();
+	
 	// Ragdoll weapon
 	Weapon->SetSimulatePhysics(true);
 	Weapon->SetEnableGravity(true);
 	Weapon->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	Weapon->AddImpulse(ScaledDeathImpulse, NAME_None, true);
 
 	// Ragdoll character mesh
 	GetMesh()->SetSimulatePhysics(true);
 	GetMesh()->SetEnableGravity(true);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	GetMesh()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	GetMesh()->AddImpulse(ScaledDeathImpulse, NAME_None, true);
 	
 	// Disable collision on capsule
 	// Having the capsule block worldstatic keeps the health bar component from falling downwards on client
@@ -130,9 +155,32 @@ void AAuraCharacterBase::MulticastHandleDeath_Implementation()
 	Dissolve();
 }
 
-void AAuraCharacterBase::BeginPlay()
+void AAuraCharacterBase::Dissolve()
 {
-	Super::BeginPlay();
+	TArray<UMaterialInstanceDynamic*> DynamicMaterialInstances;
+	
+	if (IsValid(BodyDissolveMaterialInstance))
+	{
+		UMaterialInstanceDynamic* DynamicMatInst = UMaterialInstanceDynamic::Create(BodyDissolveMaterialInstance, this);
+		
+		GetMesh()->SetMaterial(0, DynamicMatInst);
+
+		DynamicMaterialInstances.Add(DynamicMatInst);
+	}
+
+	if (IsValid(WeaponDissolveMaterialInstance))
+	{
+		UMaterialInstanceDynamic* DynamicMatInst = UMaterialInstanceDynamic::Create(WeaponDissolveMaterialInstance, this);
+		
+		Weapon->SetMaterial(0, DynamicMatInst);
+		
+		DynamicMaterialInstances.Add(DynamicMatInst);
+	}
+	
+	if (!DynamicMaterialInstances.IsEmpty())
+	{
+		StartDissolveTimeline(DynamicMaterialInstances);
+	}
 }
 
 void AAuraCharacterBase::ApplyGameplayEffectToSelf(const TSubclassOf<UGameplayEffect>& InGameplayEffectClass, float Level) const
@@ -170,32 +218,4 @@ void AAuraCharacterBase::AddCharacterAbilities() const
 	UAuraAbilitySystemComponent* ASC = CastChecked<UAuraAbilitySystemComponent>(AbilitySystemComponent);
 	ASC->AddCharacterAbilities(StartupAbilities);
 	ASC->AddCharacterPassiveAbilities(StartupPassiveAbilities);
-}
-
-void AAuraCharacterBase::Dissolve()
-{
-	TArray<UMaterialInstanceDynamic*> DynamicMaterialInstances;
-	
-	if (IsValid(BodyDissolveMaterialInstance))
-	{
-		UMaterialInstanceDynamic* DynamicMatInst = UMaterialInstanceDynamic::Create(BodyDissolveMaterialInstance, this);
-		
-		GetMesh()->SetMaterial(0, DynamicMatInst);
-
-		DynamicMaterialInstances.Add(DynamicMatInst);
-	}
-
-	if (IsValid(WeaponDissolveMaterialInstance))
-	{
-		UMaterialInstanceDynamic* DynamicMatInst = UMaterialInstanceDynamic::Create(WeaponDissolveMaterialInstance, this);
-		
-		Weapon->SetMaterial(0, DynamicMatInst);
-		
-		DynamicMaterialInstances.Add(DynamicMatInst);
-	}
-	
-	if (!DynamicMaterialInstances.IsEmpty())
-	{
-		StartDissolveTimeline(DynamicMaterialInstances);
-	}
 }

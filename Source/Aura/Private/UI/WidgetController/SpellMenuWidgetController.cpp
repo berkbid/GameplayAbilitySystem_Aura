@@ -2,7 +2,6 @@
 
 #include "UI/WidgetController/SpellMenuWidgetController.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/Data/AbilityInfo.h"
 #include "Player/AuraPlayerState.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(SpellMenuWidgetController)
@@ -13,23 +12,30 @@ void USpellMenuWidgetController::BindCallBacksToDependencies()
 	
 	ASC->OnAbilityStatusChanged.AddLambda([this](const FGameplayTag& AbilityTag, const FGameplayTag& StatusTag, int32 NewLevel)
 	{
-		if (AbilityInfoDelegate.IsBound())
+		if (OnAbilityStatusLevelChanged.IsBound())
 		{
-			if (const UAbilityInfo* AbilityInfo = GetAbilityInfo())
-			{
-				FAuraAbilityInfo Info = AbilityInfo->FindAbilityInfo(AbilityTag);
-				Info.StatusTag = StatusTag;
-				Info.Level = NewLevel;
-				AbilityInfoDelegate.Broadcast(Info);
-			}
+			OnAbilityStatusLevelChanged.Broadcast(AbilityTag, StatusTag, NewLevel);
 		}
 	});
-
+	
+	ASC->OnAbilityEquipped.AddUObject(this, &UAuraWidgetController::OnAbilityEquipped);
+	
 	AAuraPlayerState* AuraPS = CastChecked<AAuraPlayerState>(WidgetControllerParams.PlayerState);
 	AuraPS->OnSpellPointUpdate.AddLambda([this](int32 NewSpellPoints)
 	{
 		if (OnSpellPointsChanged.IsBound()) { OnSpellPointsChanged.Broadcast(NewSpellPoints); }
 	});
+}
+
+void USpellMenuWidgetController::BroadcastInitialValues()
+{
+	// TODO: Could do like HUDWidgetController, unless we assume startup abilities are already given
+	// Broadcast initial ability information values (which are active, and their status)
+	BroadcastAbilityInfo();
+	
+	// Broadcast initial spell points value
+	AAuraPlayerState* AuraPS = CastChecked<AAuraPlayerState>(WidgetControllerParams.PlayerState);
+	if (OnSpellPointsChanged.IsBound()) { OnSpellPointsChanged.Broadcast(AuraPS->GetSpellPoints()); }
 }
 
 void USpellMenuWidgetController::SpendOrRefundSpellPoint(const FGameplayTag& AbilityTag, int32 SpellPoints) const
@@ -48,12 +54,9 @@ bool USpellMenuWidgetController::GetDescriptionsByAbilityTag(const FGameplayTag&
 	return ASC->GetDescriptionsByAbilityTag(AbilityTag, Level, OutDescription, OutNextLevelDescription);
 }
 
-void USpellMenuWidgetController::BroadcastInitialValues()
+void USpellMenuWidgetController::EquipAbility(const FGameplayTag& AbilityTag, const FGameplayTag& InputTag)
 {
-	// Broadcast initial ability information values (which are active, and their status)
-	BroadcastAbilityInfo();
-	
-	// Broadcast initial spell points value
-	AAuraPlayerState* AuraPS = CastChecked<AAuraPlayerState>(WidgetControllerParams.PlayerState);
-	if (OnSpellPointsChanged.IsBound()) { OnSpellPointsChanged.Broadcast(AuraPS->GetSpellPoints()); }
+	UAuraAbilitySystemComponent* ASC = CastChecked<UAuraAbilitySystemComponent>(WidgetControllerParams.AbilitySystemComponent);
+	check(ASC);
+	ASC->ServerEquipAbility(AbilityTag, InputTag);
 }

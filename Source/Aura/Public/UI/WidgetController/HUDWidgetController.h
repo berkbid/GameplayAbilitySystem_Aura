@@ -13,6 +13,7 @@ class UObject;
 class UGameplayAbility;
 class UAuraAbilitySystemComponent;
 struct FOnAttributeChangeData;
+struct FGameplayTag;
 
 USTRUCT(BlueprintType)
 struct FUIWidgetRow : public FTableRowBase

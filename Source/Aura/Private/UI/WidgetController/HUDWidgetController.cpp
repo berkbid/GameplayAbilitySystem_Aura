@@ -68,7 +68,9 @@ void UHUDWidgetController::BindCallBacksToDependencies()
 	{
 		if (OnAbilityCommitted.IsBound()) { OnAbilityCommitted.Broadcast(Ability); }
 	});
-
+	
+	ASC->OnAbilityEquipped.AddUObject(this, &UAuraWidgetController::OnAbilityEquipped);
+	
 	AAuraPlayerState* AuraPS = CastChecked<AAuraPlayerState>(WidgetControllerParams.PlayerState);
 	
 	// Experience changed

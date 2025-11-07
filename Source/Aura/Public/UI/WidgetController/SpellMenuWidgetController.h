@@ -27,7 +27,12 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	AURA_API bool GetDescriptionsByAbilityTag(const FGameplayTag& AbilityTag, const int32 Level, FString& OutDescription, FString& OutNextLevelDescription);
-	
+
+	UFUNCTION(BlueprintCallable)
+	AURA_API void EquipAbility(const FGameplayTag& AbilityTag, const FGameplayTag& InputTag);
+
+protected:
+
 protected:
 	UPROPERTY(BlueprintAssignable, Category="GAS|SpellPoints")
 	FOnPlayerStatChangedSignature OnSpellPointsChanged;

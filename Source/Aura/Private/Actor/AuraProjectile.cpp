@@ -83,7 +83,6 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 	// 															OtherComp ? *OtherComp->GetName() : TEXT("NONE"),
 	// 															OtherActor ? *OtherActor->GetName() : TEXT("NONE"));
 	
-	//if (!DamageEffectSpecHandle.Data.IsValid() || DamageEffectSpecHandle.Data.Get()->GetContext().GetEffectCauser() == OtherActor)
 	if (OtherActor == GetInstigator())
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("(%s): Overlapped with instigator actor: %s, doing nothing."), *GetClientServerContextString(this), *GetNameSafe(GetInstigator()));
@@ -92,7 +91,7 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 	
 	if (UAuraAbilitySystemLibrary::AreFriends(GetInstigator(), OtherActor))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("(%s): Overlapped with friend actor: %s, doing nothing."), *GetClientServerContextString(this), *GetNameSafe(OtherActor));
+		//UE_LOG(LogTemp, Warning, TEXT("(%s): Overlapped with friend actor: %s, doing nothing."), *GetClientServerContextString(this), *GetNameSafe(OtherActor));
 		return;
 	}
 	
@@ -104,13 +103,13 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 		// Pass gameplay effect to the other actor
 		if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor))
 		{
-			if (DamageEffectSpecHandle.Data.IsValid())
-			{
-				if (const FGameplayEffectSpec* EffectSpec = DamageEffectSpecHandle.Data.Get())
-				{
-					TargetASC->ApplyGameplayEffectSpecToSelf(*EffectSpec);
-				}
-			}
+			// Set target ASC
+			DamageEffectParams.TargetASC = TargetASC;
+
+			// Set the death impulse and knockback force
+			DamageEffectParams.UpdateImpulsesWithRotation(GetActorRotation());
+			
+			UAuraAbilitySystemLibrary::ApplyDamageEffect(DamageEffectParams);
 		}
 		
 		Destroy();

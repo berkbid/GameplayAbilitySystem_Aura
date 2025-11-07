@@ -226,6 +226,7 @@ void AAuraPlayerController::AbilityInputTagHeld(const FInputActionValue& InputAc
 	// Pass the ability input tag held functionality to the ability system component if it isn't for movement purposes
 	if (!InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB) || bTargeting || bShiftKeyDown)
 	{
+		// TODO: Why do we activate abilities on input tag held instead of input tag pressed?
 		if (GetASC())
 		{
 			GetASC()->AbilityInputTagHeld(InputTag);

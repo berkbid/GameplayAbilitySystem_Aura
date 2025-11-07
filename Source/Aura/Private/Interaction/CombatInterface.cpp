@@ -14,6 +14,6 @@ FVector ICombatInterface::GetCombatSocketLocation_Implementation(const FGameplay
 	return FVector::ZeroVector;
 }
 
-void ICombatInterface::Die()
+void ICombatInterface::Die(const FVector& DeathImpulse)
 {
 }

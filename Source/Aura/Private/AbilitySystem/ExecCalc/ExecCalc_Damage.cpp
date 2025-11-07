@@ -82,15 +82,8 @@ UExecCalc_Damage::UExecCalc_Damage()
 
 void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams, FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const
 {
-	//const UAbilitySystemComponent* SourceASC = ExecutionParams.GetSourceAbilitySystemComponent();
-	//const UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
-	//const AActor* SourceAvatar = SourceASC ? SourceASC->GetAvatarActor() : nullptr;
-	//const AActor* TargetAvatar = TargetASC ? TargetASC->GetAvatarActor() : nullptr;
-	//const ICombatInterface* SourceCombatInterface = Cast<ICombatInterface>(SourceAvatar);
-	//const ICombatInterface* TargetCombatInterface = Cast<ICombatInterface>(TargetAvatar);
-	
 	const FGameplayEffectSpec& Spec = ExecutionParams.GetOwningSpec();
-
+	
 	// Get source and target tags
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
@@ -99,8 +92,98 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 	EvaluationParameters.SourceTags = SourceTags;
 	EvaluationParameters.TargetTags = TargetTags;
 
+	// TODO: Rework this, should check if damage is debuff damage, not if the target is debuffed
+	// Determine if the target has ANY debuff, if so, do not apply debuff effects
+	const bool bIsTargetDebuffed = EvaluationParameters.TargetTags->HasTag(FGameplayTag::RequestGameplayTag(FName("Debuff")));
+	if (!bIsTargetDebuffed)
+	{
+		CalculateDebuffEffects(ExecutionParams, Spec, EvaluationParameters);
+	}
+	
+	// Calculate damage based on source and target attributes
+	float Damage = CalculateDamageWithResistances(ExecutionParams, Spec, EvaluationParameters);
+	
+	// Update the damage based on source and target attributes
+	// TODO: Fix these, shouldn't care if target is debuffed, but rather if the damage is debuff damage
+	// Not allowing debuffed target to block damage
+	const bool bBlocked = !bIsTargetDebuffed ? UpdateDamageWithBlock(Damage, ExecutionParams, EvaluationParameters) : false;
+	// Allowing armor to effect debuff damage right now
+	UpdateDamageWithArmor(Damage, ExecutionParams, EvaluationParameters);
+	// Not allowing debuffed target to take critical damage
+	const bool bCrit = !bIsTargetDebuffed ? UpdateDamageWithCritical(Damage, ExecutionParams, EvaluationParameters) : false;
+
+	// Get the Aura gameplay effect context from the Effect Spec and add damage information
+	const FGameplayEffectContextHandle& EffectContextHandle = Spec.GetEffectContext();
+	// Set block and crit data on context handle
+	UAuraAbilitySystemLibrary::SetIsBlockedHit(const_cast<FGameplayEffectContextHandle&>(EffectContextHandle), bBlocked);
+	UAuraAbilitySystemLibrary::SetIsCriticalHit(const_cast<FGameplayEffectContextHandle&>(EffectContextHandle), bCrit);
+	
+	const FGameplayModifierEvaluatedData EvaluatedData(UAuraAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Additive, Damage);
+	OutExecutionOutput.AddOutputModifier(EvaluatedData);
+}
+
+void UExecCalc_Damage::CalculateDebuffEffects(const FGameplayEffectCustomExecutionParameters& ExecutionParams, const FGameplayEffectSpec& Spec, const FAggregatorEvaluateParameters& EvaluationParameters) const
+{
+	const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
+	constexpr float DefaultIfNotFound = -1.f;
+	
+	// Debuff
+	for (const TTuple<FGameplayTag, FGameplayTag>& DamageToDebuffTagPair : AuraGameplayTags.DamageTypesToDebuffs)
+	{
+		const FGameplayTag& DamageType = DamageToDebuffTagPair.Key;
+		const FGameplayTag& DebuffType = DamageToDebuffTagPair.Value;
+
+		// TODO: Not sure why checking this
+		const float DamageMagnitude = Spec.GetSetByCallerMagnitude(DamageType, false, DefaultIfNotFound);
+		if (FMath::IsNearlyEqual(DamageMagnitude, DefaultIfNotFound)) { continue; }
+
+		// Get the debuff chance from the source
+		const float SourceDebuffChance = Spec.GetSetByCallerMagnitude(AuraGameplayTags.Debuff_Info_Chance, false, DefaultIfNotFound);
+		if (FMath::IsNearlyEqual(SourceDebuffChance, DefaultIfNotFound)) { continue; }
+		
+		// Get resistance value for given damage type
+		float TargetDebuffResistance = 0.f;
+		const FGameplayTag& ResistanceTag = AuraGameplayTags.DamageTypesToResistances[DamageType];
+		ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().TagsToCaptureDefs[ResistanceTag], EvaluationParameters, TargetDebuffResistance);
+		TargetDebuffResistance = FMath::Max<float>(TargetDebuffResistance, 0.f);
+
+		// Determine if debuff occured
+		const float EffectiveDebuffChance = SourceDebuffChance * (100 - TargetDebuffResistance) / 100.f;
+		const bool bDebuff = FMath::RandRange(0.f, 100.f) <= EffectiveDebuffChance;
+
+		// If debuff occured, set values on the effect context.
+		// Aura attribute set will look for these values when damage occurs and apply the appropriate GE for debuff
+		if (bDebuff)
+		{
+			// Set debuff values on context handle
+			// TODO: This is just a copy, not changing actual values?
+			FGameplayEffectContextHandle EffectContextHandle = Spec.GetEffectContext();
+
+			// Should we do it like this instead?
+			//const FGameplayEffectContextHandle& EffectContextHandle = Spec.GetEffectContext();
+			//UAuraAbilitySystemLibrary::SetIsDebuffSuccessful(const_cast<FGameplayEffectContextHandle&>(EffectContextHandle), true);
+			
+			UAuraAbilitySystemLibrary::SetIsDebuffSuccessful(EffectContextHandle, true);
+			
+			UAuraAbilitySystemLibrary::SetDamageType(EffectContextHandle, DamageType);
+
+			const float DebuffDamage = Spec.GetSetByCallerMagnitude(AuraGameplayTags.Debuff_Info_Damage, false, DefaultIfNotFound);
+			const float DebuffFrequency = Spec.GetSetByCallerMagnitude(AuraGameplayTags.Debuff_Info_Frequency, false, DefaultIfNotFound);
+			const float DebuffDuration = Spec.GetSetByCallerMagnitude(AuraGameplayTags.Debuff_Info_Duration, false, DefaultIfNotFound);
+			// TODO: We could check if we didn't get default value and only set each value if that is the case
+			UAuraAbilitySystemLibrary::SetDebuffDamage(EffectContextHandle, DebuffDamage);
+			UAuraAbilitySystemLibrary::SetDebuffFrequency(EffectContextHandle, DebuffFrequency);
+			UAuraAbilitySystemLibrary::SetDebuffDuration(EffectContextHandle, DebuffDuration);
+		}
+	}
+}
+
+float UExecCalc_Damage::CalculateDamageWithResistances(const FGameplayEffectCustomExecutionParameters& ExecutionParams, const FGameplayEffectSpec& Spec, const FAggregatorEvaluateParameters& EvaluationParameters) const
+{
+	const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
+	
 	float Damage = 0.f;
-	for (const TTuple<FGameplayTag, FGameplayTag>& DamageToResistanceTagPair : FAuraGameplayTags::Get().DamageTypesToResistances)
+	for (const TTuple<FGameplayTag, FGameplayTag>& DamageToResistanceTagPair : AuraGameplayTags.DamageTypesToResistances)
 	{
 		// Get the damage for this damage type
 		float DamageTypeValue = Spec.GetSetByCallerMagnitude(DamageToResistanceTagPair.Key, false);
@@ -122,20 +205,7 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 		
 		Damage += DamageTypeValue;
 	}
-	
-	// Update the damage based on source and target attributes
-	const bool bBlocked = UpdateDamageWithBlock	(Damage, ExecutionParams, EvaluationParameters);
-	UpdateDamageWithArmor	(Damage, ExecutionParams, EvaluationParameters);
-	const bool bCrit = UpdateDamageWithCritical(Damage, ExecutionParams, EvaluationParameters);
-
-	// Get the Aura gameplay effect context from the Effect Spec and add damage information
-	const FGameplayEffectContextHandle& EffectContextHandle = Spec.GetEffectContext();
-	// Set block and crit data on context handle
-	UAuraAbilitySystemLibrary::SetIsBlockedHit(const_cast<FGameplayEffectContextHandle&>(EffectContextHandle), bBlocked);
-	UAuraAbilitySystemLibrary::SetIsCriticalHit(const_cast<FGameplayEffectContextHandle&>(EffectContextHandle), bCrit);
-	
-	const FGameplayModifierEvaluatedData EvaluatedData(UAuraAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Additive, Damage);
-	OutExecutionOutput.AddOutputModifier(EvaluatedData);
+	return Damage;
 }
 
 bool UExecCalc_Damage::UpdateDamageWithCritical(float& OutDamage, const FGameplayEffectCustomExecutionParameters& ExecutionParams, const FAggregatorEvaluateParameters& EvaluationParameters) const

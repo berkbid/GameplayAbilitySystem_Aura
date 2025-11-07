@@ -1,7 +1,6 @@
 // Copyright Berkeley Bidwell
 
 #include "Player/AuraPlayerState.h"
-
 #include "AuraGameplayTags.h"
 #include "Player/AuraPlayerController.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
@@ -109,7 +108,7 @@ void AAuraPlayerState::SetLevel(int32 InLevel)
 	AuraAttributeSet->LevelUp();
 
 	// Tell ASC to update the eligibility of abilities now that we reached a new level
-	AbilitySystemComponent->UpdateAbilitiesEligibility(Level);
+	AbilitySystemComponent->UpdateAbilitiesEligibilityFromLevelUp(Level);
 }
 
 bool AAuraPlayerState::AddOrRefundAttributePoints(const FGameplayTag& AttributeTag, int32 AttributePointsToAdd)

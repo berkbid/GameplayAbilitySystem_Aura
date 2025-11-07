@@ -1,16 +1,16 @@
 // Copyright Berkeley Bidwell
 
-#include "AbilitySystem/Abilities/AuraGA_CastProjectile.h"
+#include "AbilitySystem/Abilities/AuraGameplayAbility_Projectile.h"
 #include "AbilitySystemComponent.h"
 #include "AuraLogChannels.h"
 #include "Actor/AuraProjectile.h"
 #include "Interaction/CombatInterface.h"
 
-#include UE_INLINE_GENERATED_CPP_BY_NAME(AuraGA_CastProjectile)
+#include UE_INLINE_GENERATED_CPP_BY_NAME(AuraGameplayAbility_Projectile)
 
 class APawn;
 
-void UAuraGA_CastProjectile::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
+void UAuraGameplayAbility_Projectile::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
                                              const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
                                              const FGameplayEventData* TriggerEventData)
 {
@@ -22,18 +22,18 @@ void UAuraGA_CastProjectile::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 	
 }
 
-bool UAuraGA_CastProjectile::CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
+bool UAuraGameplayAbility_Projectile::CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags,
 	const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
 {
 	return Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags);                    
 }
 
-void UAuraGA_CastProjectile::EndAbility(const FGameplayAbilitySpecHandle Handle,
+void UAuraGameplayAbility_Projectile::EndAbility(const FGameplayAbilitySpecHandle Handle,
                                         const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
                                         bool bReplicateEndAbility, bool bWasCancelled)
 {
-	UE_LOG(LogAuraAbilitySystem, Warning, TEXT("UAuraGA_CastProjectile::EndAbility(%s)"), *GetClientServerContextString(this));
+	UE_LOG(LogAuraAbilitySystem, Warning, TEXT("UAuraGameplayAbility_Projectile::EndAbility(%s)"), *GetClientServerContextString(this));
 	
 	// Referenced from LyraGameplayAbility_RangedWeapon
 	if (IsEndAbilityValid(Handle, ActorInfo))
@@ -51,11 +51,11 @@ void UAuraGA_CastProjectile::EndAbility(const FGameplayAbilitySpecHandle Handle,
 	}
 	else
 	{
-		UE_LOG(LogAuraAbilitySystem, Warning, TEXT("UAuraGA_CastProjectile::EndAbility(%s): End ability INVALID"), *GetClientServerContextString(this));
+		UE_LOG(LogAuraAbilitySystem, Warning, TEXT("UAuraGameplayAbility_Projectile::EndAbility(%s): End ability INVALID"), *GetClientServerContextString(this));
 	}
 }
 
-void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocation, const FGameplayTag& SpawnLocationSocketTag, bool bOverridePitch, float PitchOverride)
+void UAuraGameplayAbility_Projectile::CastProjectile(const FVector& ProjectileTargetLocation, const FGameplayTag& SpawnLocationSocketTag, bool bOverridePitch, float PitchOverride)
 {
 	// Spawn projectile on server
 	const bool bIsServer = HasAuthority(&CurrentActivationInfo);
@@ -109,38 +109,9 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Gameplay Ability for projectile missing damage effect class for damage gameplay effect"));
 		}
-		
-		//if (const UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetAvatarActorFromActorInfo()))
-		if (const UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo())
-		{
-			// Set some extra fields in the effect context handle
-			FGameplayEffectContextHandle EffectContextHandle = SourceASC->MakeEffectContext();
-			EffectContextHandle.SetAbility(this);
-			EffectContextHandle.AddSourceObject(Projectile);
-			TArray<TWeakObjectPtr<AActor>> Actors;
-			Actors.Add(Projectile);
-			EffectContextHandle.AddActors(Actors);
-			FHitResult HitResult;
-			HitResult.Location = ProjectileTargetLocation;
-			EffectContextHandle.AddHitResult(HitResult);
-			
-			// Create spec handle using the GE_Damage
-			const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), EffectContextHandle);
 
-			// Allows for multiple damage types
-			for (const TPair<FGameplayTag, FScalableFloat>& Pair : DamageTypes)
-			{
-				// Get the damage multiplier using the Damage scalable float curve
-				const float ScaledDamage = Pair.Value.GetValueAtLevel(GetAbilityLevel());
-				
-				// Set the damage magnitude on the spec handle since the GE uses set by caller for magnitude calculation type
-				SpecHandle.Data.Get()->SetSetByCallerMagnitude(Pair.Key, ScaledDamage);
-			}
-			
-			// Give projectile gameplay effect spec for causing damage
-			Projectile->DamageEffectSpecHandle = SpecHandle;
-		}
-		
+		// Set the damage effect params that projectile can use for damage (no target actor set)
+		Projectile->DamageEffectParams = MakeDamageEffectParamsFromClassDefaults();
 		
 		// Finish spawning projectile from deferred spawn
 		Projectile->FinishSpawning(SpawnTransform);	
@@ -151,7 +122,7 @@ void UAuraGA_CastProjectile::CastProjectile(const FVector& ProjectileTargetLocat
 	}
 }
 
-void UAuraGA_CastProjectile::UpdateTargetLocation(const FVector& InTargetLocation)
+void UAuraGameplayAbility_Projectile::UpdateTargetLocation(const FVector& InTargetLocation)
 {
 	TargetLocation = InTargetLocation;
 

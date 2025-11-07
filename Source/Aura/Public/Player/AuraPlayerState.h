@@ -45,6 +45,7 @@ public:
 	
 	// ~ ICombatInterface
 	virtual int32 GetPlayerLevel_Implementation() const override { return Level; }
+	virtual FOnDeath& GetOnDeathDelegate() override { return OnDeath; }
 	// ~ End ICombatInterface
 	
 	/** Server call to add to Xp */
@@ -74,6 +75,9 @@ public:
 	FOnPlayerStatsUpdate OnAttributeUpdate;
 	FOnPlayerStatsUpdate OnSpellPointUpdate;
 
+	UPROPERTY(BlueprintAssignable, Category="Aura|Death")
+	FOnDeath OnDeath;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<ULevelUpInfo> LevelUpInfo;
 	

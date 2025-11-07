@@ -105,8 +105,10 @@ void UAuraAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputT
 	
 	if (FGameplayAbilitySpec* AbilitySpec = FindAbilityForTag(InputTag))
 	{
+		// TODO: Interesting that we processed a pressed event every tick while input tag is held
 		AbilitySpecInputPressed(*AbilitySpec);
-		
+
+		// This keeps the ability from being activated/cancelled if it is already active
 		if (!AbilitySpec->IsActive())
 		{
 			TryActivateAbility(AbilitySpec->Handle);
@@ -196,6 +198,24 @@ FGameplayAbilitySpec* UAuraAbilitySystemComponent::GetSpecFromAbilityTag(const F
 	return nullptr;
 }
 
+FGameplayTag UAuraAbilitySystemComponent::GetStatusFromAbilityTag(const FGameplayTag& AbilityTag)
+{
+	if (FGameplayAbilitySpec* AbilitySpec = GetSpecFromAbilityTag(AbilityTag))
+	{
+		return GetStatusTagFromSpec(*AbilitySpec);
+	}
+	return FGameplayTag();
+}
+
+FGameplayTag UAuraAbilitySystemComponent::GetInputTagFromAbilityTag(const FGameplayTag& AbilityTag)
+{
+	if (FGameplayAbilitySpec* AbilitySpec = GetSpecFromAbilityTag(AbilityTag))
+	{
+		return GetInputTagFromSpec(*AbilitySpec);
+	}
+	return FGameplayTag();
+}
+
 void UAuraAbilitySystemComponent::AddOrRefundAttribute(const FGameplayTag& AttributeTag, int32 IncrementAmount)
 {
 	if (IncrementAmount == 0) { return; }
@@ -220,7 +240,7 @@ void UAuraAbilitySystemComponent::AddOrRefundAttribute(const FGameplayTag& Attri
 	}
 }
 
-void UAuraAbilitySystemComponent::UpdateAbilitiesEligibility(int32 Level)
+void UAuraAbilitySystemComponent::UpdateAbilitiesEligibilityFromLevelUp(int32 Level)
 {
 	//TODO: Could check HasAuthority()
 	//GetOwner()->HasAuthority()
@@ -232,11 +252,13 @@ void UAuraAbilitySystemComponent::UpdateAbilitiesEligibility(int32 Level)
 	
 	for (const FAuraAbilityInfo& Info : AbilityInfo->AbilityInformation)
 	{
+		// If the level requirement is not met, or the ability has already been given
 		if (Level < Info.LevelRequirement || GetSpecFromAbilityTag(Info.AbilityTag))
 		{
 			continue;
 		}
-		
+
+		// TODO: Make sure we aren't giving ability multiple times
 		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(Info.Ability, 1);
 		AbilitySpec.GetDynamicSpecSourceTags().AddTag(Eligible);
 		GiveAbility(AbilitySpec);
@@ -249,8 +271,67 @@ void UAuraAbilitySystemComponent::UpdateAbilitiesEligibility(int32 Level)
 	}
 }
 
+void UAuraAbilitySystemComponent::ServerEquipAbility_Implementation(const FGameplayTag& AbilityTag, const FGameplayTag& InputTag)
+{
+	if (FGameplayAbilitySpec* AbilitySpec = GetSpecFromAbilityTag(AbilityTag))
+	{
+		const FGameplayTag& PrevSlot = GetInputTagFromSpec(*AbilitySpec);
+		
+		// Return if ability already in correct slot
+		if (PrevSlot.MatchesTagExact(InputTag))
+		{
+			return;
+		}
+		
+		const FGameplayTag& Status = GetStatusTagFromSpec(*AbilitySpec);
+		
+		const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
+		const bool bAbilityIsEquipped = Status.MatchesTagExact(GameplayTags.Abilities_Status_Equipped);
+		const bool bAbilityIsUnlocked = Status.MatchesTagExact(GameplayTags.Abilities_Status_Unlocked);
+		
+		const bool bEquipValid = bAbilityIsEquipped || bAbilityIsUnlocked;
+		
+		if (bEquipValid)
+		{
+			// Remove this InputTag (slot) from any ability that has it
+			// Clear this slot of any ability in it
+			ClearAbilitiesOfSlot(InputTag);
+			
+			// Clear this ability's slot, in case it is a different slot
+			ClearSlot(AbilitySpec);
+			
+			// Now assign this slot to this ability
+			AbilitySpec->GetDynamicSpecSourceTags().AddTag(InputTag);
+			if (bAbilityIsUnlocked)
+			{
+				AbilitySpec->GetDynamicSpecSourceTags().RemoveTag(GameplayTags.Abilities_Status_Unlocked);
+				AbilitySpec->GetDynamicSpecSourceTags().AddTag(GameplayTags.Abilities_Status_Equipped);
+			}
+			
+			MarkAbilitySpecDirty(*AbilitySpec);
+			
+			// Call client rpc to broadcast new ability status and input tag
+			ClientEquipAbility(AbilityTag, Status, InputTag, PrevSlot);
+		}
+	}
+}
+
+void UAuraAbilitySystemComponent::ClientEquipAbility_Implementation(const FGameplayTag& AbilityTag, const FGameplayTag& Status, const FGameplayTag& InputTag, const FGameplayTag& PrevInputTag)
+{
+	OnAbilityEquipped.Broadcast(AbilityTag, Status, InputTag, PrevInputTag);
+}
+
 bool UAuraAbilitySystemComponent::GetDescriptionsByAbilityTag(const FGameplayTag& AbilityTag, const int32 Level, FString& OutDescription, FString& OutNextLevelDescription)
 {
+	if (!AbilityTag.IsValid() ||
+		!AbilityTag.MatchesTag(FGameplayTag::RequestGameplayTag(FName("Abilities"))) ||
+		AbilityTag.MatchesTagExact(FAuraGameplayTags::Get().Abilities_None))
+	{
+		OutDescription = TEXT("");
+		OutNextLevelDescription = TEXT("");
+		return false;
+	}
+	
 	if (const FGameplayAbilitySpec* AbilitySpec = GetSpecFromAbilityTag(AbilityTag))
 	{
 		if (UAuraGameplayAbility* AuraGameplayAbility = Cast<UAuraGameplayAbility>(AbilitySpec->Ability))
@@ -268,6 +349,50 @@ bool UAuraAbilitySystemComponent::GetDescriptionsByAbilityTag(const FGameplayTag
 		OutDescription = UAuraGameplayAbility::GetLockedDescription(AbilityInfo->FindAbilityInfo(AbilityTag).LevelRequirement);
 	}
 	OutNextLevelDescription = FString();
+	return false;
+}
+
+void UAuraAbilitySystemComponent::ClearSlot(FGameplayAbilitySpec* AbilitySpec)
+{
+	if (AbilitySpec)
+	{
+		const FGameplayTag& Slot = GetInputTagFromSpec(*AbilitySpec);
+		AbilitySpec->GetDynamicSpecSourceTags().RemoveTag(Slot);
+		MarkAbilitySpecDirty(*AbilitySpec);
+	}
+}
+
+void UAuraAbilitySystemComponent::ClearAbilitiesOfSlot(const FGameplayTag& InputTag)
+{
+	ABILITYLIST_SCOPE_LOCK();
+	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
+	{
+		if (AbilityHasSlot(&AbilitySpec, InputTag))
+		{
+			ClearSlot(&AbilitySpec);
+		}
+		
+		/*
+		if (GetInputTagFromSpec(AbilitySpec) == InputTag)
+		{
+			ClearSlot(&AbilitySpec);
+		}
+		*/
+	}
+}
+
+bool UAuraAbilitySystemComponent::AbilityHasSlot(FGameplayAbilitySpec* AbilitySpec, const FGameplayTag& Slot)
+{
+	if (AbilitySpec)
+	{
+		for (const FGameplayTag& Tag : AbilitySpec->GetDynamicSpecSourceTags())
+		{
+			if (Tag.MatchesTagExact(Slot))
+			{
+				return true;
+			}
+		}
+	}
 	return false;
 }
 
@@ -315,13 +440,30 @@ void UAuraAbilitySystemComponent::ServerSpendOrRefundSpellPoint_Implementation(c
 			
 			AbilitySpec->Level = bNewAbilityLevelIsZero ? 1 : NewAbilityLevel;
 			
-			// Cannot go to 0, when lowering to level 0, we keep it at level 1 but change status instead
+			// Cannot go to 0, when lowering to level 0, we keep it at level 1 but change status instead. Going to eligible status
 			if (bNewAbilityLevelIsZero)
 			{
 				AbilitySpec->GetDynamicSpecSourceTags().RemoveTag(AbilityStatus);
 				AbilitySpec->GetDynamicSpecSourceTags().AddTag(GameplayTags.Abilities_Status_Eligible);
+				
+				if (AbilityStatus.MatchesTagExact(GameplayTags.Abilities_Status_Equipped))
+				{
+					//ServerEquipAbility(AbilityTag, GetInputTagFromSpec(*AbilitySpec));
+					const FGameplayTag& PrevInputTag = GetInputTagFromSpec(*AbilitySpec);
+					ClearSlot(AbilitySpec);
+					
+					// TODO: Should we clear ability also? Would need access to ability spec handle
+					//ClearAbility(AbilitySpec->Handle);
+					
+					// Not sure if this is the best solution, ClientUpdateAbilityStatusAndLevel isn't working because doesn't send previous input tag
+					ClientEquipAbility(AbilityTag, AbilityStatus, FGameplayTag(), PrevInputTag);
+				}
+				else // Unlocked
+				{
+
+				}
+
 				AbilityStatus = GameplayTags.Abilities_Status_Eligible;
-				// TODO: If ability was equipped, need to un-equip it
 			}
 		}
 		

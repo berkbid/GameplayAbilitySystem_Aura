@@ -19,6 +19,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FEffectAssetTags, const FGameplayTagContaine
 DECLARE_MULTICAST_DELEGATE(FAbilitiesGiven);
 DECLARE_DELEGATE_OneParam(FForEachAbility, const FGameplayAbilitySpec&);
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FAbilityStatusChanged, const FGameplayTag& /*AbilityTag*/, const FGameplayTag& /*StatusTag*/, int32 /*AbilityLevel*/);
+DECLARE_MULTICAST_DELEGATE_FourParams(FAbilityEquipped, const FGameplayTag& /*AbilityTag*/, const FGameplayTag& /*StatusTag*/, const FGameplayTag& /*InputTag*/, const FGameplayTag& /*PrevInputTag*/);
 
 /**
  * 
@@ -49,17 +50,29 @@ public:
 	static AURA_API FGameplayTag GetStatusTagFromSpec(const FGameplayAbilitySpec& AbilitySpec);
 
 	AURA_API FGameplayAbilitySpec* GetSpecFromAbilityTag(const FGameplayTag& AbilityTag);
+	AURA_API FGameplayTag GetStatusFromAbilityTag(const FGameplayTag& AbilityTag);
+	AURA_API FGameplayTag GetInputTagFromAbilityTag(const FGameplayTag& AbilityTag);
 	
 	/** Can be called by server or client, will call server RPC for functionality */
 	AURA_API void AddOrRefundAttribute(const FGameplayTag& AttributeTag, int32 IncrementAmount);
 
-	/** Called from server to update the eligibility of an ability based on player level */
-	AURA_API void UpdateAbilitiesEligibility(int32 Level);
+	/** Called from server to update the eligibility of an ability based on player leveling up */
+	AURA_API void UpdateAbilitiesEligibilityFromLevelUp(int32 Level);
 
 	UFUNCTION(Reliable, Server)
 	AURA_API void ServerSpendOrRefundSpellPoint(const FGameplayTag& AbilityTag, int32 Amount);
 
+	UFUNCTION(Reliable, Server)
+	AURA_API void ServerEquipAbility(const FGameplayTag& AbilityTag, const FGameplayTag& InputTag);
+	
+	UFUNCTION(Reliable, Client)
+	AURA_API void ClientEquipAbility(const FGameplayTag& AbilityTag, const FGameplayTag& Status, const FGameplayTag& InputTag, const FGameplayTag& PrevInputTag);
+	
 	AURA_API bool GetDescriptionsByAbilityTag(const FGameplayTag& AbilityTag, const int32 Level, FString& OutDescription, FString& OutNextLevelDescription);
+
+	AURA_API void ClearSlot(FGameplayAbilitySpec* AbilitySpec);
+	AURA_API void ClearAbilitiesOfSlot(const FGameplayTag& InputTag);
+	static AURA_API bool AbilityHasSlot(FGameplayAbilitySpec* AbilitySpec, const FGameplayTag& Slot);
 	
 public:
 	/** Broadcast when effect is applied with a MessageTag Gameplay Tag */
@@ -68,8 +81,11 @@ public:
 	/** Broadcast when an ability is given */
 	FAbilitiesGiven OnAbilitiesGiven;
 
-	/** Broadcast when the status of an ability changes */
+	/** Broadcast when the status and/or level of an ability changes */
 	FAbilityStatusChanged OnAbilityStatusChanged;
+	
+	/** Broadcast when an ability is equipped or changed slots */
+	FAbilityEquipped OnAbilityEquipped;
 	
 protected:
 	// ~UAbilitySystemComponent

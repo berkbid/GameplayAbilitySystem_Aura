@@ -52,15 +52,16 @@ public:
 	
 	AURA_API virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
-	AURA_API virtual FString GetDescription(int32 Level);
-	AURA_API virtual FString GetNextLevelDescription(int32 Level);
+	AURA_API virtual FString GetDescription(int32 Level) const;
+	AURA_API virtual FString GetNextLevelDescription(int32 Level) const;
 	static AURA_API FString GetLockedDescription(int32 Level);
 	
 public:
 	/** Use when giving abilities to character */
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	FGameplayTag StartupInputTag;
-	
+
+	/** Used by GE_AbilityCost and MMC_AbilityCost to get the ability's cost */
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Cost")
 	FScalableFloat Cost;
 	
@@ -78,4 +79,7 @@ protected:
 	// AURA_API virtual void ApplyAbilityTagsToGameplayEffectSpec(FGameplayEffectSpec& Spec, FGameplayAbilitySpec* AbilitySpec) const override;
 	// AURA_API virtual bool DoesAbilitySatisfyTagRequirements(const UAbilitySystemComponent& AbilitySystemComponent, const FGameplayTagContainer* SourceTags = nullptr, const FGameplayTagContainer* TargetTags = nullptr, OUT FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 	// ~UGameplayAbility interface
+
+	AURA_API float GetManaCost(float InLevel = 1.f) const;
+	AURA_API float GetCooldown(float InLevel = 1.f) const;
 };

@@ -82,6 +82,9 @@ void AAuraCharacter::InitAbilityActorInfo()
 	// Call on both client and server
 	AbilitySystemComponent->InitAbilityActorInfo(AuraPlayerState, this);
 
+	// Broadcast that the ASC is now registered and available to bind to
+	OnASCRegistered.Broadcast(AbilitySystemComponent);
+	
 	// This is where course does HUD->InitHUD(), but we are doing that in player controller instead
 
 	

@@ -89,12 +89,12 @@ void UAuraGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, c
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
-FString UAuraGameplayAbility::GetDescription(int32 Level)
+FString UAuraGameplayAbility::GetDescription(int32 Level) const
 {
 	return FString::Printf(TEXT("<Default>%s,  </><Level>%d</>"), L"Default Ability Name - LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum LoremIpsum", Level);
 }
 
-FString UAuraGameplayAbility::GetNextLevelDescription(int32 Level)
+FString UAuraGameplayAbility::GetNextLevelDescription(int32 Level) const
 {
 	return FString::Printf(TEXT("<Default>Next Level:  </><Level>%d</> \n<Default>Causes much more damage </>"), Level);
 }
@@ -102,4 +102,35 @@ FString UAuraGameplayAbility::GetNextLevelDescription(int32 Level)
 FString UAuraGameplayAbility::GetLockedDescription(int32 Level)
 {
 	return FString::Printf(TEXT("<Default>Spell Locked Until Level: %d</>"), Level);
+}
+
+float UAuraGameplayAbility::GetManaCost(float InLevel) const
+{
+	/*
+	if (const UGameplayEffect* CostEffect = GetCostGameplayEffect())
+	{
+		for (const FGameplayModifierInfo& Mod :  CostEffect->Modifiers)
+		{
+			if (Mod.Attribute == UAuraAttributeSet::GetManaAttribute())
+			{
+				float Magnitude = 0.f;
+				Mod.ModifierMagnitude.GetStaticMagnitudeIfPossible(InLevel, Magnitude);
+				return Magnitude;
+			}
+		}
+	}
+	*/
+	
+	return Cost.GetValueAtLevel(InLevel);
+}
+
+float UAuraGameplayAbility::GetCooldown(float InLevel) const
+{
+	if (const UGameplayEffect* CooldownEffect = GetCooldownGameplayEffect())
+	{
+		float Cooldown = 1.f;
+		CooldownEffect->DurationMagnitude.GetStaticMagnitudeIfPossible(InLevel, Cooldown);
+		return Cooldown;
+	}
+	return 0.f;
 }

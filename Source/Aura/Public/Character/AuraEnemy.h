@@ -40,7 +40,7 @@ public:
 	
 	// ~ Begin ICombatInterface
 	virtual int32 GetPlayerLevel_Implementation() const override { return Level; }
-	AURA_API virtual void Die() override;
+	AURA_API virtual void Die(const FVector& DeathImpulse) override;
 	// ~ End ICombatInterface
 
 	// ~ Begin IEnemyInterface
@@ -50,7 +50,7 @@ public:
 	// ~ End IEnemyInterface
 	
 	// AAuraCharacterBase
-	AURA_API virtual void MulticastHandleDeath() override;
+	AURA_API virtual void MulticastHandleDeath(const FVector& DeathImpulse) override;
 	// ~AAuraCharacterBase
 	
 	UFUNCTION(BlueprintPure, Category ="UI")

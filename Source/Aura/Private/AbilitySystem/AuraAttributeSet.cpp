@@ -3,13 +3,17 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystemBlueprintLibrary.h"
+#include "AuraAbilityTypes.h"
 #include "AuraGameplayTags.h"
 #include "AuraLogChannels.h"
 #include "GameplayEffectExtension.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
+#include "AbilitySystem/ExecCalc/ExecCalc_Damage.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
+#include "GameplayEffectComponents/TargetTagsGameplayEffectComponent.h"
 #include "Interaction/CombatInterface.h"
 #include "Interaction/PlayerInterface.h"
 #include "Net/UnrealNetwork.h"
@@ -101,6 +105,9 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 
 	// Access to lots of data post gameplay effect execute
 	FEffectProperties Props(Data);
+
+	// Ensure target character implements combat interface and is not dead
+	if (!Props.TargetCharacter->Implements<UCombatInterface>() || ICombatInterface::Execute_IsDead(Props.TargetCharacter)) { return; }
 	
 	if (Data.EvaluatedData.Attribute == GetManaAttribute())
 	{
@@ -113,70 +120,153 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	// If we are getting a changed incoming damage (meta attribute)
 	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute())
 	{
-		// Use the meta-attribute value, then consume the data and zero it out
-		const float LocalIncomingDamage = GetIncomingDamage();
-		SetIncomingDamage(0.f);
-
-		if (LocalIncomingDamage > 0.f)
-		{
-			const float NewHealth = GetHealth() - LocalIncomingDamage;
-			SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
-
-			const bool bFatalDamage = GetHealth() <= 0.f;
-			
-			if (bFatalDamage)
-			{
-				// Call die function on combat interface of target actor if fatal damage
-				ICombatInterface* CombatInterface = CastChecked<ICombatInterface>(Props.TargetAvatarActor);
-				CombatInterface->Die();
-				SendXpEvent(Props);
-			}
-			else
-			{
-				// Activate the GA_HitReact on target losing health
-				if (Props.TargetASC)
-				{
-					const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
-					
-					// Create tag container with hit react tag
-					FGameplayTagContainer TagContainer;
-					TagContainer.AddTag(AuraGameplayTags.Abilities_HitReact);
-					
-					// Cancel any active hit react ability
-					Props.TargetASC->CancelAbilities(&TagContainer, nullptr, nullptr);
-					
-					// Activate hit react gameplay ability
-					Props.TargetASC->TryActivateAbilitiesByTag(TagContainer);
-				}
-			}
-			
-			const bool bBlock = UAuraAbilitySystemLibrary::IsBlockedHit(Props.EffectContextHandle);
-			const bool bCrit = UAuraAbilitySystemLibrary::IsCriticalHit(Props.EffectContextHandle);
-			ShowFloatingText(Props, LocalIncomingDamage, bBlock, bCrit);
-		}
+		// See lecture 314 if this solution isn't sufficient for stopping hit react
+		const bool bDotDamage = Data.EffectSpec.GetDuration() > 0.f;
+		HandleIncomingDamage(Props, bDotDamage);
 	}
 	
 	// If we are getting a changed incoming xp (meta attribute)
 	if (Data.EvaluatedData.Attribute == GetIncomingXpAttribute())
 	{
-		const float LocalIncomingXp = GetIncomingXp();
-		SetIncomingXp(0.f);
-		UE_LOG(LogAuraAbilitySystem, Warning, TEXT("Post GE Incoming Xp value: %f"), LocalIncomingXp);
-		
-		if (LocalIncomingXp > 0.f)
-		{
-			// Source character is the owner, since GA_ListenForEvents applies GE_EventBasedEffect to self, adding to IncomingXp
-			if (Props.SourceCharacter && Props.SourceCharacter->Implements<UPlayerInterface>())
-			{
-				// This will add to the xp on the player state which will handle everything else
-				IPlayerInterface::Execute_AddToXp(Props.SourceCharacter, LocalIncomingXp);
-			}
-		}
+		HandleIncomingXP(Props);
 	}
 
 	//if (Data.EvaluatedData.Attribute == GetStrengthAttribute())
 	//{
 	//}
+}
+
+void UAuraAttributeSet::HandleIncomingDamage(const FEffectProperties& Props, const bool bDotDamage)
+{
+	// Use the meta-attribute value, then consume the data and zero it out
+	const float LocalIncomingDamage = GetIncomingDamage();
+	SetIncomingDamage(0.f);
+	if (LocalIncomingDamage <= 0.f) { return; }
+
+	const float NewHealth = GetHealth() - LocalIncomingDamage;
+	SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
+
+	// If fatal damage
+	if (GetHealth() <= 0.f)
+	{
+		// Call die function on combat interface of target actor if fatal damage
+		ICombatInterface* CombatInterface = CastChecked<ICombatInterface>(Props.TargetAvatarActor);
+		CombatInterface->Die(UAuraAbilitySystemLibrary::GetDeathImpulse(Props.EffectContextHandle));
+		SendXpEvent(Props);
+	}
+	else
+	{
+		// Knockback character
+		const FVector Knockback = UAuraAbilitySystemLibrary::GetKnockback(Props.EffectContextHandle);
+		if (!Knockback.IsNearlyZero(1.f) && Props.TargetCharacter)
+		{
+			Props.TargetCharacter->LaunchCharacter(Knockback, true, true);
+			// TODO: Could make interface function for knockback so only AI will stop movement, see lecture 315 comment
+			// This will fix the AI Move To task that breaks launch character causing it to only launch directly upwards
+			// Could also call Props.TargetCharacter->GetCharacterMovement()->SetMovementMode(MOVE_Falling)
+			Props.TargetCharacter->GetCharacterMovement()->StopMovementImmediately();
+		}
+		
+		// Cause hit react
+		// See lecture 314 if this solution isn't sufficient for stopping hit react
+		if (!bDotDamage && Props.TargetASC)
+		{
+			const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
+					
+			// Create tag container with hit react tag
+			FGameplayTagContainer TagContainer;
+			TagContainer.AddTag(AuraGameplayTags.Abilities_HitReact);
+					
+			// Cancel any active hit react ability
+			Props.TargetASC->CancelAbilities(&TagContainer, nullptr, nullptr);
+					
+			// Activate hit react gameplay ability
+			Props.TargetASC->TryActivateAbilitiesByTag(TagContainer);
+		}
+		
+		// Apply debuff if it is successful
+		if (!bDotDamage && UAuraAbilitySystemLibrary::IsDebuffSuccessful(Props.EffectContextHandle))
+		{
+			Debuff(Props);
+		}
+	}
+
+	// Show floating text
+	const bool bBlock = UAuraAbilitySystemLibrary::IsBlockedHit(Props.EffectContextHandle);
+	const bool bCrit = UAuraAbilitySystemLibrary::IsCriticalHit(Props.EffectContextHandle);
+	ShowFloatingText(Props, LocalIncomingDamage, bBlock, bCrit);
+}
+
+void UAuraAttributeSet::Debuff(const FEffectProperties& Props)
+{
+	const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
+	FGameplayEffectContextHandle EffectContextHandle = Props.SourceASC->MakeEffectContext();
+	EffectContextHandle.AddSourceObject(Props.SourceAvatarActor);
+
+	const FGameplayTag DebuffDamageType = UAuraAbilitySystemLibrary::GetDamageType(Props.EffectContextHandle);
+	const float DebuffDamage = UAuraAbilitySystemLibrary::GetDebuffDamage(Props.EffectContextHandle);
+	const float DebuffFrequency = UAuraAbilitySystemLibrary::GetDebuffFrequency(Props.EffectContextHandle);
+	const float DebuffDuration = UAuraAbilitySystemLibrary::GetDebuffDuration(Props.EffectContextHandle);
+	
+	const FString DebuffName = FString::Printf(TEXT("DynamicDebuff_%s"), *DebuffDamageType.ToString());
+	UGameplayEffect* Effect = NewObject<UGameplayEffect>(GetTransientPackage(), FName(DebuffName));
+	
+	Effect->DurationPolicy = EGameplayEffectDurationType::HasDuration;
+	Effect->Period = DebuffFrequency;
+	Effect->DurationMagnitude = FScalableFloat(DebuffDuration);
+	
+	// Add owned gameplay tag of the debuff damage type
+	UTargetTagsGameplayEffectComponent& Component = Effect->FindOrAddComponent<UTargetTagsGameplayEffectComponent>();
+	FInheritedTagContainer TagContainer = FInheritedTagContainer();
+	TagContainer.Added.AddTag(AuraGameplayTags.DamageTypesToDebuffs[DebuffDamageType]);
+	Component.SetAndApplyTargetTagChanges(TagContainer);
+	
+	Effect->StackingType = EGameplayEffectStackingType::AggregateBySource;
+	Effect->StackLimitCount = 1;
+	// Do not execute on application so damage text does not overlap on screen
+	Effect->bExecutePeriodicEffectOnApplication = false;
+
+	// Use exec calc calculation class to utilize resistances for debuffs
+	FGameplayEffectExecutionDefinition Execution;
+	Execution.CalculationClass = UExecCalc_Damage::StaticClass();
+	Effect->Executions.Add(Execution);
+	
+	/*
+	FGameplayModifierInfo& Modifier = Effect->Modifiers.Add_GetRef(FGameplayModifierInfo());
+	Modifier.ModifierMagnitude = FScalableFloat(DebuffDamage);
+	Modifier.ModifierOp = EGameplayModOp::Additive;
+	Modifier.Attribute = GetIncomingDamageAttribute();
+	*/
+
+	// Make a GE spec with an effect context handle and an effect
+	if (FGameplayEffectSpec* MutableSpec = new FGameplayEffectSpec(Effect, EffectContextHandle, 1.f))
+	{
+		// Damage value for UExecCalc_Damage to use
+		MutableSpec->SetSetByCallerMagnitude(DebuffDamageType, DebuffDamage);
+		
+		// Get the effect context casted to our custom type to set the damage type property
+		FAuraGameplayEffectContext* AuraContext = static_cast<FAuraGameplayEffectContext*>(MutableSpec->GetContext().Get());
+		AuraContext->SetDamageType(DebuffDamageType);
+
+		Props.TargetASC->ApplyGameplayEffectSpecToSelf(*MutableSpec);
+	}
+}
+
+void UAuraAttributeSet::HandleIncomingXP(const FEffectProperties& Props)
+{
+	const float LocalIncomingXp = GetIncomingXp();
+	SetIncomingXp(0.f);
+	UE_LOG(LogAuraAbilitySystem, Warning, TEXT("Post GE Incoming Xp value: %f"), LocalIncomingXp);
+		
+	if (LocalIncomingXp > 0.f)
+	{
+		// Source character is the owner, since GA_ListenForEvents applies GE_EventBasedEffect to self, adding to IncomingXp
+		if (Props.SourceCharacter && Props.SourceCharacter->Implements<UPlayerInterface>())
+		{
+			// This will add to the xp on the player state which will handle everything else
+			IPlayerInterface::Execute_AddToXp(Props.SourceCharacter, LocalIncomingXp);
+		}
+	}
 }
 
 void UAuraAttributeSet::ShowFloatingText(const FEffectProperties& EffectProperties, float Damage, bool bBlockedHit, bool bCriticalHit)

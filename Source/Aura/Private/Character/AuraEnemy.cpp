@@ -75,10 +75,9 @@ void AAuraEnemy::BeginPlay()
 	OnGameplayEffectTagCountChanged.AddUObject(this, &AAuraEnemy::OnHitReactTagCountChanged);
 	
 	// Set the widget controller on the health bar component's widget
-	if (UAuraUserWidget* HealthBarAuraUserWidget = Cast<UAuraUserWidget>(HealthBar->GetUserWidgetObject()))
-	{
-		HealthBarAuraUserWidget->SetWidgetController(GetEnemyWidgetController());
-	}
+	UAuraUserWidget* HealthBarAuraUserWidget = CastChecked<UAuraUserWidget>(HealthBar->GetUserWidgetObject());
+	HealthBarAuraUserWidget->SetWidgetController(GetEnemyWidgetController());
+	EnemyWidgetController->BroadcastInitialValues();
 }
 
 void AAuraEnemy::PossessedBy(AController* NewController)
@@ -111,6 +110,9 @@ void AAuraEnemy::InitAbilityActorInfo()
 	check(AbilitySystemComponent);
 
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+
+	// Broadcast that the ASC is now registered and available to bind to
+	OnASCRegistered.Broadcast(AbilitySystemComponent);
 	
 	// Only doing this as server (values get replicated to clients), course does not do this check
 	if (HasAuthority())
@@ -148,7 +150,7 @@ void AAuraEnemy::OnHitReactTagCountChanged(const FGameplayTag GameplayTag, int32
 	}
 }
 
-void AAuraEnemy::Die()
+void AAuraEnemy::Die(const FVector& DeathImpulse)
 {
 	// Server is in here
 	
@@ -162,7 +164,7 @@ void AAuraEnemy::Die()
 	}
 	
 	SetLifeSpan(LifeSpan);
-	Super::Die();
+	Super::Die(DeathImpulse);
 }
 
 FVector AAuraEnemy::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const
@@ -208,7 +210,7 @@ AActor* AAuraEnemy::GetCombatTarget_Implementation() const
 	return CombatTarget;
 }
 
-void AAuraEnemy::MulticastHandleDeath()
+void AAuraEnemy::MulticastHandleDeath(const FVector& DeathImpulse)
 {
 	// Detach the HealthBarWidgetComponent from the root component (capsule).
 	// NOTE: This prevents the HealthBarWidgetComponent from falling off (only in clients). "Show Collision" command
@@ -218,7 +220,7 @@ void AAuraEnemy::MulticastHandleDeath()
 	//	HealthBar->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
 	//}
 	
-	Super::MulticastHandleDeath();
+	Super::MulticastHandleDeath(DeathImpulse);
 }
 
 UEnemyWidgetController* AAuraEnemy::GetEnemyWidgetController()

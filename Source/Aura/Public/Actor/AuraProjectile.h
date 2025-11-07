@@ -3,7 +3,7 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-#include "GameplayEffectTypes.h"
+#include "AuraAbilityTypes.h"
 #include "AuraProjectile.generated.h"
 
 namespace EEndPlayReason { enum Type : int; }
@@ -29,7 +29,7 @@ public:
 	AAuraProjectile();
 
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
-	FGameplayEffectSpecHandle DamageEffectSpecHandle;
+	FDamageEffectParams DamageEffectParams;
 	
 protected:
 	virtual void BeginPlay() override;

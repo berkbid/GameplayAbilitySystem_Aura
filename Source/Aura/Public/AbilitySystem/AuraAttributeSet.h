@@ -255,6 +255,9 @@ protected:
 
 
 private:
+	void HandleIncomingDamage(const FEffectProperties& Props, const bool bDotDamage);
+	void HandleIncomingXP(const FEffectProperties& Props);
+	static void Debuff(const FEffectProperties& Props);
 	void FillEffectProperties(const FGameplayEffectModCallbackData& Data, FEffectProperties& OutEffectProperties) const;
 	static void ShowFloatingText(const FEffectProperties& EffectProperties, float Damage, bool bBlockedHit, bool bCriticalHit);
 	static void SendXpEvent(const FEffectProperties& Props);

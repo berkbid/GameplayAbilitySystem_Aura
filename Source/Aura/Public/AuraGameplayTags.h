@@ -44,13 +44,7 @@ public:
     FGameplayTag Attributes_Secondary_ManaRegeneration;
 	FGameplayTag Attributes_Secondary_MaxHealth;
     FGameplayTag Attributes_Secondary_MaxMana;
-
-	// Secondary attributes treated as resistances
-	FGameplayTag Attributes_Resistance_Fire;
-	FGameplayTag Attributes_Resistance_Lightning;
-	FGameplayTag Attributes_Resistance_Arcane;
-	FGameplayTag Attributes_Resistance_Physical;
-
+	
 	// Meta attributes
 	FGameplayTag Attributes_Meta_IncomingXp;
 	
@@ -72,7 +66,28 @@ public:
 	FGameplayTag Damage_Lightning;
 	FGameplayTag Damage_Arcane;
 	FGameplayTag Damage_Physical;
+	
+	// Secondary attributes treated as resistances
+	FGameplayTag Attributes_Resistance_Fire;
+	FGameplayTag Attributes_Resistance_Lightning;
+	FGameplayTag Attributes_Resistance_Arcane;
+	FGameplayTag Attributes_Resistance_Physical;
 
+	// Debuffs
+	/** Debuff associated with fire damage type */
+	FGameplayTag Debuff_Burn;
+	/** Debuff associated with lightning damage type */
+	FGameplayTag Debuff_Stun;
+	/** Debuff associated with arcane damage type */
+	FGameplayTag Debuff_Arcane;
+	/** Debuff associated with physical damage type */
+	FGameplayTag Debuff_Physical;
+
+	FGameplayTag Debuff_Info_Chance;
+	FGameplayTag Debuff_Info_Damage;
+	FGameplayTag Debuff_Info_Frequency;
+	FGameplayTag Debuff_Info_Duration;
+	
 	// Abilities
 	FGameplayTag Abilities_None;
 	FGameplayTag Abilities_Attack;
@@ -98,6 +113,7 @@ public:
 	
 	/** Mapping of damage type gameplay tags to resistance type gameplay tags */
 	TMap<FGameplayTag, FGameplayTag> DamageTypesToResistances;
+	TMap<FGameplayTag, FGameplayTag> DamageTypesToDebuffs;
 	
 	// Tag to indicate reacting to a hit
 	FGameplayTag Effects_HitReact;

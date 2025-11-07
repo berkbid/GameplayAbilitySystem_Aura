@@ -12,6 +12,7 @@ class UObject;
 class UGameplayAbility;
 class UAbilityInfo;
 struct FAuraAbilityInfo;
+struct FGameplayTag;
 
 USTRUCT(BlueprintType)
 struct FWidgetControllerParams
@@ -40,7 +41,7 @@ struct FWidgetControllerParams
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributeChangedSignature, float, NewValue);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerStatChangedSignature, int32, NewValue);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbilityInfoSignature, const FAuraAbilityInfo&, AbilityInfo);
-
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnAbilityStatusLevelChanged, const FGameplayTag&, AbilityTag, const FGameplayTag&, StatusTag, int32, Level);
 
 /**
  * UAuraWidgetController
@@ -64,16 +65,24 @@ public:
 	
 	/** Broadcast the ability info delegate for each activatable ability */
 	AURA_API void BroadcastAbilityInfo() const;
+	
+	AURA_API void OnAbilityEquipped(const FGameplayTag& AbilityTag, const FGameplayTag& Status, const FGameplayTag& InputTag, const FGameplayTag& PrevInputTag) const;
 
 protected:
 	AURA_API UAbilityInfo* GetAbilityInfo() const;
+	
+	UFUNCTION(BlueprintCallable)
+	AURA_API FAuraAbilityInfo GetAbilityInfoByAbilityTag(const FGameplayTag& AbilityTag) const;
 	
 protected:
 	UPROPERTY(BlueprintReadOnly, Category="WidgetController")
 	FWidgetControllerParams WidgetControllerParams;
 	
-	/** Broadcast for each activatable ability with its info, when they are given to ASC */
-	UPROPERTY(BlueprintAssignable, Category="GAS|Messages")
-	FAbilityInfoSignature AbilityInfoDelegate;
-	
+	// Broadcast when a slot (input tag) has an ability equipped or unequipped from it
+	UPROPERTY(BlueprintAssignable, Category="GAS|Ability")
+	FAbilityInfoSignature OnSlotAbilityChanged;
+
+	// Broadcast when an ability's status and/or level changes
+	UPROPERTY(BlueprintAssignable, Category="GAS|Ability")
+	FOnAbilityStatusLevelChanged OnAbilityStatusLevelChanged;
 };
