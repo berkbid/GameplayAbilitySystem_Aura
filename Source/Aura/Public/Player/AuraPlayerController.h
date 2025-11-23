@@ -19,6 +19,7 @@ struct FInputActionValue;
 class UAuraInputConfig;
 class UAuraAbilitySystemComponent;
 class USplineComponent;
+class UNiagaraSystem;
 
 /**
  * AAuraPlayerController
@@ -98,6 +99,9 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
+	
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UNiagaraSystem> ClickNiagaraSystem;
 
 	// Movement
 	

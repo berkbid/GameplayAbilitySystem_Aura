@@ -16,7 +16,8 @@
 
 struct FHitResult;
 
-AAuraProjectile::AAuraProjectile()
+AAuraProjectile::AAuraProjectile(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = false;
 	
@@ -38,6 +39,7 @@ AAuraProjectile::AAuraProjectile()
 	
 	// Want the projectiles to replicate
 	bReplicates = true;
+	SetReplicatingMovement(true);
 }
 
 void AAuraProjectile::BeginPlay()
@@ -45,6 +47,7 @@ void AAuraProjectile::BeginPlay()
 	Super::BeginPlay();
 	
 	SetLifeSpan(LifeSpan);
+	
 	
 	//UE_LOG(LogTemp, Warning, TEXT("AuraProjectile::BeginPlay(%s) - Transform: %s"), *GetClientServerContextString(this), *GetActorTransform().ToString());
 	

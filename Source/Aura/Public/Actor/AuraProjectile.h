@@ -26,10 +26,16 @@ class AURA_API AAuraProjectile : public AActor
 	GENERATED_BODY()
 	
 public:	
-	AAuraProjectile();
+	AAuraProjectile(const FObjectInitializer& ObjectInitializer);
 
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
 	FDamageEffectParams DamageEffectParams;
+
+	UFUNCTION(BlueprintPure)
+	UProjectileMovementComponent* GetProjectileMovement() const { return ProjectileMovement; }
+
+	UPROPERTY()
+	TObjectPtr<USceneComponent> HomingTargetSceneComponent;
 	
 protected:
 	virtual void BeginPlay() override;

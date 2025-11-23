@@ -39,8 +39,5 @@ protected:
 	/** Target location from mouse target data when activating ability */
 	UPROPERTY(BlueprintReadOnly)
 	FVector TargetLocation = FVector::ZeroVector;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	int32 NumProjectiles = 5;
-
+	
 };

@@ -7,6 +7,7 @@
 #include "InputAction.h"
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
+#include "NiagaraFunctionLibrary.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "Components/SplineComponent.h"
 #include "GameFramework/Character.h"
@@ -293,6 +294,10 @@ void AAuraPlayerController::AbilityInputTagReleased(const FInputActionValue& Inp
 				CachedDestination = NavPath->PathPoints[LastPathPointIndex];
 				// Only true since we have a valid cached destination
 				bAutoRunning = true;
+
+				// TODO: Should we spawn this system if shift is held?
+				// Spawn click to move system
+				UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ClickNiagaraSystem, CachedDestination);
 			}
 		}
 	}
