@@ -245,7 +245,9 @@ UEnemyWidgetController* AAuraEnemy::GetEnemyWidgetController()
 void AAuraEnemy::NotifyActorBeginCursorOver()
 {
 	Super::NotifyActorBeginCursorOver();
-
+	
+	// TODO: If we want to block cursor over using blocking tag on ASC, need to retrieve ASC from player
+	
 	// Highlights enemy with post process material in post process volume using stencil index 250
 	GetMesh()->SetRenderCustomDepth(true);
 	if (Weapon)

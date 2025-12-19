@@ -12,6 +12,7 @@ class UObject;
 class UAnimMontage;
 class USoundBase;
 class UAbilitySystemComponent;
+class USkeletalMeshComponent;
 class AActor;
 
 USTRUCT(BlueprintType)
@@ -93,6 +94,12 @@ public:
 
 	// Pure virtual method which requires it to be implemented
 	virtual FOnDeath& GetOnDeathDelegate() = 0;
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void SetInShockLoop(bool bInLoop);
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	USkeletalMeshComponent* GetWeapon() const;
 
 protected:
 	FOnASCRegistered OnASCRegistered;

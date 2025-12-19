@@ -41,6 +41,7 @@ public:
 	bool bStartupAbilitiesGiven = false;
 	
 	AURA_API void AbilityInputTagHeld(const FGameplayTag& InputTag);
+	AURA_API void AbilityInputTagPressed(const FGameplayTag& InputTag);
 	AURA_API void AbilityInputTagReleased(const FGameplayTag& InputTag);
 
 	AURA_API void ForEachAbility(const FForEachAbility& Delegate);

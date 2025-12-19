@@ -1,7 +1,10 @@
 // Copyright Berkeley Bidwell
 
 #include "Player/AuraPlayerController.h"
+
+#include "AbilitySystemGlobals.h"
 #include "AuraGameplayTags.h"
+#include "AuraLogChannels.h"
 #include "Player/AuraPlayerState.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
@@ -61,7 +64,11 @@ void AAuraPlayerController::SetupInputComponent()
 	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Completed, this, &AAuraPlayerController::ShiftReleased);
 	AuraInputComponent->BindAction(MenuAction, ETriggerEvent::Started, this, &AAuraPlayerController::ToggleEscapeMenu);
 	AuraInputComponent->BindAbilityActions(InputConfig, this, &ThisClass::AbilityInputTagPressed, &ThisClass::AbilityInputTagReleased, &ThisClass::AbilityInputTagHeld);
-	
+}
+
+AAuraHUD* AAuraPlayerController::GetAuraHud() const
+{
+	return CastChecked<AAuraHUD>(GetHUD(), ECastCheckedType::NullAllowed);
 }
 
 void AAuraPlayerController::Tick(float DeltaSeconds)
@@ -131,11 +138,32 @@ void AAuraPlayerController::ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUD
 	}
 }
 
+void AAuraPlayerController::AcknowledgePossession(APawn* P)
+{
+	Super::AcknowledgePossession(P);
+	//UE_LOG(LogTemp, Warning, TEXT("[%s]: AcknowledgePossession: %s"), *GetClientServerContextString(this), *GetNameSafe(P));
+	
+	// This is where client and server will execute when new pawn possession
+}
+
+void AAuraPlayerController::InitPlayerState()
+{
+	Super::InitPlayerState();
+	BroadcastOnPlayerStateChanged();
+}
+
+void AAuraPlayerController::CleanupPlayerState()
+{
+	Super::CleanupPlayerState();
+	BroadcastOnPlayerStateChanged();
+}
+
 void AAuraPlayerController::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
-	
 	PrintLocalRole(TEXT("OnRep_PlayerState: "));
+	
+	BroadcastOnPlayerStateChanged();
 	
 	InitHUD();
 }
@@ -158,9 +186,82 @@ void AAuraPlayerController::InitHUD()
 	}
 }
 
-AAuraHUD* AAuraPlayerController::GetAuraHud() const
+void AAuraPlayerController::BroadcastOnPlayerStateChanged()
 {
-	return CastChecked<AAuraHUD>(GetHUD(), ECastCheckedType::NullAllowed);
+	OnPlayerStateChanged();
+	
+	PlayerStateChanged.Broadcast(PlayerState);
+	
+	LastSeenPlayerState = PlayerState;
+}
+
+void AAuraPlayerController::OnPlayerStateChanged()
+{
+	if (IsLocalController())
+	{
+		if (PlayerState)
+		{
+			// Register to new player state
+			if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(PlayerState))
+			{
+				FOnGameplayEffectTagCountChanged& TraceTagDelegate = ASC->RegisterGameplayTagEvent(FAuraGameplayTags::Get().Player_Block_CursorTrace, EGameplayTagEventType::NewOrRemoved);
+				BlockCursorTraceTagChangedDelegateHandle = TraceTagDelegate.AddUObject(this, &AAuraPlayerController::OnPlayerBlockTagChanged);
+				
+				FOnGameplayEffectTagCountChanged& PressedTagDelegate = ASC->RegisterGameplayTagEvent(FAuraGameplayTags::Get().Player_Block_InputPressed, EGameplayTagEventType::NewOrRemoved);
+				BlockInputPressedTagChangedDelegateHandle = PressedTagDelegate.AddUObject(this, &AAuraPlayerController::OnPlayerBlockTagChanged);
+			}
+		}
+		else
+		{
+			// Unregister from last seen player state
+			if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(LastSeenPlayerState))
+			{
+				if (BlockCursorTraceTagChangedDelegateHandle.IsValid())
+				{
+					ASC->UnregisterGameplayTagEvent(BlockCursorTraceTagChangedDelegateHandle, FAuraGameplayTags::Get().Player_Block_CursorTrace, EGameplayTagEventType::NewOrRemoved);
+					BlockCursorTraceTagChangedDelegateHandle.Reset();
+				}
+				if (BlockInputPressedTagChangedDelegateHandle.IsValid())
+				{
+					ASC->UnregisterGameplayTagEvent(BlockInputPressedTagChangedDelegateHandle, FAuraGameplayTags::Get().Player_Block_InputPressed, EGameplayTagEventType::NewOrRemoved);
+					BlockInputPressedTagChangedDelegateHandle.Reset();
+				}
+			}
+			
+			// These should not be valid at this point
+			check(!BlockCursorTraceTagChangedDelegateHandle.IsValid());
+			check(!BlockInputPressedTagChangedDelegateHandle.IsValid());
+			
+			// Set this back to the default value if no player state
+			OnPlayerBlockTagChanged(FAuraGameplayTags::Get().Player_Block_CursorTrace, 0);
+		}
+	}
+}
+
+void AAuraPlayerController::OnPlayerBlockTagChanged(FGameplayTag GameplayTag, int32 TagCount)
+{
+	if (GameplayTag.MatchesTagExact(FAuraGameplayTags::Get().Player_Block_CursorTrace))
+	{
+		if (TagCount > 0)
+		{
+			bEnableMouseOverEvents = false;
+			// Manually update moused over object to be none
+			UPrimitiveComponent::DispatchMouseOverEvents(CurrentClickablePrimitive.Get(), nullptr);
+			CurrentClickablePrimitive = nullptr;
+		}
+		else
+		{
+			bEnableMouseOverEvents = true;
+		}
+	}
+	else if (GameplayTag.MatchesTagExact(FAuraGameplayTags::Get().Player_Block_InputPressed))
+	{
+		// Stopping any active auto run if the pressed input gets blocked
+		if (TagCount > 0)
+		{
+			bAutoRunning = false;
+		}
+	}
 }
 
 void AAuraPlayerController::AuraMove(const FInputActionValue& InputActionValue)
@@ -192,8 +293,15 @@ void AAuraPlayerController::ToggleEscapeMenu()
 
 void AAuraPlayerController::AbilityInputTagPressed(const FInputActionValue& InputActionValue, const FGameplayTag InputTag)
 {
+	// Do not process if ASC has input pressed block tag
+	if (GetASC() && GetASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_InputPressed))
+	{
+		return;
+	}
+	
 	// Want to know if we are targeting an enemy when an ability is pressed, to determine if left click should move or use ability
 	// TODO: Server is not setting or using these properties on autonomous proxy, do we care?
+	// TODO: Should we also check that shift key is not down?
 	if (InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
 	{
 		FHitResult CursorHit;
@@ -215,14 +323,30 @@ void AAuraPlayerController::AbilityInputTagPressed(const FInputActionValue& Inpu
 		}
 		else
 		{
+			// TODO: Shouldn't this already be false since onreleased sets this to false?
 			// Invalidate cached destination if we are targeting or we did not get valid blocking hit
 			bValidCachedDestination = false;
+		}
+	}
+	
+	// TODO: This seems correct, should filter only non-movement press events
+	if (!bValidCachedDestination && !bShiftKeyDown)
+	{
+		if (GetASC())
+		{
+			GetASC()->AbilityInputTagPressed(InputTag);
 		}
 	}
 }
 
 void AAuraPlayerController::AbilityInputTagHeld(const FInputActionValue& InputActionValue, const FGameplayTag InputTag)
 {
+	// Do not process if ASC has input held block tag
+	if (GetASC() && GetASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_InputHeld))
+	{
+		return;
+	}
+	
 	// TODO: Server does not enforce targeting value, do we care?
 	// Pass the ability input tag held functionality to the ability system component if it isn't for movement purposes
 	if (!InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB) || bTargeting || bShiftKeyDown)
@@ -258,6 +382,12 @@ void AAuraPlayerController::AbilityInputTagReleased(const FInputActionValue& Inp
 	// Telling ASC of input released regardless, could be inside if statement below
 	if (GetASC())
 	{
+		// Do not process if ASC has input released block tag
+		if (GetASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_InputReleased))
+		{
+			return;
+		}
+		
 		GetASC()->AbilityInputTagReleased(InputTag);
 	}
 	
@@ -338,5 +468,5 @@ void AAuraPlayerController::ShowDamageNumber_Implementation(float DamageAmount, 
 
 void AAuraPlayerController::PrintLocalRole(const FString& InMessage) const
 {
-	UE_LOG(LogTemp, Warning, TEXT("%sLocal Role: %s"), *InMessage, *UEnum::GetValueAsString<ENetRole>(GetLocalRole()));
+	UE_LOG(LogTemp, Warning, TEXT("[%s]: %s"), *UEnum::GetValueAsString<ENetRole>(GetLocalRole()), *InMessage);
 }

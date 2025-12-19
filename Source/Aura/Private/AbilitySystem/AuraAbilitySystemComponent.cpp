@@ -103,6 +103,7 @@ void UAuraAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputT
 		return;
 	}
 	
+	ABILITYLIST_SCOPE_LOCK();
 	if (FGameplayAbilitySpec* AbilitySpec = FindAbilityForTag(InputTag))
 	{
 		// TODO: Interesting that we processed a pressed event every tick while input tag is held
@@ -116,16 +117,56 @@ void UAuraAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputT
 	}
 }
 
+void UAuraAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
+{
+	if (!InputTag.IsValid())
+	{
+		return;
+	}
+	
+	ABILITYLIST_SCOPE_LOCK();
+	if (FGameplayAbilitySpec* AbilitySpec = FindAbilityForTag(InputTag))
+	{
+		// TODO: Interesting that we processed a pressed event every tick while input tag is held
+		AbilitySpecInputPressed(*AbilitySpec);
+
+		// This keeps the ability from being activated/cancelled if it is already active
+		if (AbilitySpec->IsActive())
+		{
+			const TArray<UGameplayAbility*> Instances = AbilitySpec->GetAbilityInstances();
+			const FGameplayAbilityActivationInfo& ActivationInfo = Instances.IsEmpty() ? AbilitySpec->ActivationInfo : Instances.Last()->GetCurrentActivationInfoRef();
+			InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputPressed, AbilitySpec->Handle, ActivationInfo.GetActivationPredictionKey());
+		}
+	}
+}
+
 void UAuraAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)
 {
 	if (!InputTag.IsValid())
 	{
 		return;
 	}
-
+	
+	ABILITYLIST_SCOPE_LOCK();
 	if (FGameplayAbilitySpec* AbilitySpec = FindAbilityForTag(InputTag))
 	{
-		AbilitySpecInputReleased(*AbilitySpec);
+		if (AbilitySpec->IsActive())
+		{
+			AbilitySpecInputReleased(*AbilitySpec);
+			
+			const TArray<UGameplayAbility*> Instances = AbilitySpec->GetAbilityInstances();
+			const FGameplayAbilityActivationInfo& ActivationInfo = Instances.IsEmpty() ? AbilitySpec->ActivationInfo : Instances.Last()->GetCurrentActivationInfoRef();
+			InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, AbilitySpec->Handle, ActivationInfo.GetActivationPredictionKey());
+
+			/*
+			// NOTE: GetPrimaryInstance() is only valid on InstancedPerActor abilities.
+			if (UGameplayAbility* PrimaryInstance = AbilitySpec->GetPrimaryInstance())
+			{
+				InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, AbilitySpec->Handle, PrimaryInstance->GetCurrentActivationInfo().GetActivationPredictionKey());
+			}
+			*/
+		}
+		
 	}
 }
 

@@ -11,6 +11,7 @@ class AAuraHUD;
 class ACharacter;
 class UObject;
 class AHUD;
+class APlayerState;
 class IEnemyInterface;
 struct FGameplayTag;
 class UInputMappingContext;
@@ -20,6 +21,8 @@ class UAuraInputConfig;
 class UAuraAbilitySystemComponent;
 class USplineComponent;
 class UNiagaraSystem;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerStateChanged, APlayerState*, NewPlayerState);
 
 /**
  * AAuraPlayerController
@@ -43,6 +46,10 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ShowDamageNumber(float DamageAmount, ACharacter* TargetCharacter, bool bBlockedHit, bool bCriticalHit);
 	
+public:
+	UPROPERTY(BlueprintAssignable, Category = "Aura|PlayerController")
+	FPlayerStateChanged PlayerStateChanged;
+	
 protected:
 	virtual void BeginPlay() override;
 	
@@ -50,9 +57,20 @@ protected:
 
 	virtual void Tick(float DeltaSeconds) override;
 	
+	//~AController interface
+	virtual void InitPlayerState() override;
+	virtual void CleanupPlayerState() override;
 	virtual void OnRep_PlayerState() override;
+	//~End of AController interface
+	
 	/** Server can init hud here because pc and ps are valid */
 	virtual void ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUDClass) override;
+
+	// Called when the player state is set or cleared
+	virtual void OnPlayerStateChanged();
+	
+	virtual void AcknowledgePossession(class APawn* P) override;
+	void OnPlayerBlockTagChanged(FGameplayTag GameplayTag, int32 TagCount);
 	
 	void InitHUD();
 	
@@ -64,6 +82,7 @@ protected:
 protected:
 	UPROPERTY(EditDefaultsOnly)
 	float AutoRunAcceptanceRadius = 50.f;
+	
 private:
 	void AuraMove(const FInputActionValue& InputActionValue);
 	void ShiftPressed() { bShiftKeyDown = true; };
@@ -77,6 +96,8 @@ private:
 
 	/** Update input mode for gameplay or for UI is parameter is false */
 	void UpdateInputMode(bool bGameInputMode);
+	
+	void BroadcastOnPlayerStateChanged();
 	
 private:
 	UPROPERTY(EditAnywhere, Category="Input")
@@ -102,7 +123,13 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UNiagaraSystem> ClickNiagaraSystem;
-
+	
+	UPROPERTY()
+	TObjectPtr<APlayerState> LastSeenPlayerState;
+	
+	FDelegateHandle BlockCursorTraceTagChangedDelegateHandle;
+	FDelegateHandle BlockInputPressedTagChangedDelegateHandle;
+	
 	// Movement
 	
 	FVector CachedDestination = FVector::ZeroVector;

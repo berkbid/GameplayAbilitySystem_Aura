@@ -47,6 +47,7 @@ public:
 	virtual void IncrementMinionCount_Implementation(int32 Amount) override { MinionCount += Amount; }
 	virtual ECharacterClass GetCharacterClass_Implementation() const override { return CharacterClass; }
 	virtual FOnDeath& GetOnDeathDelegate() override { return OnDeath; }
+	virtual USkeletalMeshComponent* GetWeapon_Implementation() const override { return Weapon; }
 	// ~ICombatInterface
 
 	UFUNCTION(NetMulticast, reliable)
