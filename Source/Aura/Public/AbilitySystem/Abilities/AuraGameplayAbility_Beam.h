@@ -26,6 +26,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	AURA_API void StoreOwnerVariables();
 	
+	UFUNCTION(BlueprintCallable)
+	AURA_API void TraceFirstTarget(const FVector& BeamTargetLocation);
+	
+	UFUNCTION(BlueprintCallable)
+	AURA_API void StoreAdditionalTargets(TArray<AActor*>& OutAdditionalTargets);
+	
 protected:
 	UPROPERTY(BlueprintReadWrite, Category = "Beam")
 	FVector MouseHitLocation;
@@ -38,4 +44,7 @@ protected:
 	
 	UPROPERTY(BlueprintReadWrite, Category = "Beam")
 	TObjectPtr<ACharacter> OwnerCharacter;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Beam")
+	int32 MaxNumShockTargets = 5;
 };

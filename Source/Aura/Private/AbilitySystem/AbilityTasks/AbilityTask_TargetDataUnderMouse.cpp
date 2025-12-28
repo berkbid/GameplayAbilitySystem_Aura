@@ -2,6 +2,7 @@
 
 #include "AbilitySystem/AbilityTasks/AbilityTask_TargetDataUnderMouse.h"
 #include "AbilitySystemComponent.h"
+#include "Aura/Aura.h"
 #include "GameFramework/PlayerController.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AbilityTask_TargetDataUnderMouse)
@@ -94,7 +95,7 @@ void UAbilityTask_TargetDataUnderMouse::SendTargetDataToServer()
 	//FScopedPredictionWindow	ScopedPrediction(ASC);
 	
 	FHitResult CursorHit;
-	PC->GetHitResultUnderCursor(ECC_Visibility, false, CursorHit);
+	PC->GetHitResultUnderCursor(ECC_Target, false, CursorHit);
 
 	// TODO: Why not use FGameplayAbilityTargetData_LocationInfo
 	// Construct TargetData and populate with HitResult

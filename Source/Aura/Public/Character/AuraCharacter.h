@@ -24,6 +24,10 @@ struct FCameraOccludedMeshActor
 	// Assuming just 1 static mesh component coming from a static mesh actor
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TArray<UMaterialInterface*> Materials;
+	
+	// Keep track if the mesh actor blocks visibility channel to revert
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool bBlockVisibility = false;
 };
 
 /**

@@ -397,6 +397,29 @@ void UAuraAbilitySystemLibrary::GetLivePlayersWithinRadius(const UObject* WorldC
 	}
 }
 
+void UAuraAbilitySystemLibrary::GetClosestTargets(int32 MaxTargets, const TArray<AActor*>& Actors, TArray<AActor*>& OutClosestTargets, const FVector& Origin)
+{
+	OutClosestTargets.Empty();
+	
+	if (MaxTargets < 1) { return; }
+ 
+	OutClosestTargets = Actors;
+	
+	Algo::Sort(OutClosestTargets, [&Origin](const AActor* A, const AActor* B)
+	{
+		// NOTE: Calculating the squared distance to avoid expensive Sqrt() call.
+		const float DistanceA = FVector::DistSquared(A->GetActorLocation(), Origin);
+		const float DistanceB = FVector::DistSquared(B->GetActorLocation(), Origin);
+		return DistanceA < DistanceB;
+	});
+	
+	if (OutClosestTargets.Num() > MaxTargets)
+	{
+		// Remove unwanted actors from the end of the array.
+		OutClosestTargets.RemoveAt(MaxTargets, OutClosestTargets.Num() - MaxTargets);
+	}
+}
+
 bool UAuraAbilitySystemLibrary::IsNotFriend(const AActor* FirstActor, const AActor* SecondActor)
 {
 	if (!FirstActor || !SecondActor)
