@@ -121,6 +121,8 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 	GameplayTags.Player_Block_InputReleased = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Player.Block.InputReleased"), FString("Block input released callback for input"));
 	GameplayTags.Player_Block_InputHeld = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Player.Block.InputHeld"), FString("Block input held callback for input"));
 	GameplayTags.Player_Block_CursorTrace = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Player.Block.CursorTrace"), FString("Block tracing under the cursor"));
+	
+	GameplayTags.Player_Status_Dead = UGameplayTagsManager::Get().AddNativeGameplayTag(FName("Player.Status.Dead"), FString("Player is dead"));
 
 	GameplayTags.bInitialized = true;
 }

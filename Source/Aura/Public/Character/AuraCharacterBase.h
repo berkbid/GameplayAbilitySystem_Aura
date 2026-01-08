@@ -34,6 +34,8 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	// ~IAbilitySystemInterface
 
+	AURA_API virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+	
 	// ICombatInterface
 	AURA_API virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const override;
 	AURA_API virtual UAnimMontage* GetHitReactMontage_Implementation() const override;
@@ -55,7 +57,7 @@ public:
 	
 	UFUNCTION(BlueprintPure)
 	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
-
+	
 public:
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	TArray<FTaggedMontage> AttackMontages;
@@ -63,11 +65,20 @@ public:
 	UPROPERTY(BlueprintAssignable, Category="Aura|Death")
 	FOnDeath OnDeath;
 	
+	// Not sure why this needs to be replicated
+	UPROPERTY(ReplicatedUsing=OnRep_Stunned, BlueprintReadOnly)
+	bool bIsStunned = false;
+	
 protected:
 	AURA_API virtual void BeginPlay() override;
 
 	/** Call to set initial primary and secondary attribute values */
 	virtual void InitializeDefaultAttributes() const {};
+	
+	AURA_API virtual void StunTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
+	
+	UFUNCTION()
+	AURA_API virtual void OnRep_Stunned() {};
 	
 	AURA_API void ApplyGameplayEffectToSelf(const TSubclassOf<UGameplayEffect>& InGameplayEffectClass, float Level) const;
 
@@ -88,6 +99,9 @@ protected:
 	FName WeaponTipSocketName;
 	
 	bool bDead = false;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
+	float BaseWalkSpeed = 600.f;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Character Class Defaults")
 	ECharacterClass CharacterClass;

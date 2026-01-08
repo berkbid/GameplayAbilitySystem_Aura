@@ -68,6 +68,9 @@ protected:
 
 	// Called when the player state is set or cleared
 	virtual void OnPlayerStateChanged();
+
+	UFUNCTION()
+	void OnPawnDeath(AActor* Actor);
 	
 	virtual void AcknowledgePossession(class APawn* P) override;
 	void OnPlayerBlockTagChanged(FGameplayTag GameplayTag, int32 TagCount);

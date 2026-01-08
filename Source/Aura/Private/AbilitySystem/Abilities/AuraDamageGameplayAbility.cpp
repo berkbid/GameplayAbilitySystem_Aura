@@ -3,13 +3,32 @@
 #include "AbilitySystem/Abilities/AuraDamageGameplayAbility.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "AuraGameplayTags.h"
+#include "AuraLogChannels.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraDamageGameplayAbility)
 
+UAuraDamageGameplayAbility::UAuraDamageGameplayAbility(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	// Block activation if player is dead
+	ActivationBlockedTags.AddTag(FAuraGameplayTags::Get().Player_Status_Dead);
+	// Block activation if player is stunned
+	ActivationBlockedTags.AddTag(FAuraGameplayTags::Get().Debuff_Stun);
+}
+
 void UAuraDamageGameplayAbility::CauseDamage(AActor* TargetActor)
 {
-	UAuraAbilitySystemLibrary::ApplyDamageEffect(MakeDamageEffectParamsFromClassDefaults(TargetActor));
+	const FDamageEffectParams DamageEffectParams = MakeDamageEffectParamsFromClassDefaults(TargetActor);
+	
+	if (!DamageEffectParams.SourceASC || !DamageEffectParams.TargetASC)
+	{
+		UE_LOG(LogAuraAbilitySystem, Log, TEXT("Cannot cause damage to [%s] due to missing ASC of self or target!"), *GetNameSafe( TargetActor));
+		return;
+	}
+	
+	UAuraAbilitySystemLibrary::ApplyDamageEffect(DamageEffectParams);
 	
 	/*
 	if (!ensure(DamageEffectClass))
@@ -63,8 +82,14 @@ FDamageEffectParams UAuraDamageGameplayAbility::MakeDamageEffectParamsFromClassD
 	if (IsValid(TargetActor))
 	{
 		FRotator Rotation = (TargetActor->GetActorLocation() - GetAvatarActorFromActorInfo()->GetActorLocation()).Rotation();
+		// This will utilize the knockback chance to determine knockback value
 		Params.UpdateImpulsesWithRotation(Rotation);
 	}
 	
 	return Params;
+}
+
+float UAuraDamageGameplayAbility::GetDamageAtLevel() const
+{
+	return Damage.GetValueAtLevel(GetAbilityLevel());
 }

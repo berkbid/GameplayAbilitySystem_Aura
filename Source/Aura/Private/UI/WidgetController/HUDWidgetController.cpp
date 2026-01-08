@@ -66,7 +66,10 @@ void UHUDWidgetController::BindCallBacksToDependencies()
 	});
 	ASC->AbilityCommittedCallbacks.AddLambda([this](UGameplayAbility* Ability)
 	{
-		if (OnAbilityCommitted.IsBound()) { OnAbilityCommitted.Broadcast(Ability); }
+		if (OnAbilityCommitted.IsBound())
+		{
+			OnAbilityCommitted.Broadcast(Ability);
+		}
 	});
 	
 	ASC->OnAbilityEquipped.AddUObject(this, &UAuraWidgetController::OnAbilityEquipped);

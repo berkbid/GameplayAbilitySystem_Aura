@@ -21,12 +21,17 @@ class UAuraDamageGameplayAbility : public UAuraGameplayAbility
 	GENERATED_BODY()
 
 public:
+	UAuraDamageGameplayAbility(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	
 	UFUNCTION(BlueprintCallable)
 	AURA_API void CauseDamage(AActor* TargetActor);
 	
 	UFUNCTION(BlueprintPure)
 	FDamageEffectParams MakeDamageEffectParamsFromClassDefaults(AActor* TargetActor = nullptr) const;
 
+	UFUNCTION(BlueprintPure)
+	float GetDamageAtLevel() const;
+	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<UGameplayEffect> DamageEffectClass;

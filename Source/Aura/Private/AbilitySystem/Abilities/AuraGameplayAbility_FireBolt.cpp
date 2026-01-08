@@ -61,9 +61,19 @@ void UAuraGameplayAbility_FireBolt::SpawnProjectiles(const FVector& ProjectileLo
 
 			if (bLaunchHomingProjectiles)
 			{
+				bool bValidHomingTarget = true;
+				
 				if (HomingTarget && HomingTarget->Implements<UCombatInterface>())
 				{
-					Projectile->GetProjectileMovement()->HomingTargetComponent = HomingTarget->GetRootComponent();
+					if (!ICombatInterface::Execute_IsDead(HomingTarget))
+					{
+						Projectile->GetProjectileMovement()->HomingTargetComponent = HomingTarget->GetRootComponent();
+					}
+					else
+					{
+						Projectile->SetAsNonHomingTargetProjectile();
+						bValidHomingTarget = false;
+					}
 				}
 				else
 				{
@@ -72,8 +82,11 @@ void UAuraGameplayAbility_FireBolt::SpawnProjectiles(const FVector& ProjectileLo
 					Projectile->GetProjectileMovement()->HomingTargetComponent = Projectile->HomingTargetSceneComponent;
 				}
 			
-				Projectile->GetProjectileMovement()->HomingAccelerationMagnitude = FMath::FRandRange(HomingAccelerationMin, HomingAccelerationMax);
-				Projectile->GetProjectileMovement()->bIsHomingProjectile = true;
+				if (bValidHomingTarget)
+				{
+					Projectile->GetProjectileMovement()->HomingAccelerationMagnitude = FMath::FRandRange(HomingAccelerationMin, HomingAccelerationMax);
+					Projectile->GetProjectileMovement()->bIsHomingProjectile = true;
+				}
 			}
 
 			

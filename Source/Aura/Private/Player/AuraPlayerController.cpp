@@ -1,7 +1,6 @@
 // Copyright Berkeley Bidwell
 
 #include "Player/AuraPlayerController.h"
-
 #include "AbilitySystemGlobals.h"
 #include "AuraGameplayTags.h"
 #include "AuraLogChannels.h"
@@ -144,6 +143,40 @@ void AAuraPlayerController::AcknowledgePossession(APawn* P)
 	//UE_LOG(LogTemp, Warning, TEXT("[%s]: AcknowledgePossession: %s"), *GetClientServerContextString(this), *GetNameSafe(P));
 	
 	// This is where client and server will execute when new pawn possession
+	
+	if (P)
+	{
+		ICombatInterface* CombatInterface = CastChecked<ICombatInterface>(P);
+		
+		if (!ICombatInterface::Execute_IsDead(P))
+		{
+			// Removing dead status tag if pawn is respawned so it can use abilities
+			if (GetASC() && GetASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Status_Dead))
+			{
+				GetASC()->RemoveLooseGameplayTag(FAuraGameplayTags::Get().Player_Status_Dead);
+			}
+			
+			if (!CombatInterface->GetOnDeathDelegate().IsAlreadyBound(this, &AAuraPlayerController::OnPawnDeath))
+			{
+				CombatInterface->GetOnDeathDelegate().AddDynamic(this, &AAuraPlayerController::OnPawnDeath);
+			}
+		}
+	}
+}
+
+void AAuraPlayerController::OnPawnDeath(AActor* Actor)
+{
+	if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(Actor))
+	{
+		CombatInterface->GetOnDeathDelegate().RemoveDynamic(this, &AAuraPlayerController::OnPawnDeath);
+	}
+	
+	// Cancel all abilities when pawn dies
+	if (GetASC())
+	{
+		GetASC()->AddLooseGameplayTag(FAuraGameplayTags::Get().Player_Status_Dead);
+		GetASC()->CancelAllAbilities();
+	}
 }
 
 void AAuraPlayerController::InitPlayerState()
@@ -245,6 +278,7 @@ void AAuraPlayerController::OnPlayerBlockTagChanged(FGameplayTag GameplayTag, in
 		if (TagCount > 0)
 		{
 			bEnableMouseOverEvents = false;
+			
 			// Manually update moused over object to be none
 			UPrimitiveComponent::DispatchMouseOverEvents(CurrentClickablePrimitive.Get(), nullptr);
 			CurrentClickablePrimitive = nullptr;

@@ -14,23 +14,34 @@ struct FHitResult;
 /**
  * 
  */
-UCLASS(MinimalAPI)
+UCLASS()
 class UAuraGameplayAbility_Beam : public UAuraDamageGameplayAbility
 {
 	GENERATED_BODY()
 	
 public:
 	UFUNCTION(BlueprintCallable)
-	AURA_API bool OnValidMouseData(const FHitResult& Hit);
+	bool OnValidMouseData(const FHitResult& Hit);
 	
 	UFUNCTION(BlueprintCallable)
-	AURA_API void StoreOwnerVariables();
+	void StoreOwnerVariables();
 	
 	UFUNCTION(BlueprintCallable)
-	AURA_API void TraceFirstTarget(const FVector& BeamTargetLocation);
+	void TraceFirstTarget(const FVector& BeamTargetLocation);
 	
 	UFUNCTION(BlueprintCallable)
-	AURA_API void StoreAdditionalTargets(TArray<AActor*>& OutAdditionalTargets);
+	void StoreAdditionalTargets(TArray<AActor*>& OutAdditionalTargets);
+	
+	UFUNCTION(BlueprintImplementableEvent)
+	void PrimaryTargetDied(AActor* DeadActor);
+	
+	UFUNCTION(BlueprintImplementableEvent)
+	void AdditionalTargetDied(AActor* DeadActor);
+	
+protected:
+	/** Call to unbind from all targets their ondeath event, and null them out. */
+	UFUNCTION(BlueprintCallable)
+	void ClearAllTargets();
 	
 protected:
 	UPROPERTY(BlueprintReadWrite, Category = "Beam")
@@ -38,6 +49,9 @@ protected:
 	
 	UPROPERTY(BlueprintReadWrite, Category = "Beam")
 	TObjectPtr<AActor> MouseHitActor;
+	
+	UPROPERTY(BlueprintReadWrite, Category = "Beam")
+	TMap<AActor*, FGameplayCueParameters> AdditionalTargetsMap;
 	
 	UPROPERTY(BlueprintReadWrite, Category = "Beam")
 	TObjectPtr<APlayerController> OwnerPlayerController;

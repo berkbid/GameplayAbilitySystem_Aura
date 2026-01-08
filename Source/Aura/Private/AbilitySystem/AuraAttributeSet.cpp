@@ -218,7 +218,17 @@ void UAuraAttributeSet::Debuff(const FEffectProperties& Props)
 	// Add owned gameplay tag of the debuff damage type
 	UTargetTagsGameplayEffectComponent& Component = Effect->FindOrAddComponent<UTargetTagsGameplayEffectComponent>();
 	FInheritedTagContainer TagContainer = FInheritedTagContainer();
-	TagContainer.Added.AddTag(AuraGameplayTags.DamageTypesToDebuffs[DebuffDamageType]);
+	const FGameplayTag DebuffTag = AuraGameplayTags.DamageTypesToDebuffs[DebuffDamageType];
+	TagContainer.Added.AddTag(DebuffTag);
+	
+	// Stun debuff should also block player input and cursor trace
+	if (DebuffTag.MatchesTagExact(AuraGameplayTags.Debuff_Stun))
+	{
+		TagContainer.Added.AddTag(AuraGameplayTags.Player_Block_InputPressed);
+		TagContainer.Added.AddTag(AuraGameplayTags.Player_Block_InputReleased);
+		TagContainer.Added.AddTag(AuraGameplayTags.Player_Block_InputHeld);
+		TagContainer.Added.AddTag(AuraGameplayTags.Player_Block_CursorTrace);
+	}
 	Component.SetAndApplyTargetTagChanges(TagContainer);
 	
 	Effect->StackingType = EGameplayEffectStackingType::AggregateBySource;

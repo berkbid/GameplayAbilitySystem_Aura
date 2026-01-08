@@ -28,6 +28,8 @@ class AURA_API AAuraProjectile : public AActor
 public:	
 	AAuraProjectile(const FObjectInitializer& ObjectInitializer);
 
+	void SetAsNonHomingTargetProjectile();
+	
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
 	FDamageEffectParams DamageEffectParams;
 
@@ -46,6 +48,9 @@ protected:
 	void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	void PlayDestroyEffects();
+	
+	UFUNCTION()
+	void OnTargetDeath(AActor* DeadActor);
 	
 private:
 	UPROPERTY(EditDefaultsOnly)

@@ -15,11 +15,15 @@ bool UAuraGameplayAbility_Beam::OnValidMouseData(const FHitResult& Hit)
 	if (bIsBlockingHit)
 	{
 		MouseHitLocation = Hit.Location;
+		
+		// I don't think we want to set this here, it is really set on anim montage event received
 		MouseHitActor = Hit.GetActor();
 	}
 	else
 	{
-		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+		// This will mimic endabilitylocally 
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, false, false);
+		//EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 	}
 	return bIsBlockingHit;
 }
@@ -46,12 +50,30 @@ void UAuraGameplayAbility_Beam::TraceFirstTarget(const FVector& BeamTargetLocati
 		const FVector SocketLocation = Weapon->GetSocketLocation(FName("TipSocket"));
 		
 		UKismetSystemLibrary::SphereTraceSingle(OwnerCharacter, SocketLocation, BeamTargetLocation, 10.f, 
-			TraceTypeQuery1, false, IgnoreActors, EDrawDebugTrace::None, HitResult, true);
+			TraceTypeQuery1, false, IgnoreActors, EDrawDebugTrace::ForDuration, HitResult, true);
 		
 		if (HitResult.bBlockingHit)
 		{
 			MouseHitLocation = HitResult.ImpactPoint;
 			MouseHitActor = HitResult.GetActor();
+			
+			UE_LOG(LogTemp, Error, TEXT("Trace hit actor: %s"), *GetNameSafe(MouseHitActor));
+			
+			if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(MouseHitActor))
+			{
+				if (!CombatInterface->GetOnDeathDelegate().IsAlreadyBound(this, &UAuraGameplayAbility_Beam::PrimaryTargetDied))
+				{
+					CombatInterface->GetOnDeathDelegate().AddDynamic(this, &UAuraGameplayAbility_Beam::PrimaryTargetDied);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("Already bound to first target ondeath: %s"), *GetNameSafe(MouseHitActor));
+				}
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Trace did not hit anything"));
 		}
 	}
 }
@@ -82,8 +104,43 @@ void UAuraGameplayAbility_Beam::StoreAdditionalTargets(TArray<AActor*>& OutAddit
 		}
 	}
 	
-	//int32 NumAdditionalTargets = FMath::Min(GetAbilityLevel() - 1, MaxNumShockTargets);
-	int32 NumAdditionalTargets = 5;
+	//const int32 NumAdditionalTargets = FMath::Min(GetAbilityLevel() - 1, MaxNumShockTargets);
+	const int32 NumAdditionalTargets = 5;
 	
 	UAuraAbilitySystemLibrary::GetClosestTargets(NumAdditionalTargets, OverlappingActors, OutAdditionalTargets, Origin);
+	
+	for (AActor* Target : OutAdditionalTargets)
+	{
+		if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(Target))
+		{
+			if (!CombatInterface->GetOnDeathDelegate().IsAlreadyBound(this, &UAuraGameplayAbility_Beam::AdditionalTargetDied))
+			{
+				CombatInterface->GetOnDeathDelegate().AddDynamic(this, &UAuraGameplayAbility_Beam::AdditionalTargetDied);
+			}
+		}
+	}
+}
+
+void UAuraGameplayAbility_Beam::ClearAllTargets()
+{
+	if (MouseHitActor)
+	{
+		if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(MouseHitActor))
+		{
+			CombatInterface->GetOnDeathDelegate().RemoveDynamic(this, &UAuraGameplayAbility_Beam::PrimaryTargetDied);
+		}
+		MouseHitActor = nullptr;
+	}
+	
+	for (const TPair<AActor*, FGameplayCueParameters>& Pair : AdditionalTargetsMap)
+	{
+		if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(Pair.Key))
+		{
+			CombatInterface->GetOnDeathDelegate().RemoveDynamic(this, &UAuraGameplayAbility_Beam::AdditionalTargetDied);
+		}
+	}
+	AdditionalTargetsMap.Empty();
+	
+	OwnerPlayerController = nullptr;
+	OwnerCharacter = nullptr;
 }

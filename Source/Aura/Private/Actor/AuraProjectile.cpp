@@ -11,6 +11,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Aura/Aura.h"
+#include "Interaction/CombatInterface.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraProjectile)
 
@@ -46,21 +47,59 @@ void AAuraProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	SetLifeSpan(LifeSpan);
-	
-	
-	//UE_LOG(LogTemp, Warning, TEXT("AuraProjectile::BeginPlay(%s) - Transform: %s"), *GetClientServerContextString(this), *GetActorTransform().ToString());
-	
-	// Letting client bind to on overlap as well for impact sound and effect
-	Sphere->OnComponentBeginOverlap.AddDynamic(this, &AAuraProjectile::OnSphereOverlap);
-
-	if (LoopingSound)
+	if (!bPlayedDestroyedEffects)
 	{
-		LoopingSoundComponent = UGameplayStatics::SpawnSoundAttached(LoopingSound, GetRootComponent());
+		SetLifeSpan(LifeSpan);
+		
+		// Letting client bind to on overlap as well for impact sound and effect
+		Sphere->OnComponentBeginOverlap.AddDynamic(this, &AAuraProjectile::OnSphereOverlap);
+		
+		if (LoopingSound)
+		{
+			LoopingSoundComponent = UGameplayStatics::SpawnSoundAttached(LoopingSound, GetRootComponent());
+		}	
 	}
 	
+	// Server checks/binds for target death to update projectile to non-homing target projectile
+	if (HasAuthority())
+	{
+		if (ProjectileMovement->bIsHomingProjectile)
+		{
+			if (ProjectileMovement->HomingTargetComponent.IsValid())
+			{
+				AActor* HomingTarget = ProjectileMovement->HomingTargetComponent->GetOwner();
+		
+				if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(HomingTarget))
+				{
+					if (ICombatInterface::Execute_IsDead(HomingTarget))
+					{
+						OnTargetDeath(HomingTarget);
+					}
+					else
+					{
+						CombatInterface->GetOnDeathDelegate().AddDynamic(this, &AAuraProjectile::OnTargetDeath);
+					}
+				}
+			}
+			else
+			{
+				SetAsNonHomingTargetProjectile();
+			}
+		}
+	}
 }
 
+void AAuraProjectile::OnTargetDeath(AActor* DeadActor)
+{
+	SetAsNonHomingTargetProjectile();
+}
+
+void AAuraProjectile::SetAsNonHomingTargetProjectile()
+{
+	ProjectileMovement->bIsHomingProjectile = false;
+	// This stops projectile from going upwards at a 45degree angle
+	ProjectileMovement->ProjectileGravityScale = .5f;
+}
 void AAuraProjectile::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);

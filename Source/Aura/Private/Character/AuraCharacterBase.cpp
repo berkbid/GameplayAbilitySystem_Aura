@@ -8,8 +8,10 @@
 #include "AbilitySystem/Debuff/DebuffNiagaraComponent.h"
 #include "Aura/Aura.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerState.h"
+#include "Net/UnrealNetwork.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraCharacterBase)
 
@@ -55,6 +57,13 @@ void AAuraCharacterBase::BeginPlay()
 	Super::BeginPlay();
 }
 
+void AAuraCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	DOREPLIFETIME(AAuraCharacterBase, bIsStunned);
+}
+
 FVector AAuraCharacterBase::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const
 {
 	const FAuraGameplayTags& GameplayTags = FAuraGameplayTags::Get();
@@ -73,6 +82,13 @@ FVector AAuraCharacterBase::GetCombatSocketLocation_Implementation(const FGamepl
 UAnimMontage* AAuraCharacterBase::GetHitReactMontage_Implementation() const
 {
 	return HitReactMontage;
+}
+
+void AAuraCharacterBase::StunTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
+{
+	bIsStunned = NewCount > 0;
+
+	GetCharacterMovement()->MaxWalkSpeed = bIsStunned ? 0.f : BaseWalkSpeed;
 }
 
 void AAuraCharacterBase::Die(const FVector& DeathImpulse)

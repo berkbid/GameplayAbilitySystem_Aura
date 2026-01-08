@@ -62,6 +62,8 @@ public:
 	
 protected:
 	AURA_API virtual void InitializeDefaultAttributes() const override;
+	
+	AURA_API virtual void OnRep_Stunned() override;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")

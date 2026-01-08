@@ -61,9 +61,6 @@ public:
 	bool bHitReacting = false;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
-	float BaseWalkSpeed = 250.f;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
 	float LifeSpan = 5.f;
 
 	// TODO: Perhaps hold soft object ptr
@@ -81,6 +78,7 @@ protected:
 	AURA_API virtual void AddCharacterAbilities() const override;
 	// Override to initialize default attributes using aura ability system library
 	AURA_API virtual void InitializeDefaultAttributes() const override;
+	AURA_API virtual void StunTagChanged(const FGameplayTag CallbackTag, int32 NewCount) override;
 	// ~ End UAuraCharacterBase
 	
 protected:

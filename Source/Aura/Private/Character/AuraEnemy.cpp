@@ -56,6 +56,8 @@ AAuraEnemy::AAuraEnemy(const FObjectInitializer& ObjectInitializer)
 	LeftHandSocketName = FName("LeftHandSocket");
 	RightHandSocketName = FName("RightHandSocket");
 	TailSocketName = FName("TailSocket");
+	
+	BaseWalkSpeed = 250.f;
 
 	// Have AI enemies auto possessed when placed in world or spawned
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
@@ -66,13 +68,6 @@ void AAuraEnemy::BeginPlay()
 	Super::BeginPlay();
 	
 	InitAbilityActorInfo();
-	
-	// Bing to when ability system component gameplay tag Effects.HitReact is added or removed
-	const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
-	FOnGameplayEffectTagCountChanged& OnGameplayEffectTagCountChanged =
-		AbilitySystemComponent->RegisterGameplayTagEvent(AuraGameplayTags.Effects_HitReact, EGameplayTagEventType::NewOrRemoved);
-	
-	OnGameplayEffectTagCountChanged.AddUObject(this, &AAuraEnemy::OnHitReactTagCountChanged);
 	
 	// Set the widget controller on the health bar component's widget
 	UAuraUserWidget* HealthBarAuraUserWidget = CastChecked<UAuraUserWidget>(HealthBar->GetUserWidgetObject());
@@ -110,7 +105,15 @@ void AAuraEnemy::InitAbilityActorInfo()
 	check(AbilitySystemComponent);
 
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
-
+	
+	const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
+	
+	// Bind to hit react tag change
+	AbilitySystemComponent->RegisterGameplayTagEvent(AuraGameplayTags.Effects_HitReact, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &AAuraEnemy::OnHitReactTagCountChanged);
+	
+	// Bind to stun tag change
+	AbilitySystemComponent->RegisterGameplayTagEvent(AuraGameplayTags.Debuff_Stun, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &AAuraEnemy::StunTagChanged);
+	
 	// Broadcast that the ASC is now registered and available to bind to
 	OnASCRegistered.Broadcast(AbilitySystemComponent);
 	
@@ -131,6 +134,19 @@ void AAuraEnemy::AddCharacterAbilities() const
 void AAuraEnemy::InitializeDefaultAttributes() const
 {
 	UAuraAbilitySystemLibrary::InitializeDefaultAttributes(this, CharacterClass, Level, AbilitySystemComponent);
+}
+
+void AAuraEnemy::StunTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
+{
+	Super::StunTagChanged(CallbackTag, NewCount);
+	
+	if (HasAuthority())
+	{
+		if (AAuraAIController* AIController = GetAuraAIController())
+		{
+			AIController->GetBlackboardComponent()->SetValueAsBool(FName("bStunned"), bIsStunned);
+		}
+	}
 }
 
 void AAuraEnemy::OnHitReactTagCountChanged(const FGameplayTag GameplayTag, int32 TagCount)

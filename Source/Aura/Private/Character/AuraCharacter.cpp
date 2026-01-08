@@ -2,6 +2,7 @@
 
 #include "Character/AuraCharacter.h"
 
+#include "AuraGameplayTags.h"
 #include "AuraLogChannels.h"
 #include "NiagaraComponent.h"
 #include "Camera/CameraComponent.h"
@@ -79,6 +80,9 @@ void AAuraCharacter::InitAbilityActorInfo()
 	
 	check(AbilitySystemComponent);
 
+	// Bind to stun tag change
+	AbilitySystemComponent->RegisterGameplayTagEvent(FAuraGameplayTags::Get().Debuff_Stun, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &AAuraCharacter::StunTagChanged);
+	
 	// Call on both client and server
 	AbilitySystemComponent->InitAbilityActorInfo(AuraPlayerState, this);
 
@@ -126,6 +130,30 @@ void AAuraCharacter::InitializeDefaultAttributes() const
 	ApplyGameplayEffectToSelf(DefaultSecondaryAttributesClass, 1.f);
 	// Set vital after secondary because we want to set health/mana equal to max health/mana
 	ApplyGameplayEffectToSelf(DefaultVitalAttributesClass, 1.f);
+}
+
+void AAuraCharacter::OnRep_Stunned()
+{
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
+		
+		// Server is doing this in attribute set where a GE is controlling the stun debuff tag duration
+		FGameplayTagContainer BlockedTags;
+		BlockedTags.AddTag(AuraGameplayTags.Player_Block_CursorTrace);
+		BlockedTags.AddTag(AuraGameplayTags.Player_Block_InputHeld);
+		BlockedTags.AddTag(AuraGameplayTags.Player_Block_InputPressed);
+		BlockedTags.AddTag(AuraGameplayTags.Player_Block_InputReleased);
+		
+		if (bIsStunned)
+		{
+			ASC->AddLooseGameplayTags(BlockedTags);
+		}
+		else
+		{
+			ASC->RemoveLooseGameplayTags(BlockedTags);
+		}
+	}
 }
 
 int32 AAuraCharacter::GetPlayerLevel_Implementation() const

@@ -133,6 +133,8 @@ public:
 	FGameplayTag Player_Block_InputHeld;
 	FGameplayTag Player_Block_CursorTrace;
 	
+	FGameplayTag Player_Status_Dead;
+	
 protected:
 
 private:
