@@ -23,7 +23,7 @@ class UAuraDamageGameplayAbility : public UAuraGameplayAbility
 public:
 	UAuraDamageGameplayAbility(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 	
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
 	AURA_API void CauseDamage(AActor* TargetActor);
 	
 	UFUNCTION(BlueprintPure)

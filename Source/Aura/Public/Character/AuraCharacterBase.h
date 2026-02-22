@@ -50,6 +50,8 @@ public:
 	virtual ECharacterClass GetCharacterClass_Implementation() const override { return CharacterClass; }
 	virtual FOnDeath& GetOnDeathDelegate() override { return OnDeath; }
 	virtual USkeletalMeshComponent* GetWeapon_Implementation() const override { return Weapon; }
+	virtual void SetIsBeingShocked_Implementation(bool bBeingShocked) override { bIsBeingShocked = bBeingShocked;}
+	virtual bool IsBeingShocked_Implementation() const override { return bIsBeingShocked; }
 	// ~ICombatInterface
 
 	UFUNCTION(NetMulticast, reliable)
@@ -69,6 +71,12 @@ public:
 	UPROPERTY(ReplicatedUsing=OnRep_Stunned, BlueprintReadOnly)
 	bool bIsStunned = false;
 	
+	UPROPERTY(ReplicatedUsing=OnRep_Burning, BlueprintReadOnly)
+	bool bIsBurning = false;
+	
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	bool bIsBeingShocked = false;
+	
 protected:
 	AURA_API virtual void BeginPlay() override;
 
@@ -79,6 +87,9 @@ protected:
 	
 	UFUNCTION()
 	AURA_API virtual void OnRep_Stunned() {};
+	
+	UFUNCTION()
+	AURA_API virtual void OnRep_Burning() {};
 	
 	AURA_API void ApplyGameplayEffectToSelf(const TSubclassOf<UGameplayEffect>& InGameplayEffectClass, float Level) const;
 
@@ -114,7 +125,10 @@ protected:
 	
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UDebuffNiagaraComponent> BurnDebuffComponent;
-
+	
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UDebuffNiagaraComponent> StunDebuffComponent;
+	
 	/** Dissolve Effects */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TObjectPtr<UMaterialInstance> BodyDissolveMaterialInstance;

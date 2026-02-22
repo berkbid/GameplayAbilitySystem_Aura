@@ -45,6 +45,11 @@ AAuraCharacterBase::AAuraCharacterBase(const FObjectInitializer& ObjectInitializ
 	BurnDebuffComponent->DebuffTag = FAuraGameplayTags::Get().Debuff_Burn;
 	BurnDebuffComponent->SetupAttachment(GetRootComponent());
 	
+	// Niagara component for stun debuff
+	StunDebuffComponent = CreateDefaultSubobject<UDebuffNiagaraComponent>("StunDebuffComponent");
+	StunDebuffComponent->DebuffTag = FAuraGameplayTags::Get().Debuff_Stun;
+	StunDebuffComponent->SetupAttachment(GetRootComponent());
+	
 	// Default name for weapon skeletal mesh tip socket
 	WeaponTipSocketName = FName("TipSocket");
 	
@@ -62,6 +67,8 @@ void AAuraCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProper
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(AAuraCharacterBase, bIsStunned);
+	DOREPLIFETIME(AAuraCharacterBase, bIsBurning);
+	DOREPLIFETIME(AAuraCharacterBase, bIsBeingShocked);
 }
 
 FVector AAuraCharacterBase::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) const
@@ -89,6 +96,14 @@ void AAuraCharacterBase::StunTagChanged(const FGameplayTag CallbackTag, int32 Ne
 	bIsStunned = NewCount > 0;
 
 	GetCharacterMovement()->MaxWalkSpeed = bIsStunned ? 0.f : BaseWalkSpeed;
+	
+	// Cancel non-passive abilities when stunned, I think only server in here, could also do in attributeset when applying debuff, but decided to do it here
+	if (bIsStunned)
+	{
+		const FGameplayTagContainer AbilitiesToCancelTags(FAuraGameplayTags::Get().Abilities);
+		const FGameplayTagContainer AbilitiesToIgnoreTags(FAuraGameplayTags::Get().Abilities_Passive);
+		GetAbilitySystemComponent()->CancelAbilities(&AbilitiesToCancelTags, &AbilitiesToIgnoreTags);
+	}
 }
 
 void AAuraCharacterBase::Die(const FVector& DeathImpulse)

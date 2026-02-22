@@ -171,17 +171,22 @@ void UAuraAttributeSet::HandleIncomingDamage(const FEffectProperties& Props, con
 		// See lecture 314 if this solution isn't sufficient for stopping hit react
 		if (!bDotDamage && Props.TargetASC)
 		{
-			const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
+			// Only hit react if target is not being shocked
+			const bool bShouldHitReact = Props.TargetCharacter && Props.TargetCharacter->Implements<UCombatInterface>() && !ICombatInterface::Execute_IsBeingShocked(Props.TargetCharacter);
+			if (bShouldHitReact)
+			{
+				const FAuraGameplayTags& AuraGameplayTags = FAuraGameplayTags::Get();
 					
-			// Create tag container with hit react tag
-			FGameplayTagContainer TagContainer;
-			TagContainer.AddTag(AuraGameplayTags.Abilities_HitReact);
+				// Create tag container with hit react tag
+				FGameplayTagContainer TagContainer;
+				TagContainer.AddTag(AuraGameplayTags.Abilities_HitReact);
 					
-			// Cancel any active hit react ability
-			Props.TargetASC->CancelAbilities(&TagContainer, nullptr, nullptr);
+				// Cancel any active hit react ability
+				Props.TargetASC->CancelAbilities(&TagContainer, nullptr, nullptr);
 					
-			// Activate hit react gameplay ability
-			Props.TargetASC->TryActivateAbilitiesByTag(TagContainer);
+				// Activate hit react gameplay ability
+				Props.TargetASC->TryActivateAbilitiesByTag(TagContainer);
+			}
 		}
 		
 		// Apply debuff if it is successful
@@ -222,7 +227,8 @@ void UAuraAttributeSet::Debuff(const FEffectProperties& Props)
 	TagContainer.Added.AddTag(DebuffTag);
 	
 	// Stun debuff should also block player input and cursor trace
-	if (DebuffTag.MatchesTagExact(AuraGameplayTags.Debuff_Stun))
+	const bool bStunDebuff = DebuffTag.MatchesTagExact(AuraGameplayTags.Debuff_Stun);
+	if (bStunDebuff)
 	{
 		TagContainer.Added.AddTag(AuraGameplayTags.Player_Block_InputPressed);
 		TagContainer.Added.AddTag(AuraGameplayTags.Player_Block_InputReleased);
@@ -257,7 +263,9 @@ void UAuraAttributeSet::Debuff(const FEffectProperties& Props)
 		// Get the effect context casted to our custom type to set the damage type property
 		FAuraGameplayEffectContext* AuraContext = static_cast<FAuraGameplayEffectContext*>(MutableSpec->GetContext().Get());
 		AuraContext->SetDamageType(DebuffDamageType);
-
+		
+		// Cancelling non-passive abilities upon stun debuff, done in character base stun tag changed instead of here
+		
 		Props.TargetASC->ApplyGameplayEffectSpecToSelf(*MutableSpec);
 	}
 }

@@ -27,7 +27,9 @@ AAuraEnemy::AAuraEnemy(const FObjectInitializer& ObjectInitializer)
 	
 	// Could use mesh if we want to for cursor over events
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-
+	
+	BaseWalkSpeed = 250.f;
+	
 	// Synchronize the movement max walk speed with local variable BaseWalkSpeed
 	GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
 	GetCharacterMovement()->bUseControllerDesiredRotation = true;
@@ -56,8 +58,6 @@ AAuraEnemy::AAuraEnemy(const FObjectInitializer& ObjectInitializer)
 	LeftHandSocketName = FName("LeftHandSocket");
 	RightHandSocketName = FName("RightHandSocket");
 	TailSocketName = FName("TailSocket");
-	
-	BaseWalkSpeed = 250.f;
 
 	// Have AI enemies auto possessed when placed in world or spawned
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;

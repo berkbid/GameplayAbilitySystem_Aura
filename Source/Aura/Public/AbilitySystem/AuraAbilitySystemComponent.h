@@ -20,6 +20,7 @@ DECLARE_MULTICAST_DELEGATE(FAbilitiesGiven);
 DECLARE_DELEGATE_OneParam(FForEachAbility, const FGameplayAbilitySpec&);
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FAbilityStatusChanged, const FGameplayTag& /*AbilityTag*/, const FGameplayTag& /*StatusTag*/, int32 /*AbilityLevel*/);
 DECLARE_MULTICAST_DELEGATE_FourParams(FAbilityEquipped, const FGameplayTag& /*AbilityTag*/, const FGameplayTag& /*StatusTag*/, const FGameplayTag& /*InputTag*/, const FGameplayTag& /*PrevInputTag*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FDeactivatePassiveAbility, const FGameplayTag& /*AbilityTag*/);
 
 /**
  * 
@@ -52,7 +53,7 @@ public:
 
 	AURA_API FGameplayAbilitySpec* GetSpecFromAbilityTag(const FGameplayTag& AbilityTag);
 	AURA_API FGameplayTag GetStatusFromAbilityTag(const FGameplayTag& AbilityTag);
-	AURA_API FGameplayTag GetInputTagFromAbilityTag(const FGameplayTag& AbilityTag);
+	AURA_API FGameplayTag GetSlotFromAbilityTag(const FGameplayTag& AbilityTag);
 	
 	/** Can be called by server or client, will call server RPC for functionality */
 	AURA_API void AddOrRefundAttribute(const FGameplayTag& AttributeTag, int32 IncrementAmount);
@@ -71,9 +72,13 @@ public:
 	
 	AURA_API bool GetDescriptionsByAbilityTag(const FGameplayTag& AbilityTag, const int32 Level, FString& OutDescription, FString& OutNextLevelDescription);
 
-	AURA_API void ClearSlot(FGameplayAbilitySpec* AbilitySpec);
+	static AURA_API void ClearSlot(FGameplayAbilitySpec* AbilitySpec);
 	AURA_API void ClearAbilitiesOfSlot(const FGameplayTag& InputTag);
+	// If given invalid Slot, will return true if ability has ANY slot
 	static AURA_API bool AbilityHasSlot(FGameplayAbilitySpec* AbilitySpec, const FGameplayTag& Slot);
+	AURA_API FGameplayAbilitySpec* GetSpecFromSlot(const FGameplayTag& Slot);
+	AURA_API bool IsPassiveAbility(const FGameplayAbilitySpec& Spec) const;
+	static AURA_API void AssignSlotToAbility(FGameplayAbilitySpec& AbilitySpec, const FGameplayTag& Slot);
 	
 public:
 	/** Broadcast when effect is applied with a MessageTag Gameplay Tag */
@@ -87,6 +92,9 @@ public:
 	
 	/** Broadcast when an ability is equipped or changed slots */
 	FAbilityEquipped OnAbilityEquipped;
+	
+	/** Broadcast when a passive ability should be deactivated */
+	FDeactivatePassiveAbility OnDeactivatePassiveAbility;
 	
 protected:
 	// ~UAbilitySystemComponent

@@ -64,6 +64,7 @@ protected:
 	AURA_API virtual void InitializeDefaultAttributes() const override;
 	
 	AURA_API virtual void OnRep_Stunned() override;
+	AURA_API virtual void OnRep_Burning() override;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")

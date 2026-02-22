@@ -9,6 +9,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
+#include "AbilitySystem/Debuff/DebuffNiagaraComponent.h"
 #include "Player/AuraPlayerState.h"
 #include "Aura/Aura.h"
 
@@ -148,11 +149,28 @@ void AAuraCharacter::OnRep_Stunned()
 		if (bIsStunned)
 		{
 			ASC->AddLooseGameplayTags(BlockedTags);
+			// Seems have to do this for player for client but not for enemy or for server
+			StunDebuffComponent->Activate();
 		}
 		else
 		{
 			ASC->RemoveLooseGameplayTags(BlockedTags);
+			// Seems have to do this for player for client but not for enemy or for server
+			StunDebuffComponent->Deactivate();
 		}
+	}
+}
+
+void AAuraCharacter::OnRep_Burning()
+{
+	// Need to do this here for aura but for enemies the debuffniagaracomponent handles this, also server handles this in the component
+	if (bIsBurning)
+	{
+		BurnDebuffComponent->Activate();
+	}
+	else
+	{
+		BurnDebuffComponent->Deactivate();
 	}
 }
 
