@@ -38,10 +38,18 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void AdditionalTargetDied(AActor* DeadActor);
 	
+	// UAuraGameplayAbility
+	virtual FString GetDescription(int32 Level) const override;
+	virtual FString GetNextLevelDescription(int32 Level) const override;
+	// ~UAuraGameplayAbility
+	
 protected:
 	/** Call to unbind from all targets their ondeath event, and null them out. */
 	UFUNCTION(BlueprintCallable)
 	void ClearAllTargets();
+	
+private:
+	FString GetDescriptionInternal(const FString& InTitle, int32 Level) const;
 	
 protected:
 	UPROPERTY(BlueprintReadWrite, Category = "Beam")

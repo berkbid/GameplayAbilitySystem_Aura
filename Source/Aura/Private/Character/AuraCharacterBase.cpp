@@ -6,6 +6,7 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "AbilitySystem/Debuff/DebuffNiagaraComponent.h"
+#include "AbilitySystem/Passive/PassiveNiagaraComponent.h"
 #include "Aura/Aura.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -49,6 +50,27 @@ AAuraCharacterBase::AAuraCharacterBase(const FObjectInitializer& ObjectInitializ
 	StunDebuffComponent = CreateDefaultSubobject<UDebuffNiagaraComponent>("StunDebuffComponent");
 	StunDebuffComponent->DebuffTag = FAuraGameplayTags::Get().Debuff_Stun;
 	StunDebuffComponent->SetupAttachment(GetRootComponent());
+	
+	// Scene component for the passive niagara components to attach to
+	EffectAttachComponent = CreateDefaultSubobject<USceneComponent>("EffectAttachComponent");
+	EffectAttachComponent->SetUsingAbsoluteRotation(true);
+	EffectAttachComponent->SetWorldRotation(FRotator::ZeroRotator);
+	EffectAttachComponent->SetupAttachment(GetRootComponent());
+	
+	// Niagara component for Halo Of Protection
+	HaloOfProtectionComponent = CreateDefaultSubobject<UPassiveNiagaraComponent>("HaloOfProtectionComponent");
+	HaloOfProtectionComponent->PassiveSpellTag = FAuraGameplayTags::Get().Abilities_Passive_HaloOfProtection;
+	HaloOfProtectionComponent->SetupAttachment(EffectAttachComponent);
+	
+	// Niagara component for Life Siphon
+	LifeSiphonComponent = CreateDefaultSubobject<UPassiveNiagaraComponent>("LifeSiphonComponent");
+	LifeSiphonComponent->PassiveSpellTag = FAuraGameplayTags::Get().Abilities_Passive_LifeSiphon;
+	LifeSiphonComponent->SetupAttachment(EffectAttachComponent);
+	
+	// Niagara component for Mana Siphon
+	ManaSiphonComponent = CreateDefaultSubobject<UPassiveNiagaraComponent>("ManaSiphonComponent");
+	ManaSiphonComponent->PassiveSpellTag = FAuraGameplayTags::Get().Abilities_Passive_ManaSiphon;
+	ManaSiphonComponent->SetupAttachment(EffectAttachComponent);
 	
 	// Default name for weapon skeletal mesh tip socket
 	WeaponTipSocketName = FName("TipSocket");
@@ -161,6 +183,15 @@ void AAuraCharacterBase::MulticastHandleDeath_Implementation(const FVector& Deat
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation(), GetActorRotation());
 	}
+	
+	if (GetController())
+	{
+		GetController()->SetIgnoreMoveInput(true);
+	}
+	
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	MoveComp->StopMovementImmediately();
+	MoveComp->DisableMovement();
 	
 	const FVector ScaledDeathImpulse = DeathImpulse * GetMesh()->GetMass();
 	

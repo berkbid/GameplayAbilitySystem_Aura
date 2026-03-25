@@ -39,7 +39,7 @@ float UMMC_MaxMana::CalculateBaseMagnitude_Implementation(const FGameplayEffectS
 	const UObject* SourceObject = Spec.GetContext().GetSourceObject();
 	const int32 PlayerLevel = SourceObject && SourceObject->Implements<UCombatInterface>() ? ICombatInterface::Execute_GetPlayerLevel(SourceObject) : 1;
 
-	UE_LOG(LogTemp, Warning, TEXT("Recalculating Max Health based on vigor and player level"));
+	//UE_LOG(LogTemp, Warning, TEXT("Recalculating Max Health based on vigor and player level"));
 	return 50.f + Intelligence * 2.5f + 15.f * PlayerLevel;
 }
 

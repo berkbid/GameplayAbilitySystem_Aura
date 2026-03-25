@@ -21,6 +21,7 @@ DECLARE_DELEGATE_OneParam(FForEachAbility, const FGameplayAbilitySpec&);
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FAbilityStatusChanged, const FGameplayTag& /*AbilityTag*/, const FGameplayTag& /*StatusTag*/, int32 /*AbilityLevel*/);
 DECLARE_MULTICAST_DELEGATE_FourParams(FAbilityEquipped, const FGameplayTag& /*AbilityTag*/, const FGameplayTag& /*StatusTag*/, const FGameplayTag& /*InputTag*/, const FGameplayTag& /*PrevInputTag*/);
 DECLARE_MULTICAST_DELEGATE_OneParam(FDeactivatePassiveAbility, const FGameplayTag& /*AbilityTag*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FActivatePassiveEffect, const FGameplayTag& /*AbilityTag*/, bool /*bActivate*/);
 
 /**
  * 
@@ -80,6 +81,9 @@ public:
 	AURA_API bool IsPassiveAbility(const FGameplayAbilitySpec& Spec) const;
 	static AURA_API void AssignSlotToAbility(FGameplayAbilitySpec& AbilitySpec, const FGameplayTag& Slot);
 	
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastActivatePassiveEffect(const FGameplayTag& AbilityTag, bool bActivate);
+	
 public:
 	/** Broadcast when effect is applied with a MessageTag Gameplay Tag */
 	FEffectAssetTags EffectAssetTags;
@@ -95,6 +99,9 @@ public:
 	
 	/** Broadcast when a passive ability should be deactivated */
 	FDeactivatePassiveAbility OnDeactivatePassiveAbility;
+	
+	/** Broadcast when a passive ability should be activated */
+	FActivatePassiveEffect ActivatePassiveEffect;
 	
 protected:
 	// ~UAbilitySystemComponent

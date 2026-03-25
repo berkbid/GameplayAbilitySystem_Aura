@@ -127,10 +127,8 @@ void UAuraAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& Inp
 	ABILITYLIST_SCOPE_LOCK();
 	if (FGameplayAbilitySpec* AbilitySpec = FindAbilityForTag(InputTag))
 	{
-		// TODO: Interesting that we processed a pressed event every tick while input tag is held
 		AbilitySpecInputPressed(*AbilitySpec);
-
-		// This keeps the ability from being activated/cancelled if it is already active
+		
 		if (AbilitySpec->IsActive())
 		{
 			const TArray<UGameplayAbility*> Instances = AbilitySpec->GetAbilityInstances();
@@ -312,17 +310,18 @@ void UAuraAbilitySystemComponent::UpdateAbilitiesEligibilityFromLevelUp(int32 Le
 	}
 }
 
-void UAuraAbilitySystemComponent::ServerEquipAbility_Implementation(const FGameplayTag& AbilityTag, const FGameplayTag& InputTag)
+void UAuraAbilitySystemComponent::ServerEquipAbility_Implementation(const FGameplayTag& AbilityTag, const FGameplayTag& Slot)
 {
 	FGameplayAbilitySpec* AbilitySpec = GetSpecFromAbilityTag(AbilityTag);
 	check(AbilitySpec);
 	
+	// Previous slot of the ability to equip, if there is one
 	const FGameplayTag& PrevSlot = GetInputTagFromSpec(*AbilitySpec);
 	//const FGameplayTag& PrevAbility = GetAbilityTagFromSpec(*AbilitySpec);
 	
 	// TODO: Is this same as comparing the ability tags in each slot?
 	// Return if ability already in correct slot
-	if (PrevSlot.MatchesTagExact(InputTag))
+	if (PrevSlot.MatchesTagExact(Slot))
 	{
 		return;
 	}
@@ -339,67 +338,66 @@ void UAuraAbilitySystemComponent::ServerEquipAbility_Implementation(const FGamep
 
 	// Handle activation/deactivation for passive abilities
 	
-	// There is an ability in this slot already. Deactivate and clear it's slot
-	if (FGameplayAbilitySpec* SlotAbilitySpec = GetSpecFromSlot(InputTag))
+	// There is an ability in this slot already. Deactivate and clear its slot
+	if (FGameplayAbilitySpec* SlotAbilitySpec = GetSpecFromSlot(Slot))
 	{
-		const FGameplayTag& SlotAbilityTag = GetInputTagFromSpec(*SlotAbilitySpec);
-		
-		// TODO: Is this necessary? I think the check at top of function does same thing
-		if (AbilityTag.MatchesTagExact(SlotAbilityTag))
-		{
-			// Course says we need to call client equip ability here so blinking UI will stop, but I don't think we do
-			return;
-		}
-		
 		// If the slot we are trying to equip to has a passive ability in it
 		if (IsPassiveAbility(*SlotAbilitySpec))
 		{
+			const FGameplayTag SlotAbilityTag = GetAbilityTagFromSpec(*SlotAbilitySpec);
+			
+			// Everyone can deactivate this passive niagara effect on the PassiveNiagaraComponent
+			MulticastActivatePassiveEffect(SlotAbilityTag, false);
+			
+			// If the ability in the other slot is the incoming one, we could swap slots
 			// Since we are pushing this ability out, we need to deactivate it
 			OnDeactivatePassiveAbility.Broadcast(SlotAbilityTag);
 		}
 		
-		
-		// Clear the current passive ability from the slot
+		// Clear the current ability from the slot we are trying to equip to
 		ClearSlot(SlotAbilitySpec);
+		
+		// Update the status tag for this ability from equipped to unlocked
+		SlotAbilitySpec->GetDynamicSpecSourceTags().RemoveTag(GameplayTags.Abilities_Status_Equipped);
+		SlotAbilitySpec->GetDynamicSpecSourceTags().AddTag(GameplayTags.Abilities_Status_Unlocked);
 	}
 	
-	// See if the incoming ability has ANY slot
+	// If the incoming ability doesn't have a slot
 	if (!AbilityHasSlot(AbilitySpec, FGameplayTag()))
 	{
+		// TODO: Should we do this after assigning the ability to its new slot?
 		// If the ability is passive and doesn't have a slot, activate it
 		if (IsPassiveAbility(*AbilitySpec))
 		{
-			TryActivateAbility(AbilitySpec->Handle);
+			if (TryActivateAbility(AbilitySpec->Handle))
+			{
+				// Everyone can activate this passive niagara effect on the PassiveNiagaraComponent
+				MulticastActivatePassiveEffect(AbilityTag, true);
+			}
 		}
-		
-		AssignSlotToAbility(*AbilitySpec, InputTag);
 	}
+	else
+	{
+		// If incoming ability already in a slot, we know it is the wrong slot
+		// If passive ability, should already be activated
+		ClearSlot(AbilitySpec);
+	}
+	// We can now assign the incoming ability to the slot since the slot is empty and
+	// the incoming ability was cleared from its previous slot
+
+	AssignSlotToAbility(*AbilitySpec, Slot);
 	
-	
-	
-	
-	// Remove this InputTag (slot) from any ability that has it
-	ClearAbilitiesOfSlot(InputTag);
-	
-	// Clear this ability's slot, in case it is a different slot
-	ClearSlot(AbilitySpec);
-	
-	// Now assign this slot to this ability
-	AssignSlotToAbility(*AbilitySpec, InputTag);
+	// Update the status tag for this ability from unlocked to equipped, if it was previously unlocked
 	if (bAbilityIsUnlocked)
 	{
 		AbilitySpec->GetDynamicSpecSourceTags().RemoveTag(GameplayTags.Abilities_Status_Unlocked);
 		AbilitySpec->GetDynamicSpecSourceTags().AddTag(GameplayTags.Abilities_Status_Equipped);
 	}
 	
-	
-	
-	
-	
 	MarkAbilitySpecDirty(*AbilitySpec);
 	
 	// Call client rpc to broadcast new ability status and input tag
-	ClientEquipAbility(AbilityTag, Status, InputTag, PrevSlot);
+	ClientEquipAbility(AbilityTag, Status, Slot, PrevSlot);
 }
 
 void UAuraAbilitySystemComponent::ClientEquipAbility_Implementation(const FGameplayTag& AbilityTag, const FGameplayTag& Status, const FGameplayTag& InputTag, const FGameplayTag& PrevInputTag)
@@ -443,7 +441,11 @@ void UAuraAbilitySystemComponent::ClearSlot(FGameplayAbilitySpec* AbilitySpec)
 	if (AbilitySpec)
 	{
 		const FGameplayTag& Slot = GetInputTagFromSpec(*AbilitySpec);
-		AbilitySpec->GetDynamicSpecSourceTags().RemoveTag(Slot);
+		if (Slot.IsValid())
+		{
+			AbilitySpec->GetDynamicSpecSourceTags().RemoveTag(Slot);
+		}
+		
 		// This is done in functions that call ClearSlot
 		//MarkAbilitySpecDirty(*AbilitySpec);
 	}
@@ -503,9 +505,14 @@ bool UAuraAbilitySystemComponent::IsPassiveAbility(const FGameplayAbilitySpec& S
 
 void UAuraAbilitySystemComponent::AssignSlotToAbility(FGameplayAbilitySpec& AbilitySpec, const FGameplayTag& Slot)
 {
-	// Course calls ClearSlot here but I think it should already be cleared
+	// Course calls ClearSlot here, but I think it should already be cleared
 	check(!AbilityHasSlot(&AbilitySpec, Slot));
 	AbilitySpec.GetDynamicSpecSourceTags().AddTag(Slot);
+}
+
+void UAuraAbilitySystemComponent::MulticastActivatePassiveEffect_Implementation(const FGameplayTag& AbilityTag, bool bActivate)
+{
+	ActivatePassiveEffect.Broadcast(AbilityTag, bActivate);
 }
 
 void UAuraAbilitySystemComponent::ServerSpendOrRefundSpellPoint_Implementation(const FGameplayTag& AbilityTag, int32 Amount)
@@ -522,7 +529,6 @@ void UAuraAbilitySystemComponent::ServerSpendOrRefundSpellPoint_Implementation(c
 		// We are spending spell points, // we know it's not status locked, either eligible, equipped, or unlocked
 		if (Amount > 0)
 		{
-			
 			if (AbilityStatus.MatchesTagExact(GameplayTags.Abilities_Status_Eligible))
 			{
 				// Change status, remove old tag, add new
@@ -538,7 +544,7 @@ void UAuraAbilitySystemComponent::ServerSpendOrRefundSpellPoint_Implementation(c
 				AbilitySpec->Level += Amount;
 			}
 		}
-		else // We are refunding spell points, we know status is either unlocked or equipped
+		else // We are refunding spell points, we know the status is either unlocked or equipped
 		{
 			const int32 NewAbilityLevel = AbilitySpec->Level + Amount;
 			
@@ -555,17 +561,28 @@ void UAuraAbilitySystemComponent::ServerSpendOrRefundSpellPoint_Implementation(c
 			// Cannot go to 0, when lowering to level 0, we keep it at level 1 but change status instead. Going to eligible status
 			if (bNewAbilityLevelIsZero)
 			{
+				// Remove the unlocked or equipped status tag
 				AbilitySpec->GetDynamicSpecSourceTags().RemoveTag(AbilityStatus);
 				AbilitySpec->GetDynamicSpecSourceTags().AddTag(GameplayTags.Abilities_Status_Eligible);
 				
+				// Un-equip the ability since it is going from equipped state to eligible state
 				if (AbilityStatus.MatchesTagExact(GameplayTags.Abilities_Status_Equipped))
 				{
-					//ServerEquipAbility(AbilityTag, GetInputTagFromSpec(*AbilitySpec));
+					if (IsPassiveAbility(*AbilitySpec))
+					{
+						const FGameplayTag SlotAbilityTag = GetAbilityTagFromSpec(*AbilitySpec);
+			
+						// Everyone can deactivate this passive niagara effect on the PassiveNiagaraComponent
+						MulticastActivatePassiveEffect(SlotAbilityTag, false);
+			
+						// If the ability in the other slot is the incoming one, we could swap slots
+						// Since we are pushing this ability out, we need to deactivate it
+						OnDeactivatePassiveAbility.Broadcast(SlotAbilityTag);
+					}
+
+					// Record the ability's previous input tag before clearing its slow
 					const FGameplayTag& PrevInputTag = GetInputTagFromSpec(*AbilitySpec);
 					ClearSlot(AbilitySpec);
-					
-					// TODO: Should we clear ability also? Would need access to ability spec handle
-					//ClearAbility(AbilitySpec->Handle);
 					
 					// Not sure if this is the best solution, ClientUpdateAbilityStatusAndLevel isn't working because doesn't send previous input tag
 					ClientEquipAbility(AbilityTag, AbilityStatus, FGameplayTag(), PrevInputTag);

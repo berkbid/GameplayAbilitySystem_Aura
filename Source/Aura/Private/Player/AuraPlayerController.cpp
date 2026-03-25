@@ -199,6 +199,19 @@ void AAuraPlayerController::OnRep_PlayerState()
 	BroadcastOnPlayerStateChanged();
 	
 	InitHUD();
+	
+	// When we're a client connected to a remote server, the player controller may replicate later than the PlayerState and AbilitySystemComponent.
+	// On other net modes the PlayerController will never replicate late.
+	if (GetWorld()->IsNetMode(NM_Client))
+	{
+		if (AAuraPlayerState* AuraPS = GetPlayerState<AAuraPlayerState>())
+		{
+			if (UAuraAbilitySystemComponent* AuraASC = AuraPS->GetAuraAbilitySystemComponent())
+			{
+				AuraASC->RefreshAbilityActorInfo();
+			}
+		}
+	}
 }
 
 void AAuraPlayerController::InitHUD()
@@ -336,7 +349,13 @@ void AAuraPlayerController::AbilityInputTagPressed(const FInputActionValue& Inpu
 	// Want to know if we are targeting an enemy when an ability is pressed, to determine if left click should move or use ability
 	// TODO: Server is not setting or using these properties on autonomous proxy, do we care?
 	// TODO: Should we also check that shift key is not down?
-	if (InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
+	
+	const bool bLMB = InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB);
+	const bool bLooksLikeClickToMove = bLMB && !bShiftKeyDown;
+	bool bClickToMove = bLooksLikeClickToMove;
+	
+	// If the input looks like click to move (can change to ability input if we end up targeting enemy on click)
+	if (bLooksLikeClickToMove)
 	{
 		FHitResult CursorHit;
 		GetHitResultUnderCursor(ECC_Visibility, false, CursorHit);
@@ -344,7 +363,10 @@ void AAuraPlayerController::AbilityInputTagPressed(const FInputActionValue& Inpu
 		
 		// We are targeting an enemy if cursor hit is valid and the actor it hits implements enemy interface
 		bTargeting = bValidBlockingHit && Cast<IEnemyInterface>(CursorHit.GetActor());
-
+		
+		// If we end up targeting an enemy when clicking to move, then this is not a click to move input
+		bClickToMove = !bTargeting;
+		
 		// Reset auto run values since we are not auto-running on LMB press, only on release
 		bAutoRunning = false;
 		FollowTime = 0.f;
@@ -363,8 +385,8 @@ void AAuraPlayerController::AbilityInputTagPressed(const FInputActionValue& Inpu
 		}
 	}
 	
-	// TODO: This seems correct, should filter only non-movement press events
-	if (!bValidCachedDestination && !bShiftKeyDown)
+	// If we are not clicking to move
+	if (!bClickToMove)
 	{
 		if (GetASC())
 		{
@@ -393,8 +415,8 @@ void AAuraPlayerController::AbilityInputTagHeld(const FInputActionValue& InputAc
 		
 		return;
 	}
-
-	// Click to move behavior since Tag == LMB and we are not targeting
+	
+	// Click to move behavior since Tag == LMB and we are not targeting and shift key not down
 	FollowTime += GetWorld()->GetDeltaSeconds();
 	
 	FHitResult CursorHit;
@@ -425,7 +447,7 @@ void AAuraPlayerController::AbilityInputTagReleased(const FInputActionValue& Inp
 		GetASC()->AbilityInputTagReleased(InputTag);
 	}
 	
-	// If input tag is not LMB then return and don't proceed to click to move behavior
+	// If input tag is not LMB or we are targetting or shift key is down, then return and don't proceed to click to move behavior
 	if (!InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB) || bTargeting || bShiftKeyDown)
 	{
 		return;
@@ -468,6 +490,7 @@ void AAuraPlayerController::AbilityInputTagReleased(const FInputActionValue& Inp
 
 	FollowTime = 0.f;
 	bValidCachedDestination = false;
+	bTargeting = false;
 }
 
 UAuraAbilitySystemComponent* AAuraPlayerController::GetASC()

@@ -32,7 +32,7 @@ void UEnemyWidgetController::BroadcastInitialValues()
 {
 	const UAuraAttributeSet* AttributeSet = CastChecked<UAuraAttributeSet>(WidgetControllerParams.AttributeSet);
 
-	UE_LOG(LogTemp, Warning, TEXT("Broadcasting initial enemy values"));
+	//UE_LOG(LogTemp, Warning, TEXT("Broadcasting initial enemy values"));
 	
 	OnHealthChanged.Broadcast(AttributeSet->GetHealth());
 	OnMaxHealthChanged.Broadcast(AttributeSet->GetMaxHealth());

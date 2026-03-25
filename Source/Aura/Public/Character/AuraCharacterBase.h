@@ -15,6 +15,7 @@ class UGameplayEffect;
 class UAbilitySystemComponent;
 class UAttributeSet;
 class UDebuffNiagaraComponent;
+class UPassiveNiagaraComponent;
 class UAnimMontage;
 class UNiagaraSystem;
 class UMaterialInstance;
@@ -128,6 +129,18 @@ protected:
 	
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UDebuffNiagaraComponent> StunDebuffComponent;
+	
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UPassiveNiagaraComponent> HaloOfProtectionComponent;
+	
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UPassiveNiagaraComponent> LifeSiphonComponent;
+	
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UPassiveNiagaraComponent> ManaSiphonComponent;
+	
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<USceneComponent> EffectAttachComponent;
 	
 	/** Dissolve Effects */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

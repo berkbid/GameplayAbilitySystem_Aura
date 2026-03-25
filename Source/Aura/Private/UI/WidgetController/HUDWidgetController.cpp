@@ -34,7 +34,7 @@ void UHUDWidgetController::BindCallBacksToDependencies()
 				// First from commitability(), second from postnetreceive calls attributeagregatordirty, third from Onrep_Mana.
 			// Ex. for server, if going from 80 to 60 mana. We receive 60, then 60. Unless remove setmana call in PostGameplayEffectExecute, then receive once
 				// Receive broadcast from commitability()
-			UE_LOG(LogTemp, Warning, TEXT("Mana attribute changed: %f"), Data.NewValue);
+			//UE_LOG(LogTemp, Warning, TEXT("Mana attribute changed: %f"), Data.NewValue);
 			OnManaChanged.Broadcast(Data.NewValue);
 		}
 	});

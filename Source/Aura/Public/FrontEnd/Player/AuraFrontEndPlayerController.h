@@ -18,4 +18,9 @@ class AURA_API AAuraFrontEndPlayerController : public ACommonPlayerController
 public:
 	AAuraFrontEndPlayerController(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 	
+	UFUNCTION(BlueprintCallable, Category = "Aura|PlayerController")
+	void ResetUserAndSession() const;
+	
+protected:
+	virtual void BeginPlay() override;
 };

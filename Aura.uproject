@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "{10C4E50F-4001-5BB5-259F-D7ACC2C211B5}",
+	"EngineAssociation": "{5234F145-4C58-D374-8C43-38BFFE8C6486}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -18,7 +18,8 @@
 				"ModularGameplayActors",
 				"CommonUI",
 				"AIModule",
-				"ModularGameplay"
+				"ModularGameplay",
+				"Niagara"
 			]
 		}
 	],

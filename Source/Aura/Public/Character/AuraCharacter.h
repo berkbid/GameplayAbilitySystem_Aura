@@ -14,7 +14,10 @@ class UStaticMeshComponent;
 class UMaterialInterface;
 class UNiagaraComponent;
 class UObject;
+class UInputComponent;
+class UInputAction;
 struct FGameplayTag;
+struct FInputActionValue;
 
 USTRUCT(BlueprintType)
 struct FCameraOccludedMeshActor
@@ -62,10 +65,13 @@ public:
 	
 protected:
 	AURA_API virtual void InitializeDefaultAttributes() const override;
+	AURA_API virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	
 	AURA_API virtual void OnRep_Stunned() override;
 	AURA_API virtual void OnRep_Burning() override;
-
+	
+	AURA_API void ZoomCam(const FInputActionValue& InputActionValue);
+	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<USpringArmComponent> SpringArm;
@@ -89,6 +95,13 @@ protected:
 	UPROPERTY(Transient,VisibleAnywhere, BlueprintReadOnly, Category="OccludedMeshes")
 	TMap<AActor*, FCameraOccludedMeshActor> OccludedMeshActors;
 	
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> ZoomAction;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	float MinTargetArmLength = 100.f;
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	float MaxTargetArmLength = 1600.f;
 private:
 	virtual void InitAbilityActorInfo() override;
 

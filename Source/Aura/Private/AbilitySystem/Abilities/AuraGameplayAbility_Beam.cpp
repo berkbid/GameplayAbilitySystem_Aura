@@ -50,7 +50,7 @@ void UAuraGameplayAbility_Beam::TraceFirstTarget(const FVector& BeamTargetLocati
 		const FVector SocketLocation = Weapon->GetSocketLocation(FName("TipSocket"));
 		
 		UKismetSystemLibrary::SphereTraceSingle(OwnerCharacter, SocketLocation, BeamTargetLocation, 10.f, 
-			TraceTypeQuery1, false, IgnoreActors, EDrawDebugTrace::ForDuration, HitResult, true);
+			TraceTypeQuery1, false, IgnoreActors, EDrawDebugTrace::None, HitResult, true);
 		
 		if (HitResult.bBlockingHit)
 		{
@@ -104,8 +104,8 @@ void UAuraGameplayAbility_Beam::StoreAdditionalTargets(TArray<AActor*>& OutAddit
 		}
 	}
 	
-	//const int32 NumAdditionalTargets = FMath::Min(GetAbilityLevel() - 1, MaxNumShockTargets);
-	const int32 NumAdditionalTargets = 5;
+	const int32 NumAdditionalTargets = FMath::Min(GetAbilityLevel() - 1, MaxNumShockTargets);
+	//const int32 NumAdditionalTargets = 5;
 	
 	UAuraAbilitySystemLibrary::GetClosestTargets(NumAdditionalTargets, OverlappingActors, OutAdditionalTargets, Origin);
 	
@@ -143,4 +143,39 @@ void UAuraGameplayAbility_Beam::ClearAllTargets()
 	
 	OwnerPlayerController = nullptr;
 	OwnerCharacter = nullptr;
+}
+
+FString UAuraGameplayAbility_Beam::GetDescription(int32 Level) const
+{
+	return GetDescriptionInternal(FString("CHAIN LIGHTNING:"), Level);
+}
+
+FString UAuraGameplayAbility_Beam::GetNextLevelDescription(int32 Level) const
+{
+	return GetDescriptionInternal(FString("NEXT LEVEL:"), Level);
+}
+
+FString UAuraGameplayAbility_Beam::GetDescriptionInternal(const FString& InTitle, int32 Level) const
+{
+	float LightningDamage = Damage.GetValueAtLevel(Level);
+	const float ManaCost = GetManaCost(Level);
+	const int32 NumTargets = FMath::Min(Level - 1, MaxNumShockTargets) + 1;
+	const float Cooldown = GetCooldown(Level);
+	
+	return FString::Printf(TEXT(
+		// Title and level
+		"<Title>%s %d</>\n\n"
+		// Level
+		"<Small>Level: </><Level>%d</>\n"
+		// Mana cost
+		"<Small>Mana Cost: </><ManaCost>%.1f</>\n"
+		// Cooldown
+		"<Small>Cooldown: </><Cooldown>%.1f</>\n"
+		// Number targets
+		"<Small>Targets: </><Cooldown>%d</>\n"
+		// Damage
+		"<Small>Damage: </><Damage>%.1f</>\n"
+		// Chance to stun
+		"<Small>Chance to stun: </>%.1f%%"),
+		*InTitle, Level, Level, ManaCost, Cooldown, NumTargets, LightningDamage, DebuffChance);
 }

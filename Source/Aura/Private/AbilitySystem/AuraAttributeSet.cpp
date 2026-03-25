@@ -18,6 +18,7 @@
 #include "Interaction/PlayerInterface.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/AuraPlayerController.h"
+#include "GameplayEffectTypes.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraAttributeSet)
 
@@ -144,7 +145,10 @@ void UAuraAttributeSet::HandleIncomingDamage(const FEffectProperties& Props, con
 	if (LocalIncomingDamage <= 0.f) { return; }
 
 	const float NewHealth = GetHealth() - LocalIncomingDamage;
-	SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
+	
+	// Clamp min health to 1 for player's character so we never die
+	const float MinHealth = IsValid(Props.TargetController) ? 1.f : 0.f;
+	SetHealth(FMath::Clamp(NewHealth, MinHealth, GetMaxHealth()));
 
 	// If fatal damage
 	if (GetHealth() <= 0.f)
@@ -237,7 +241,9 @@ void UAuraAttributeSet::Debuff(const FEffectProperties& Props)
 	}
 	Component.SetAndApplyTargetTagChanges(TagContainer);
 	
-	Effect->StackingType = EGameplayEffectStackingType::AggregateBySource;
+	// TODO: Set stacking type not working, editor only function call, do we need to do this?
+	//Effect->SetStackingType(EGameplayEffectStackingType::AggregateBySource);
+	
 	Effect->StackLimitCount = 1;
 	// Do not execute on application so damage text does not overlap on screen
 	Effect->bExecutePeriodicEffectOnApplication = false;
@@ -468,7 +474,7 @@ void UAuraAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth) co
 {
 	// Inform ability system of new replicated value
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Health, OldHealth);
-	UE_LOG(LogTemp, Warning, TEXT("OnRep_Health - Old: %f, New: %f"), OldHealth.GetCurrentValue(), Health.GetCurrentValue());
+	//UE_LOG(LogTemp, Warning, TEXT("OnRep_Health - Old: %f, New: %f"), OldHealth.GetCurrentValue(), Health.GetCurrentValue());
 }
 
 void UAuraAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth) const
@@ -480,7 +486,7 @@ void UAuraAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHeal
 void UAuraAttributeSet::OnRep_Mana(const FGameplayAttributeData& OldMana) const
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Mana, OldMana);
-	UE_LOG(LogTemp, Warning, TEXT("OnRep_Mana - Old: %f, New: %f"), OldMana.GetCurrentValue(), Mana.GetCurrentValue());
+	//UE_LOG(LogTemp, Warning, TEXT("OnRep_Mana - Old: %f, New: %f"), OldMana.GetCurrentValue(), Mana.GetCurrentValue());
 }
 
 void UAuraAttributeSet::OnRep_MaxMana(const FGameplayAttributeData& OldMaxMana) const

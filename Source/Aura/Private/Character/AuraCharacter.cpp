@@ -4,6 +4,7 @@
 
 #include "AuraGameplayTags.h"
 #include "AuraLogChannels.h"
+#include "EnhancedInputComponent.h"
 #include "NiagaraComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -12,6 +13,7 @@
 #include "AbilitySystem/Debuff/DebuffNiagaraComponent.h"
 #include "Player/AuraPlayerState.h"
 #include "Aura/Aura.h"
+#include "Input/AuraInputComponent.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AuraCharacter)
 
@@ -111,7 +113,7 @@ void AAuraCharacter::InitAbilityActorInfo()
 
 void AAuraCharacter::LevelUpParticles() const
 {
-	UE_LOG(LogTemp, Warning, TEXT("[%s]: Level up particles"), *GetClientServerContextString(GetController()));
+	//UE_LOG(LogTemp, Warning, TEXT("[%s]: Level up particles"), *GetClientServerContextString(GetController()));
 	
 	if (IsValid(LevelUpNiagaraComponent))
 	{
@@ -131,6 +133,16 @@ void AAuraCharacter::InitializeDefaultAttributes() const
 	ApplyGameplayEffectToSelf(DefaultSecondaryAttributesClass, 1.f);
 	// Set vital after secondary because we want to set health/mana equal to max health/mana
 	ApplyGameplayEffectToSelf(DefaultVitalAttributesClass, 1.f);
+}
+
+void AAuraCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	
+	UAuraInputComponent* AuraInputComponent = CastChecked<UAuraInputComponent>(InputComponent);
+	check(ZoomAction);
+	
+	AuraInputComponent->BindAction(ZoomAction, ETriggerEvent::Triggered, this, &AAuraCharacter::ZoomCam);
 }
 
 void AAuraCharacter::OnRep_Stunned()
@@ -172,6 +184,16 @@ void AAuraCharacter::OnRep_Burning()
 	{
 		BurnDebuffComponent->Deactivate();
 	}
+}
+
+void AAuraCharacter::ZoomCam(const FInputActionValue& InputActionValue)
+{
+	const float ZoomInputValue = InputActionValue.Get<float>();
+	//UE_LOG(LogTemp, Warning, TEXT("[%s]: Zooming in: %f"), *GetClientServerContextString(GetController()), ZoomInputValue);
+
+	const float CurrentTargetArmLength = SpringArm->TargetArmLength;
+	const float NewTargetArmLength = FMath::Clamp(CurrentTargetArmLength - ZoomInputValue * 50.f, MinTargetArmLength, MaxTargetArmLength);
+	SpringArm->TargetArmLength = NewTargetArmLength;
 }
 
 int32 AAuraCharacter::GetPlayerLevel_Implementation() const

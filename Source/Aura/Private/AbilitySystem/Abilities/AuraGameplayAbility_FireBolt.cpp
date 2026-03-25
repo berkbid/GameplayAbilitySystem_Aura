@@ -112,7 +112,7 @@ FString UAuraGameplayAbility_FireBolt::GetNextLevelDescription(int32 Level) cons
 
 FString UAuraGameplayAbility_FireBolt::GetDescriptionInternal(const FString& InTitle, int32 Level) const
 {
-	float FireDamage = Damage.GetValueAtLevel(Level);
+	const float FireDamage = Damage.GetValueAtLevel(Level);
 	const float ManaCost = GetManaCost(Level);
 	const int32 NumFireBolts = FMath::Min(Level, MaxNumProjectiles);
 	const float Cooldown = GetCooldown(Level);
@@ -125,11 +125,12 @@ FString UAuraGameplayAbility_FireBolt::GetDescriptionInternal(const FString& InT
 		// Mana cost
 		"<Small>Mana Cost: </><ManaCost>%.1f</>\n"
 		// Cooldown
-		"<Small>Cooldown: </><Cooldown>%.1f</>\n\n"
+		"<Small>Cooldown: </><Cooldown>%.1f</>\n"
 		// Num projectiles
-		"Launches %d bolt%s of fire, "
+		"<Small>Firebolts: </>%d\n"
 		// Damage
-		"exploding on impact an dealing: <Damage>%.1f</>"
-		" fire damage with a chance to burn\n\n"),
-		*InTitle, Level, Level, ManaCost, Cooldown, NumFireBolts, NumFireBolts > 1 ? TEXT("s") : TEXT(""), FireDamage);
+		"<Small>Damage: </><Damage>%.1f</>\n"
+		// Burn chance
+		"<Small>Burn Chance: </>%.1f\n"),
+		*InTitle, Level, Level, ManaCost, Cooldown,  NumFireBolts, FireDamage,DebuffChance);
 }

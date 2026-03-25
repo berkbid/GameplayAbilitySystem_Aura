@@ -37,8 +37,10 @@ void UDebuffNiagaraComponent::BeginPlay()
 	}
 	
 	// Bind to owner death to deactivate
-	CombatInterface->GetOnDeathDelegate().RemoveDynamic(this, &UDebuffNiagaraComponent::OnOwnerDeath);
-	CombatInterface->GetOnDeathDelegate().AddDynamic(this, &UDebuffNiagaraComponent::OnOwnerDeath);
+	if (!CombatInterface->GetOnDeathDelegate().IsAlreadyBound(this, &UDebuffNiagaraComponent::OnOwnerDeath))
+	{
+		CombatInterface->GetOnDeathDelegate().AddDynamic(this, &UDebuffNiagaraComponent::OnOwnerDeath);
+	}
 }
 
 void UDebuffNiagaraComponent::OnDebuffTagChanged(const FGameplayTag GameplayTag, int32 TagCount)

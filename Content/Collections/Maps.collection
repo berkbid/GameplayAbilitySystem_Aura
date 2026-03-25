@@ -5,5 +5,6 @@ ParentGuid:00000000-0000-0000-0000-000000000000
 
 /Game/FrontEnd/Maps/L_AuraFrontEnd.L_AuraFrontEnd
 /Game/Maps/L_Dungeon.L_Dungeon
+/Game/Maps/L_Dungeon_Temp.L_Dungeon_Temp
 /Game/Maps/L_EQS_Testing.L_EQS_Testing
 /Game/Maps/L_StartupMap.L_StartupMap
