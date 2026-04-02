@@ -91,3 +91,6 @@ Plugins/Developer/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+
+# Extras
+Shortcuts/*
